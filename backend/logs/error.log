@@ -1,0 +1,1195 @@
+2026-05-31 22:24:18 error: PrismaClientKnownRequestError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:24:29 error: PrismaClientKnownRequestError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:25:32 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:26:00 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:26:39 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:27:43 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:27:49 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:29:35 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:35
+
+  54   }));
+  55 }
+  56 
+→ 57 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:57:18)
+2026-05-31 22:32:52 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findFirst()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:40:44
+
+  37 }
+  38 
+  39 // Prevent duplicate submissions by hospital name
+→ 40 const existing = await prisma.hospital.findFirst(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:40:22)
+2026-05-31 22:33:06 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findFirst()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:40:44
+
+  37 }
+  38 
+  39 // Prevent duplicate submissions by hospital name
+→ 40 const existing = await prisma.hospital.findFirst(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:40:22)
+2026-05-31 23:26:07 error: PrismaClientValidationError: 
+Invalid `prisma.candidate.update()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:159:44
+
+  156   if (data[k] === undefined) delete data[k];
+  157 });
+  158 
+→ 159 const updated = await prisma.candidate.update({
+        where: {
+          id: "9c856ac6-28c2-477c-a236-88294e22a491"
+        },
+        data: {
+          profile: {
+          ~~~~~~~
+            name: "raj_0",
+            headline: "Associate Consultant Dental Surgery · 7 years experience",
+            email: "user01@gmail.com",
+            phone: "9116914178",
+            city: "Udaipur",
+            state: "Rajasthan",
+            avatar: "RR",
+            verified: true,
+            completeness: 100,
+            role: "Dentist",
+            registrationNumber: "TSMC/FMR/2018/45231",
+            registrationCouncil: "National Medical Commission (NMC)",
+            specialty: "Dental Surgery",
+            grade: "Associate Consultant",
+            preferredRoleTypes: [
+              "Full-time"
+            ],
+            licenseStatus: "Active",
+            specialistRegisterStatus: "Specialist registered",
+            revalidationDate: "2027-12-31",
+            indemnityProvider: "Covered by Apollo Hospitals Professional Indemnity Insurance",
+            rightToWork: "Indian citizen",
+            visaStatus: "Not Required",
+            yearsExperience: 7,
+            summary: "Experienced Dental Surgeon with 8+ years of clinical experience in preventive, restorative, and endodontic dentistry. Skilled in root canal therapy, tooth extractions, crown and bridge procedures, cosmetic dentistry, and comprehensive oral health management. Proven ability to manage high patient volumes while maintaining excellent clinical outcomes and patient satisfaction. Experienced in multidisciplinary collaboration, infection control protocols, and mentoring junior dental professionals. Committed to evidence-based practice, patient-centered care, and continuous professional development.",
+            qualifications: [
+              {
+                degree: "MBBS",
+                institution: "All India Institute of Medical Sciences",
+                year: "2012"
+              },
+              {
+                degree: "MD (General Medicine)",
+                institution: "Postgraduate Institute of Medical Education and Research",
+                year: "2015"
+              }
+            ],
+            experience: [
+              {
+                role: "Senior Consultant – General Medicine",
+                hospital: "Apollo Hospitals",
+                city: "Hyderabad",
+                start: "2023-12-16",
+                end: "",
+                summary: "Lead consultant for outpatient and inpatient management of acute and chronic medical conditions. Managed high-volume OPD clinics and supervised treatment plans for admitted patients. Participated in emergency response teams, ICU rounds, and multidisciplinary case discussions. Successfully handled complex cases involving sepsis, uncontrolled diabetes, cardiovascular risk factors, and respiratory illnesses. Mentored junior residents and medical officers, ensured evidence-based clinical practice, and contributed to quality improvement initiatives resulting in improved patient outcomes and reduced readmission rates.",
+                current: true,
+                specialty: "Dental Surgery",
+                hospitalType: "Tertiary Care Multispeciality Hospital",
+                department: "OPD, IPD, Emergency Department",
+                patientLoad: "40–60 OPD patients/day, 15–20 IPD patients, acute medical emergencies, diabetes, hypertension, infectious diseases, respiratory disorders",
+                rota: "1:4 Emergency Rota, Weekend and Night On-call Duties",
+                keyProcedures: [
+                  "OPD",
+                  "Emergency calls",
+                  "ICU rounds",
+                  "Acute Medical Stabilization"
+                ]
+              }
+            ],
+            clinicalSkills: [
+              "RCT",
+              "Crowns",
+              "Restorations",
+              "Implants"
+            ],
+            technicalSkills: [
+              "EMR",
+              "MS Excel",
+              "Ultrasound console",
+              "R"
+            ],
+            procedures: [
+              {
+                name: "Dental Consultation",
+                count: 5000
+              },
+              {
+                name: "Dental Fillings",
+                count: 2000
+              }
+            ],
+            certifications: [
+              {
+                name: "Basic Life Support (BLS)",
+                issuer: "American Heart Association",
+                year: "2024"
+              }
+            ],
+            publications: [
+              "raju. Clinical Outcomes of Single-Visit Root Canal Therapy: A Retrospective Analysis. Journal of Conservative Dentistry 2022 DOI/PMID: gfeh"
+            ],
+            publicationDetails: [
+              {
+                title: "Clinical Outcomes of Single-Visit Root Canal Therapy: A Retrospective Analysis",
+                authors: "raju",
+                journal: "Journal of Conservative Dentistry",
+                year: "2022",
+                doi: "gfeh",
+                citations: 4
+              }
+            ],
+            totalCitations: "12",
+            hIndex: "2",
+            i10Index: "1",
+            scholarUrl: "https://scholar.google.com/citations?user=demo123",
+            orcid: "0000-0002-4567-8910",
+            professionalHighlights: [
+              {
+                category: "Audit / QI",
+                title: "Dental Infection Control Compliance Audit",
+                detail: "Conducted a clinic-wide audit of sterilization and infection control protocols. Achieved 100% compliance with NABH standards and reduced documentation errors by 25%.",
+                year: "2024"
+              }
+            ],
+            languages: [
+              "English",
+              "Hindi"
+            ],
+            availability: "30 days notice",
+            expectedSalaryMin: 23,
+            expectedSalaryMax: 52,
+            linkedinUrl: "",
+            documentChecklist: [
+              "Medical registration certificate",
+              "MBBS / primary medical degree",
+              "Specialty fellowship / training proof",
+              "Postgraduate degree certificates",
+              "Indemnity / malpractice cover",
+              "Passport / government ID",
+              "Right-to-work proof",
+              "Police verification / DBS",
+              "ACLS/BLS/ALS certificate"
+            ]
+          },
+      ?   id?: String | StringFieldUpdateOperationsInput,
+      ?   name?: String | StringFieldUpdateOperationsInput,
+      ?   initials?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   role?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   specialty?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   experienceYears?: Int | NullableIntFieldUpdateOperationsInput | Null,
+      ?   location?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   currentEmployer?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   summary?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   matchPercent?: Int | NullableIntFieldUpdateOperationsInput | Null,
+      ?   verified?: Boolean | BoolFieldUpdateOperationsInput,
+      ?   registration?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   email?: String | StringFieldUpdateOperationsInput,
+      ?   phone?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   languages?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   procedures?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   skills?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   education?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   certifications?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   experience?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   profileJson?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   cvSource?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   uploadedCvName?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   uploadedCvMime?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   uploadedCvData?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   cvCloudinaryId?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   cvUrl?: String | NullableStringFieldUpdateOperationsInput | Null,
+      ?   user?: UserUpdateOneWithoutCandidateNestedInput,
+      ?   applications?: ApplicationUpdateManyWithoutCandidateNestedInput,
+      ?   savedJobs?: SavedJobUpdateManyWithoutCandidateNestedInput
+        }
+      })
+
+Unknown argument `profile`. Did you mean `role`? Available options are marked with ?.
+    at Pn (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:29:1363)
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7090)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:159:21)
+2026-06-01 22:30:40 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:37
+
+  16   res.json([]);
+  17   return;
+  18 }
+→ 19 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:20)
+2026-06-01 22:30:40 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:59:35
+
+  56   }));
+  57 }
+  58 
+→ 59 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:59:18)
+2026-06-01 22:30:40 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:35
+
+  13   res.json({ activeJobs: 0, totalApplicants: 0, newApplicants: 0, shortlisted: 0 });
+  14   return;
+  15 }
+→ 16 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:18)
+2026-06-01 22:30:40 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-01 22:30:40 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:149:34
+
+  146 // GET /api/auth/me
+  147 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  148   try {
+→ 149     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:149:16)
+2026-06-01 22:30:45 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:37
+
+  16   res.json([]);
+  17   return;
+  18 }
+→ 19 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:20)
+2026-06-01 22:30:45 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:59:35
+
+  56   }));
+  57 }
+  58 
+→ 59 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:59:18)
+2026-06-01 22:30:45 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:35
+
+  13   res.json({ activeJobs: 0, totalApplicants: 0, newApplicants: 0, shortlisted: 0 });
+  14   return;
+  15 }
+→ 16 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:18)
+2026-06-01 22:30:45 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-01 22:30:46 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:149:34
+
+  146 // GET /api/auth/me
+  147 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  148   try {
+→ 149     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:149:16)
+2026-06-01 22:30:51 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-01 22:30:56 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-02 23:47:08 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findFirst()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:65:44
+
+  62 }
+  63 
+  64 // Prevent duplicate submissions by hospital name
+→ 65 const existing = await prisma.hospital.findFirst(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\onboardingRoutes.ts:65:22)
+2026-06-02 23:50:44 error: [Email] Approval email failed for hospital %s: %s
+2026-06-03 00:19:57 error: PrismaClientKnownRequestError: 
+Invalid `prisma.savedJob.create()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:41:41
+
+  38   return;
+  39 }
+  40 try {
+→ 41   const saved = await prisma.savedJob.create(
+Unique constraint failed on the fields: (`candidateId`,`jobId`)
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:41:19)
+2026-06-03 00:31:00 error: PrismaClientKnownRequestError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:37
+
+  16   res.json([]);
+  17   return;
+  18 }
+→ 19 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:20)
+2026-06-03 00:31:00 error: PrismaClientKnownRequestError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:66:35
+
+  63   }));
+  64 }
+  65 
+→ 66 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:66:18)
+2026-06-04 01:19:32 error: PrismaClientKnownRequestError: 
+Invalid `prisma.candidate.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:46
+
+  137   res.status(404).json({ error: 'No candidate profile linked to your account' });
+  138   return;
+  139 }
+→ 140 const candidate = await prisma.candidate.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:23)
+2026-06-04 01:19:32 error: PrismaClientKnownRequestError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:32 error: PrismaClientKnownRequestError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:32 error: PrismaClientKnownRequestError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7447)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:40 error: PrismaClientInitializationError: 
+Invalid `prisma.application.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:51
+
+  21 } else if (req.user!.role === 'CANDIDATE') {
+  22   where = { candidateId: req.user!.candidateId! };
+  23 }
+→ 24 const applications = await prisma.application.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:26)
+2026-06-04 01:19:40 error: PrismaClientInitializationError: 
+Invalid `prisma.application.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:51
+
+  21 } else if (req.user!.role === 'CANDIDATE') {
+  22   where = { candidateId: req.user!.candidateId! };
+  23 }
+→ 24 const applications = await prisma.application.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:26)
+2026-06-04 01:19:42 error: PrismaClientInitializationError: 
+Invalid `prisma.application.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:51
+
+  21 } else if (req.user!.role === 'CANDIDATE') {
+  22   where = { candidateId: req.user!.candidateId! };
+  23 }
+→ 24 const applications = await prisma.application.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:26)
+2026-06-04 01:19:42 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:42 error: PrismaClientInitializationError: 
+Invalid `prisma.candidate.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:46
+
+  137   res.status(404).json({ error: 'No candidate profile linked to your account' });
+  138   return;
+  139 }
+→ 140 const candidate = await prisma.candidate.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:23)
+2026-06-04 01:19:42 error: PrismaClientInitializationError: 
+Invalid `prisma.application.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:51
+
+  21 } else if (req.user!.role === 'CANDIDATE') {
+  22   where = { candidateId: req.user!.candidateId! };
+  23 }
+→ 24 const applications = await prisma.application.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:24:26)
+2026-06-04 01:19:44 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:44 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:46 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:46 error: PrismaClientInitializationError: 
+Invalid `prisma.candidate.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:46
+
+  137   res.status(404).json({ error: 'No candidate profile linked to your account' });
+  138   return;
+  139 }
+→ 140 const candidate = await prisma.candidate.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:23)
+2026-06-04 01:19:46 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:46 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:58 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:58 error: PrismaClientInitializationError: 
+Invalid `prisma.candidate.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:46
+
+  137   res.status(404).json({ error: 'No candidate profile linked to your account' });
+  138   return;
+  139 }
+→ 140 const candidate = await prisma.candidate.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:23)
+2026-06-04 01:19:58 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:19:58 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:37
+
+  16   res.json([]);
+  17   return;
+  18 }
+→ 19 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:20)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:35
+
+  64   }));
+  65 }
+  66 
+→ 67 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:18)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:34
+
+  154 // GET /api/auth/me
+  155 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  156   try {
+→ 157     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:16)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-04 01:20:02 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:34
+
+  154 // GET /api/auth/me
+  155 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  156   try {
+→ 157     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:16)
+2026-06-04 21:11:13 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:37
+
+  16   res.json([]);
+  17   return;
+  18 }
+→ 19 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\applicationRoutes.ts:19:20)
+2026-06-04 21:11:13 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:35
+
+  13   res.json({ activeJobs: 0, totalApplicants: 0, newApplicants: 0, shortlisted: 0 });
+  14   return;
+  15 }
+→ 16 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\statsRoutes.ts:16:18)
+2026-06-04 21:11:13 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:35
+
+  64   }));
+  65 }
+  66 
+→ 67 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:18)
+2026-06-04 21:11:13 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-04 21:11:13 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:34
+
+  154 // GET /api/auth/me
+  155 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  156   try {
+→ 157     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:16)
+2026-06-04 21:11:19 error: PrismaClientInitializationError: 
+Invalid `prisma.job.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:35
+
+  64   }));
+  65 }
+  66 
+→ 67 const jobs = await prisma.job.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\jobRoutes.ts:67:18)
+2026-06-04 21:11:19 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-04 21:11:19 error: PrismaClientInitializationError: 
+Invalid `prisma.user.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:34
+
+  154 // GET /api/auth/me
+  155 router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
+  156   try {
+→ 157     let user = await prisma.user.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\authRoutes.ts:157:16)
+2026-06-04 21:11:24 error: PrismaClientInitializationError: 
+Invalid `prisma.hospital.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:44
+
+  14   res.status(404).json({ error: 'No hospital linked to your account' });
+  15   return;
+  16 }
+→ 17 const hospital = await prisma.hospital.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\hospitalRoutes.ts:17:22)
+2026-06-04 21:11:32 error: PrismaClientInitializationError: 
+Invalid `prisma.savedJob.findMany()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:45
+
+  14   res.status(400).json({ error: 'No candidate profile linked' });
+  15   return;
+  16 }
+→ 17 const savedJobs = await prisma.savedJob.findMany(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\savedJobRoutes.ts:17:23)
+2026-06-04 21:11:32 error: PrismaClientInitializationError: 
+Invalid `prisma.candidate.findUnique()` invocation in
+C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:46
+
+  137   res.status(404).json({ error: 'No candidate profile linked to your account' });
+  138   return;
+  139 }
+→ 140 const candidate = await prisma.candidate.findUnique(
+Can't reach database server at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`
+
+Please make sure your database server is running at `ep-red-shape-aog7y9yt.c-2.ap-southeast-1.aws.neon.tech:5432`.
+    at Un.handleRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:7748)
+    at Un.handleAndLogRequestError (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6771)
+    at Un.request (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:121:6478)
+    at async l (C:\Users\Admin\Documents\jugad\job-main\backend\node_modules\@prisma\client\runtime\library.js:130:9644)
+    at async <anonymous> (C:\Users\Admin\Documents\jugad\job-main\backend\src\routes\candidateRoutes.ts:140:23)

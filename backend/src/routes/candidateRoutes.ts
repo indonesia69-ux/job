@@ -1,0 +1,209 @@
+import logger from '../lib/logger';
+import { Router, Response } from 'express';
+import prisma from '../lib/prisma';
+import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
+import { formatCandidate, ensureUsageReset, getSearchLimit, syncFormProfile } from '../lib/helpers';
+
+const router = Router();
+
+// Doctor-level degrees used to classify Premium candidates
+const DOCTOR_DEGREES = ['MBBS', 'MD', 'DM', 'DNB', 'MS', 'MCh', 'DrNB'];
+
+// ─── GET /api/candidates/search ───────────────────────────────────────────────
+// Query params:
+//   q       – free text (name / role / specialty / skills / education)
+//   role    – exact role filter (optional)
+//   type    – "basic" (non-doctors) | "premium" (doctors) | omitted = all
+//   degrees – comma-separated degree list for premium filter
+//   take    – page size (default 50, max 100)
+//   skip    – offset for pagination
+router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+  try {
+    const q        = (req.query.q as string | undefined)?.trim() || '';
+    const roleFilter = (req.query.role as string | undefined)?.trim();
+    const type     = (req.query.type as string | undefined) || 'all';
+    const degrees  = (req.query.degrees as string | undefined)
+      ? (req.query.degrees as string).split(',').map(d => d.trim().toUpperCase()).filter(Boolean)
+      : DOCTOR_DEGREES;
+    const take     = Math.min(100, Math.max(1, parseInt(req.query.take as string) || 50));
+    const skip     = Math.max(0, parseInt(req.query.skip as string) || 0);
+
+    // Build the WHERE clause using Prisma's typed API where possible,
+    // falling back to $queryRaw for JSON-column text search on PostgreSQL.
+    // Strategy: fetch with scalar filters first, then post-filter in JS for JSON fields
+    // (avoids complex raw SQL while keeping things readable).
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { hospital: true } });
+    if (!user || !user.hospital) {
+      res.status(400).json({ error: 'No hospital linked to your account' });
+      return;
+    }
+    const updatedUser = await ensureUsageReset(prisma, user);
+
+    if (type === 'premium') {
+      const limit = getSearchLimit(user.hospital.onboardingPlan || 'Basic');
+      if (updatedUser.premiumSearchesThisMonth >= limit) {
+        res.status(403).json({ error: `You have reached your limit of ${limit} premium searches this month.`, code: 'PLAN_QUOTA_EXCEEDED' });
+        return;
+      }
+      // Increment search usage
+      await prisma.user.update({
+        where: { id: updatedUser.id },
+        data: { premiumSearchesThisMonth: updatedUser.premiumSearchesThisMonth + 1 }
+      });
+    }
+
+    // Scalar filter conditions
+    const scalarWhere: any = {};
+
+    if (roleFilter && roleFilter !== 'All') {
+      scalarWhere.role = { equals: roleFilter, mode: 'insensitive' as const };
+    }
+
+    if (q) {
+      scalarWhere.OR = [
+        { name:      { contains: q, mode: 'insensitive' as const } },
+        { role:      { contains: q, mode: 'insensitive' as const } },
+        { specialty: { contains: q, mode: 'insensitive' as const } },
+        { location:  { contains: q, mode: 'insensitive' as const } },
+        { summary:   { contains: q, mode: 'insensitive' as const } },
+        // JSON columns stored as text — PostgreSQL ILIKE on cast
+        { skills:    { contains: q, mode: 'insensitive' as const } },
+        { education: { contains: q, mode: 'insensitive' as const } },
+        { procedures:{ contains: q, mode: 'insensitive' as const } },
+      ];
+    }
+
+    let candidates = await prisma.candidate.findMany({
+      where: scalarWhere,
+      orderBy: [
+        { matchPercent: 'desc' },
+        { name: 'asc' },
+      ],
+      take: take + skip, // fetch extra so we can post-filter before slicing
+    });
+
+    // ── Post-filter: basic vs premium split ──────────────────────────────────
+    // "Premium" = has a doctor-level degree in their education JSON
+    // "Basic"   = everyone else (nurses, technicians, allied health)
+    if (type === 'premium' || type === 'basic') {
+      candidates = candidates.filter((c) => {
+        const educationText = (c.education || '').toUpperCase();
+        const profileText   = (c.profileJson || '').toUpperCase();
+        const combinedText  = educationText + ' ' + profileText;
+        const isDoctor = degrees.some((deg) => {
+          // word-boundary style match: degree must appear as a standalone token
+          return new RegExp(`(^|[^A-Z])${deg}([^A-Z]|$)`).test(combinedText);
+        });
+        return type === 'premium' ? isDoctor : !isDoctor;
+      });
+    }
+
+    // Apply skip/take after post-filtering
+    const paginated = candidates.slice(skip, skip + take);
+    const total = candidates.length;
+
+    res.json({
+      candidates: paginated.map(formatCandidate),
+      total,
+      take,
+      skip,
+    });
+  } catch (error) {
+    logger.error('[candidate search]', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
+// GET /api/candidates
+router.get('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+  try {
+    const candidates = await prisma.candidate.findMany({
+      orderBy: { matchPercent: 'desc' },
+      take: 50, // Added basic limit
+    });
+    res.json(candidates.map(formatCandidate));
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/candidates/me
+router.get('/me', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const candidateId = req.user!.candidateId;
+    if (!candidateId) {
+      res.status(404).json({ error: 'No candidate profile linked to your account' });
+      return;
+    }
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: candidateId },
+      include: { applications: true },
+    });
+    if (!candidate) {
+      res.status(404).json({ error: 'Candidate profile not found' });
+      return;
+    }
+    res.json(formatCandidate(candidate));
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/candidates/me
+router.put('/me', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest, res: Response) => {
+  try {
+    const candidateId = req.user!.candidateId;
+    if (!candidateId) {
+      res.status(400).json({ error: 'No candidate profile linked to your account' });
+      return;
+    }
+    
+    const { profile, profileJson, cvUrl, cvCloudinaryId, cvName, cvMime, supportingDocuments, ...rest } = req.body;
+    
+    // If the frontend form sent `profile`, sync it fully
+    if (profile) {
+      await syncFormProfile(
+        candidateId, 
+        profile, 
+        req.user!.email, 
+        {
+          cvUrl,
+          cvCloudinaryId,
+          name: cvName,
+          mime: cvMime,
+        },
+        supportingDocuments
+      );
+      const fullyUpdated = await prisma.candidate.findUnique({ where: { id: candidateId } });
+      res.json(formatCandidate(fullyUpdated));
+      return;
+    }
+
+    // Fallback direct update
+    const data: any = { ...rest };
+    if (profileJson !== undefined) {
+      data.profileJson = typeof profileJson === 'string' ? profileJson : JSON.stringify(profileJson);
+    }
+    if (cvUrl) data.cvUrl = String(cvUrl);
+    if (cvCloudinaryId) data.cvCloudinaryId = String(cvCloudinaryId);
+    
+    // Clean up empty fields
+    Object.keys(data).forEach(k => {
+      if (data[k] === undefined) delete data[k];
+    });
+
+    const updated = await prisma.candidate.update({
+      where: { id: candidateId },
+      data,
+    });
+    res.json(formatCandidate(updated));
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Failed to update candidate profile' });
+  }
+});
+
+export default router;

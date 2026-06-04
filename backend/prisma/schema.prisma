@@ -1,0 +1,269 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   // "RECRUITER" | "CANDIDATE"
+  createdAt    DateTime @default(now())
+
+  username     String?  @unique
+  fullName     String?
+  mobile       String?
+
+  // For recruiters: the hospital they manage
+  hospitalId   String?
+  hospital     Hospital? @relation(fields: [hospitalId], references: [id])
+
+  // For candidates: their profile
+  candidate    Candidate?
+
+  // In-app notifications
+  notifications InAppNotification[]
+
+  // ── Plan Usage Tracking (NEW) ──────────────────────────────────────────────
+  currentMonthStartDate      DateTime @default(now())
+  jobsPostedThisMonth        Int      @default(0)
+  premiumSearchesThisMonth   Int      @default(0)
+}
+
+model Hospital {
+  id                 String   @id @default(uuid())
+  name               String
+  shortName          String?
+  type               String?
+  city               String?
+  state              String?
+  address            String?
+  phone              String?
+  email              String?
+  website            String?
+  registrationNumber String?
+  beds               Int?
+  founded            Int?
+  about              String?
+  specialties        String   // JSON string
+  verified           Boolean  @default(false)
+  verifiedOn         String?
+  verifiedBy         String?
+
+  // ── Onboarding workflow (NEW) ─────────────────────────────────────────────
+  onboardingStatus      String   @default("Pending")   // "Pending" | "Approved" | "Rejected" | "RequestMoreDocuments"
+  onboardingNote        String?                         // Admin note on rejection/approval
+  requestedDocuments    String?                         // Admin-written list of docs needed (RequestMoreDocuments flow)
+  onboardingPlan     String   @default("Basic")     // "Basic" | "Pro" | "Premium"
+  maxRecruiters      Int      @default(3)            // Set from plan: Basic=3, Pro=10, Premium=unlimited(999)
+  submittedBy        String?                         // Contact person name on onboarding form
+  submittedEmail     String?                         // Hospital contact email (for onboarding verification)
+  submittedPhone     String?                         // Hospital contact phone
+  submittedAt        DateTime?                       // When onboarding form was submitted
+  approvedAt         DateTime?                       // When admin approved
+  approvedBy         String?                         // AdminUser id who approved
+  inviteCode         String?   @unique               // 12-char alphanumeric code for recruiter signup
+
+  // ── Extended Onboarding Fields ─────────────────────────────────────────────
+  brandName          String?
+  registrationAuthority String?
+  nabhStatus         String?
+  nablStatus         String?
+  gstNumber          String?
+  panNumber          String?
+  ownershipType      String?
+  contactDesignation String?
+  contactWhatsapp    String?
+  contactAlternatePhone String?
+  district           String?
+  pinCode            String?
+  billingName        String?
+  billingGstNumber   String?
+  billingAddress     String?
+  billingEmail       String?
+  billingPhone       String?
+  icuBeds            Int?
+  numberOfDoctors    Int?
+  numberOfEmployees  Int?
+  averageMonthlyHiring Int?
+  preferredHiringStates String?
+  emergencyHiringRequirement Boolean?
+  internshipHiring   Boolean?
+  campusRecruitment  Boolean?
+
+  jobs               Job[]
+  users              User[]
+  documents          HospitalDocument[]
+}
+
+// Verification documents uploaded during hospital onboarding
+model HospitalDocument {
+  id           String   @id @default(uuid())
+  hospitalId   String
+  hospital     Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+  name         String                    // Original filename
+  cloudinaryId String                    // Cloudinary public_id
+  url          String                    // Cloudinary secure_url
+  type         String   @default("verification")  // "verification" | "accreditation" | "license"
+  uploadedAt   DateTime @default(now())
+}
+
+model Job {
+  id               String   @id @default(uuid())
+  role             String
+  category         String?
+  specialty        String
+  subSpecialty     String?
+  location         String
+  city             String?
+  salaryMin        Float
+  salaryMax        Float
+  experienceMin    Int?
+  experienceMax    Int?
+  experience       String?
+  type             String
+  shift            String?
+  status           String   @default("Active")
+  postedDays       Int?
+  postedOn         DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  visibilityEndsAt DateTime?
+  description      String
+  responsibilities String?
+  requirements     String?
+  perks            String?
+  tags             String?
+  /// JSON array of recruiter-defined application fields for this job
+  customApplicationFields String?
+
+  hospitalId       String
+  hospital         Hospital @relation(fields: [hospitalId], references: [id])
+
+  applications     Application[]
+  savedBy          SavedJob[]
+}
+
+model Candidate {
+  id              String   @id @default(uuid())
+  name            String
+  initials        String?
+  role            String?
+  specialty       String?
+  experienceYears Int?
+  location        String?
+  currentEmployer String?
+  summary         String?
+  matchPercent    Int?
+  verified        Boolean  @default(false)
+  registration    String?
+  email           String   @unique
+  phone           String?
+  languages       String?
+  procedures      String?
+  skills          String?
+  education       String?
+  certifications  String?
+  experience      String?
+  profileJson     String?  // Full form profile snapshot (JSON)
+  cvSource        String?  // "form" | "upload"
+  uploadedCvName  String?
+  uploadedCvMime  String?
+  uploadedCvData  String?  // DEPRECATED: base64 data URL — kept for backward compat, new uploads use cvUrl
+
+  // ── Cloudinary CV fields (NEW) ────────────────────────────────────────────
+  cvCloudinaryId  String?  // Cloudinary public_id
+  cvUrl           String?  // Cloudinary secure_url (preferred over uploadedCvData)
+  
+  // ── Multiple Documents (NEW) ────────────────────────────────────────────
+  supportingDocuments String? // JSON array of { name, url, publicId, mime }
+
+  // Link to auth user
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  applications    Application[]
+  savedJobs       SavedJob[]
+}
+
+model SavedJob {
+  id          String   @id @default(uuid())
+  savedAt     DateTime @default(now())
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobId])
+}
+
+model Application {
+  id          String    @id @default(uuid())
+  status      String    @default("New")
+  appliedOn   DateTime  @default(now())
+  cvSource    String?   // "form" | "upload"
+  uploadedCvName  String?
+  uploadedCvMime  String?
+  uploadedCvData  String?  // DEPRECATED: base64 — kept for backward compat
+  /// JSON object: { [fieldId]: value } for job-specific questions
+  customFieldResponses String?
+
+  // ── Cloudinary CV fields (NEW) ────────────────────────────────────────────
+  cvCloudinaryId String?  // Cloudinary public_id
+  cvUrl          String?  // Cloudinary secure_url
+
+  // ── Multiple Documents (NEW) ────────────────────────────────────────────
+  supportingDocuments String? // JSON array of { name, url, publicId, mime }
+
+  jobId       String
+  job         Job       @relation(fields: [jobId], references: [id])
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  @@unique([jobId, candidateId])
+}
+
+// ── Admin authentication (separate from User table) ──────────────────────────
+model AdminUser {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}
+
+// ── In-app notifications for recruiters and candidates ───────────────────────
+model InAppNotification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String?  // Optional deep-link for the notification
+  createdAt DateTime @default(now())
+}
+
+// ── Activity / audit log ─────────────────────────────────────────────────────
+model ActivityLog {
+  id         String   @id @default(uuid())
+  entityType String   // "hospital" | "recruiter" | "candidate" | "job" | "application"
+  entityId   String
+  action     String   // "created" | "approved" | "rejected" | "blocked" | "verified" | "deleted"
+  actorId    String?  // Admin or user who performed the action
+  actorRole  String?  // "ADMIN" | "RECRUITER" | "CANDIDATE"
+  meta       String?  // JSON blob for extra context
+  createdAt  DateTime @default(now())
+}
