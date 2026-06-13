@@ -6,7 +6,7 @@ export async function fetchSavedJobIds(): Promise<string[]> {
   // Backend GET /api/saved-jobs returns [{savedAt, job}] — extract job IDs from it
   const res = await fetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
   if (!res.ok) return [];
-  const data = await res.json() as { savedAt: string; job: Job }[];
+  const data = (await res.json()) as { savedAt: string; job: Job }[];
   return (data ?? []).map((item) => item.job?.id).filter(Boolean) as string[];
 }
 
@@ -14,7 +14,7 @@ export async function fetchSavedJobs(): Promise<Job[]> {
   const res = await fetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to load saved jobs");
   // Backend returns [{savedAt, job}] — extract the job objects
-  const data = await res.json() as { savedAt: string; job: Job }[];
+  const data = (await res.json()) as { savedAt: string; job: Job }[];
   return (data ?? []).map((item) => item.job).filter(Boolean) as Job[];
 }
 

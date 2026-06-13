@@ -10,6 +10,7 @@ import { login as saveAuth } from "@/store/authStore";
 import { apiBase } from "@/lib/api";
 import { authSignInSchema } from "@/lib/validations";
 import { loginErrorMessage, rolePortalMismatchMessage } from "@/lib/authMessages";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/auth/login")({
   head: () => ({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/auth/login")({
 function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const emailRef = useRef<HTMLInputElement>(null);
@@ -68,12 +70,14 @@ function LoginPage() {
       }
       saveAuth(data.token, data.user);
       toast.success("Welcome back!");
-      navigate({ to: "/" });
+      setLoginSuccess(true);
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 1200);
     } catch {
       const msg = "Network error. Is the backend running?";
       setFormError(msg);
       toast.error(msg);
-    } finally {
       setLoading(false);
     }
   };
@@ -112,9 +116,17 @@ function LoginPage() {
           {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="password">
-            Password <span className="text-destructive">*</span>
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">
+              Password <span className="text-destructive">*</span>
+            </Label>
+            <Link
+              to="/auth/forgot-password"
+              className="text-[12px] font-medium text-accent hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <Input
             id="password"
             ref={passwordRef}
@@ -130,9 +142,20 @@ function LoginPage() {
           )}
         </div>
 
-        <Button type="submit" disabled={loading} className="h-11 w-full text-[14px] font-medium">
-          {loading ? "Signing in…" : "Sign in"}
+        <Button
+          type="submit"
+          disabled={loading || loginSuccess}
+          className="h-11 w-full text-[14px] font-medium"
+        >
+          {loading || loginSuccess ? "Signing in…" : "Sign in"}
         </Button>
+        {loginSuccess && (
+          <LottiePlayer
+            src="/successful_signup_signin.json"
+            loop={false}
+            className="mx-auto mt-4 h-14 w-14 sm:h-16 sm:w-16"
+          />
+        )}
       </form>
 
       <div className="relative">

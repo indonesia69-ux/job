@@ -3,19 +3,15 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { updateApplicationStatus } from "@/lib/recruiterData";
 import {
-  getAllowedNextStatuses,
   isTerminalApplicationStatus,
   statusPillClass,
   displayToApiStatus,
   type DisplayApplicantStatus,
 } from "@/lib/applicationStatus";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { WorkflowActions } from "./WorkflowActions";
+
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
@@ -48,7 +44,6 @@ export function CandidatePanel({
   };
 
   const apiStatus = displayToApiStatus(candidate?.status as DisplayApplicantStatus);
-  const nextStatuses = candidate ? getAllowedNextStatuses(apiStatus) : [];
   const locked = candidate ? isTerminalApplicationStatus(apiStatus) : true;
   const statusClass = candidate ? statusPillClass(candidate.status) : "";
 
@@ -89,46 +84,13 @@ export function CandidatePanel({
                 <Meta icon={<Phone className="h-3.5 w-3.5" />}>{candidate.phone}</Meta>
               </div>
 
+              <WorkflowActions
+                applicationId={candidate.applicationId!}
+                status={apiStatus}
+                onUpdate={() => router.invalidate()}
+              />
+
               <div className="flex flex-wrap gap-2 pt-1">
-                {nextStatuses.includes("Reviewed") && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9"
-                    onClick={() => setStatus("Reviewed", "Marked as reviewed")}
-                  >
-                    Mark reviewed
-                  </Button>
-                )}
-                {nextStatuses.includes("Shortlisted") && (
-                  <Button
-                    size="sm"
-                    className="h-9"
-                    onClick={() => setStatus("Shortlisted", "Candidate shortlisted")}
-                  >
-                    Shortlist
-                  </Button>
-                )}
-                {nextStatuses.includes("Rejected") && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-                    onClick={() => setStatus("Rejected", "Candidate rejected")}
-                  >
-                    Reject
-                  </Button>
-                )}
-                {nextStatuses.includes("Contacted") && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-9"
-                    onClick={() => setStatus("Contacted", "Marked as contacted")}
-                  >
-                    Mark contacted
-                  </Button>
-                )}
                 {locked && (
                   <span className="self-center text-[11px] text-muted-foreground">
                     Status is final and cannot be changed.
@@ -169,14 +131,151 @@ export function CandidatePanel({
             </SheetHeader>
 
             <div className="flex-1 overflow-y-auto p-6">
-              <Tabs defaultValue="overview">
-                <TabsList className="grid w-full grid-cols-5">
+              <Tabs defaultValue="workflow">
+                <TabsList className="grid w-full grid-cols-6">
+                  <TabsTrigger value="workflow">Workflow</TabsTrigger>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="exp">Experience</TabsTrigger>
                   <TabsTrigger value="edu">Education</TabsTrigger>
                   <TabsTrigger value="skills">Skills</TabsTrigger>
                   <TabsTrigger value="docs">Documents</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="workflow" className="mt-5 space-y-5">
+                  <Section title="Interview Details">
+                    {candidate.interviewDate ? (
+                      <div className="space-y-2 text-[13px] text-foreground">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              Date
+                            </span>
+                            {new Date(candidate.interviewDate).toLocaleString()}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              Type
+                            </span>
+                            {candidate.interviewType}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              Interviewer
+                            </span>
+                            {candidate.interviewerName} ({candidate.interviewerEmail})
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              {candidate.interviewType === "Virtual" ? "Link" : "Venue"}
+                            </span>
+                            {candidate.meetingLink ? (
+                              <a
+                                href={candidate.meetingLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                {candidate.meetingLink}
+                              </a>
+                            ) : (
+                              candidate.venue || "—"
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              Round
+                            </span>
+                            {candidate.interviewRound}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-muted-foreground">
+                        No interview scheduled yet.
+                      </p>
+                    )}
+                  </Section>
+
+                  <Separator />
+
+                  <Section title="Document Requests">
+                    {candidate.requestedDocumentList &&
+                    candidate.requestedDocumentList.length > 0 ? (
+                      <div className="space-y-2 text-[13px] text-foreground">
+                        <ul className="list-disc pl-4 space-y-1">
+                          {candidate.requestedDocumentList.map((d, i) => (
+                            <li key={i}>{d}</li>
+                          ))}
+                        </ul>
+                        {candidate.documentRequestNote && (
+                          <div className="mt-2 text-muted-foreground italic">
+                            Note: {candidate.documentRequestNote}
+                          </div>
+                        )}
+                        {candidate.applicationDocuments &&
+                          candidate.applicationDocuments.length > 0 && (
+                            <div className="mt-4 space-y-1.5">
+                              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                Uploaded by Candidate
+                              </span>
+                              {candidate.applicationDocuments.map((doc: any, i: number) => (
+                                <div
+                                  key={i}
+                                  className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5"
+                                >
+                                  <span className="truncate text-[13px] text-foreground">
+                                    {doc.name}
+                                  </span>
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary text-[12px] hover:underline flex items-center gap-1"
+                                  >
+                                    <Download className="h-3.5 w-3.5" /> View
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-muted-foreground">No documents requested.</p>
+                    )}
+                  </Section>
+
+                  <Separator />
+
+                  <Section title="Offer & Joining">
+                    {candidate.offerLetterUrl ? (
+                      <div className="space-y-2 text-[13px] text-foreground">
+                        <div className="flex items-center justify-between rounded-lg border border-border bg-emerald-500/10 px-3 py-2.5">
+                          <span className="truncate text-emerald-800 font-medium">
+                            Offer Letter Sent
+                          </span>
+                          <a
+                            href={candidate.offerLetterUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-emerald-700 text-[12px] hover:underline flex items-center gap-1"
+                          >
+                            <FileText className="h-3.5 w-3.5" /> View PDF
+                          </a>
+                        </div>
+                        {candidate.joiningDate && (
+                          <div className="mt-3">
+                            <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
+                              Confirmed Joining Date
+                            </span>
+                            {new Date(candidate.joiningDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-muted-foreground">No offer letter sent.</p>
+                    )}
+                  </Section>
+                </TabsContent>
 
                 <TabsContent value="overview" className="mt-5 space-y-5">
                   {candidate.customAnswers && candidate.customAnswers.length > 0 && (
@@ -190,7 +289,9 @@ export function CandidatePanel({
                             <dt className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                               {a.label}
                               {a.required && (
-                                <span className="ml-1 normal-case text-destructive">(required)</span>
+                                <span className="ml-1 normal-case text-destructive">
+                                  (required)
+                                </span>
                               )}
                             </dt>
                             <dd className="mt-1 text-[13px] text-foreground">{a.value}</dd>
@@ -204,15 +305,16 @@ export function CandidatePanel({
                       {candidate.summary || "—"}
                     </p>
                   </Section>
-                  {candidate.formProfile?.publications && candidate.formProfile.publications.length > 0 && (
-                    <Section title="Publications">
-                      <ul className="list-disc space-y-1 pl-4 text-[13px] text-foreground/85">
-                        {candidate.formProfile.publications.map((p, i) => (
-                          <li key={i}>{p}</li>
-                        ))}
-                      </ul>
-                    </Section>
-                  )}
+                  {candidate.formProfile?.publications &&
+                    candidate.formProfile.publications.length > 0 && (
+                      <Section title="Publications">
+                        <ul className="list-disc space-y-1 pl-4 text-[13px] text-foreground/85">
+                          {candidate.formProfile.publications.map((p, i) => (
+                            <li key={i}>{p}</li>
+                          ))}
+                        </ul>
+                      </Section>
+                    )}
                   {candidate.formProfile?.availability && (
                     <Section title="Availability">
                       <p className="text-[13px] text-foreground/85">
@@ -264,7 +366,9 @@ export function CandidatePanel({
                         >
                           <div>
                             <div className="font-medium">{ed.degree}</div>
-                            <div className="text-[11.5px] text-muted-foreground">{ed.institute}</div>
+                            <div className="text-[11.5px] text-muted-foreground">
+                              {ed.institute}
+                            </div>
                           </div>
                           <span className="text-[11.5px] text-muted-foreground">{ed.year}</span>
                         </div>
@@ -335,7 +439,10 @@ export function CandidatePanel({
                     <Section title="Supporting Documents">
                       <div className="space-y-1.5">
                         {candidate.supportingDocuments.map((doc: any, i: number) => (
-                          <div key={i} className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                          <div
+                            key={i}
+                            className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5"
+                          >
                             <span className="truncate text-[13px] text-foreground">
                               {doc.name || `Document ${i + 1}`}
                             </span>
@@ -354,7 +461,8 @@ export function CandidatePanel({
 
                   {/* Document checklist from step 15 */}
                   <Section title="Verification Documents Ready">
-                    {candidate.formProfile?.documentChecklist && candidate.formProfile.documentChecklist.length > 0 ? (
+                    {candidate.formProfile?.documentChecklist &&
+                    candidate.formProfile.documentChecklist.length > 0 ? (
                       <div className="space-y-1.5">
                         {candidate.formProfile.documentChecklist.map((doc: string) => (
                           <div
@@ -367,7 +475,9 @@ export function CandidatePanel({
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[12px] text-muted-foreground">No documents marked as ready.</p>
+                      <p className="text-[12px] text-muted-foreground">
+                        No documents marked as ready.
+                      </p>
                     )}
                   </Section>
                 </TabsContent>

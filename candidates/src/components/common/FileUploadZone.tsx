@@ -3,6 +3,7 @@ import { UploadCloud, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { CV_ACCEPT, fileToUploaded, type UploadedFile } from "@/lib/fileUpload";
+import { LottiePlayer } from "./LottiePlayer";
 
 type Props = {
   files: UploadedFile[];
@@ -41,7 +42,15 @@ export function FileUploadZone({ files, onChange, multiple = true, title, hint }
         onChange={(e) => onPick(e.target.files)}
       />
       <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-surface-2 px-6 py-10 text-center">
-        <UploadCloud className="h-8 w-8 text-muted-foreground" />
+        {files.length === 0 ? (
+          <LottiePlayer
+            src="/rest_sent_flow.json"
+            loop={false}
+            className="mx-auto mb-2 h-12 w-12 sm:h-14 sm:w-14"
+          />
+        ) : (
+          <UploadCloud className="h-8 w-8 text-muted-foreground" />
+        )}
         <p className="mt-3 text-sm font-medium text-foreground">{title}</p>
         <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
         <Button

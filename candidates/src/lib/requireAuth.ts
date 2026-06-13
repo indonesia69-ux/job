@@ -5,8 +5,7 @@ import { isAuthenticated } from "@/store/authStore";
 export function requireCandidateAuth(returnPath?: string) {
   if (typeof window === "undefined") return;
   if (isAuthenticated()) return;
-  const redirectTo =
-    returnPath ?? `${window.location.pathname}${window.location.search}`;
+  const redirectTo = returnPath ?? `${window.location.pathname}${window.location.search}`;
   throw redirect({
     to: "/auth",
     search: { redirect: redirectTo },

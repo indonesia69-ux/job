@@ -4,13 +4,9 @@ import type { FormProfile } from "@/lib/formProfile";
 
 export type JobType = "Full-time" | "Part-time" | "Locum";
 export type JobStatus = "Active" | "Closed" | "Draft";
-export type ApplicantStatus =
-  | "Applied"
-  | "Reviewed"
-  | "Shortlisted"
-  | "Rejected"
-  | "Contacted"
-  | "Job closed";
+import type { DisplayApplicantStatus } from "../applicationStatus";
+
+export type ApplicantStatus = DisplayApplicantStatus;
 
 export type Job = {
   id: string;
@@ -71,4 +67,35 @@ export type Candidate = {
   }[];
   customAnswers?: { fieldId: string; label: string; value: string; required: boolean }[];
   supportingDocuments?: any[];
+
+  // ── Premium Search & Locking ──
+  locked?: boolean;
+  expectedSalaryMin?: number;
+  expectedSalaryMax?: number;
+  currentSalaryMin?: number;
+  currentSalaryMax?: number;
+  noticePeriod?: string;
+  preferredLocations?: string[];
+  availabilityStatus?: string;
+
+  // ── New Recruitment Workflow Fields ──
+  interviewDate?: string | null;
+  interviewType?: string | null;
+  meetingLink?: string | null;
+  venue?: string | null;
+  interviewerName?: string | null;
+  interviewerEmail?: string | null;
+  interviewNotes?: string | null;
+  interviewRound?: number;
+  interviewHistory?: any;
+  candidateResponseNote?: string | null;
+  interviewOutcomeNote?: string | null;
+  requestedDocumentList?: string[];
+  documentRequestNote?: string | null;
+  offerLetterUrl?: string | null;
+  offerLetterCloudinaryId?: string | null;
+  joiningDate?: string | null;
+  joiningNote?: string | null;
+  finalStatusNote?: string | null;
+  applicationDocuments?: any[];
 };

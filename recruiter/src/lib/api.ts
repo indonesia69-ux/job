@@ -1,11 +1,15 @@
 /**
  * Returns the API base URL.
- * - During SSR (Node.js server): must be an absolute URL so fetch() works.
- * - In the browser: empty string so requests are relative and go through the Vite proxy.
+ * Production cPanel builds must set VITE_API_BASE to the Render backend URL.
+ * Development may fall back to the local Vite proxy in the browser.
  */
 export function apiBase(): string {
-  if (typeof window === "undefined") {
-    return "http://127.0.0.1:3000";
+  const configured = import.meta.env.VITE_API_BASE || "";
+  if (import.meta.env.PROD && !configured) {
+    throw new Error("VITE_API_BASE is required for production builds.");
   }
-  return import.meta.env.VITE_API_BASE || "";
+  if (typeof window === "undefined") {
+    return configured || "http://127.0.0.1:3000";
+  }
+  return configured;
 }

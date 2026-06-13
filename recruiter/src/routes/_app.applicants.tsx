@@ -4,12 +4,17 @@ import { loadRecruiterDashboard } from "@/lib/recruiterData";
 import { PageLoader } from "@/components/common/PageLoader";
 
 export const Route = createFileRoute("/_app/applicants")({
-  validateSearch: (search: Record<string, unknown>): { jobId?: string; q?: string } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { jobId?: string; q?: string; page?: number; limit?: number } => ({
     jobId: typeof search.jobId === "string" ? search.jobId : undefined,
     q: typeof search.q === "string" ? search.q : undefined,
+    page: typeof search.page === "number" ? search.page : 1,
+    limit: typeof search.limit === "number" ? search.limit : 50,
   }),
   staleTime: 0,
-  loader: loadRecruiterDashboard,
+  loaderDeps: ({ search: { page, limit } }) => ({ page, limit }),
+  loader: async ({ deps: { page, limit } }) => await loadRecruiterDashboard(page, limit),
   pendingComponent: PageLoader,
   head: () => ({
     meta: [

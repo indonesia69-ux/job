@@ -34,10 +34,7 @@ export function CvDocument({
   const titleLine = [c.grade, c.specialty || c.role].filter(Boolean).join(" · ") || c.headline;
 
   return (
-    <div
-      id={id}
-      className={`overflow-hidden rounded-2xl border bg-card shadow-pop ${className}`}
-    >
+    <div id={id} className={`overflow-hidden rounded-2xl border bg-card shadow-pop ${className}`}>
       <div className="relative overflow-hidden bg-[linear-gradient(135deg,oklch(0.19_0.045_265),oklch(0.29_0.07_260)_55%,oklch(0.55_0.18_262))] px-8 py-8 text-primary-foreground">
         <div className="absolute inset-x-0 bottom-0 h-1 bg-warning" />
         <div className="relative flex flex-wrap items-start justify-between gap-6">
@@ -81,7 +78,10 @@ export function CvDocument({
 
       <div className="grid border-b bg-surface-2 px-8 py-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric label="Experience" value={`${c.yearsExperience || 0}+ yrs`} />
-        <Metric label="Procedure volume" value={procedureVolume ? `${procedureVolume}+` : `${c.procedures.length}`} />
+        <Metric
+          label="Procedure volume"
+          value={procedureVolume ? `${procedureVolume}+` : `${c.procedures.length}`}
+        />
         <Metric label="Publications" value={`${publications.length}`} />
         <Metric label="Citations" value={totalCitations || "0"} />
       </div>
@@ -89,7 +89,11 @@ export function CvDocument({
       <div className="grid gap-8 p-8 lg:grid-cols-[1.4fr_0.6fr]">
         <main className="space-y-8">
           {c.experience.length > 0 && (
-            <CVSection title="Clinical Experience" icon={<Briefcase className="h-4 w-4" />} prominent>
+            <CVSection
+              title="Clinical Experience"
+              icon={<Briefcase className="h-4 w-4" />}
+              prominent
+            >
               <div className="space-y-4">
                 {c.experience.map((e, i) => (
                   <article
@@ -111,13 +115,7 @@ export function CvDocument({
                         </span>
                       </div>
                       <div className="mt-3 flex flex-wrap gap-1.5">
-                        {[
-                          e.specialty,
-                          e.hospitalType,
-                          e.department,
-                          e.patientLoad,
-                          e.rota,
-                        ]
+                        {[e.specialty, e.hospitalType, e.department, e.patientLoad, e.rota]
                           .filter(Boolean)
                           .map((item) => (
                             <span
@@ -129,7 +127,9 @@ export function CvDocument({
                           ))}
                       </div>
                       {e.summary && (
-                        <p className="mt-3 text-sm leading-relaxed text-foreground/75">{e.summary}</p>
+                        <p className="mt-3 text-sm leading-relaxed text-foreground/75">
+                          {e.summary}
+                        </p>
                       )}
                       {e.keyProcedures && e.keyProcedures.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -151,7 +151,11 @@ export function CvDocument({
           )}
 
           {publications.length > 0 && (
-            <CVSection title="Publications & Citations" icon={<BookOpen className="h-4 w-4" />} prominent>
+            <CVSection
+              title="Publications & Citations"
+              icon={<BookOpen className="h-4 w-4" />}
+              prominent
+            >
               <div className="mb-4 grid gap-3 sm:grid-cols-3">
                 <ResearchStat label="Total citations" value={totalCitations || "0"} />
                 <ResearchStat label="h-index" value={c.hIndex || "—"} />
@@ -159,17 +163,26 @@ export function CvDocument({
               </div>
               <div className="space-y-3">
                 {publications.map((p, i) => (
-                  <article key={`${p.title}-${i}`} className="rounded-xl border bg-surface px-4 py-3">
+                  <article
+                    key={`${p.title}-${i}`}
+                    className="rounded-xl border bg-surface px-4 py-3"
+                  >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold leading-snug text-foreground">{p.title}</p>
-                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{p.meta}</p>
+                        <p className="text-sm font-semibold leading-snug text-foreground">
+                          {p.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {p.meta}
+                        </p>
                       </div>
                       <span className="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-primary">
                         {p.citations} cites
                       </span>
                     </div>
-                    {p.doi && <p className="mt-2 text-[11px] text-foreground/65">DOI/PMID: {p.doi}</p>}
+                    {p.doi && (
+                      <p className="mt-2 text-[11px] text-foreground/65">DOI/PMID: {p.doi}</p>
+                    )}
                   </article>
                 ))}
               </div>
@@ -202,16 +215,23 @@ export function CvDocument({
             <CVSection title="Audit, Teaching & Leadership" icon={<Award className="h-4 w-4" />}>
               <div className="grid gap-3 sm:grid-cols-2">
                 {c.professionalHighlights.map((h, i) => (
-                  <article key={`${h.title}-${i}`} className="rounded-xl border bg-surface px-4 py-3">
+                  <article
+                    key={`${h.title}-${i}`}
+                    className="rounded-xl border bg-surface px-4 py-3"
+                  >
                     <div className="flex items-center justify-between gap-3">
                       <span className="rounded-full bg-brand-soft px-2 py-0.5 text-[10px] font-semibold text-primary">
                         {h.category}
                       </span>
-                      {h.year && <span className="text-[11px] text-muted-foreground">{h.year}</span>}
+                      {h.year && (
+                        <span className="text-[11px] text-muted-foreground">{h.year}</span>
+                      )}
                     </div>
                     <p className="mt-2 text-sm font-semibold text-foreground">{h.title}</p>
                     {h.detail && (
-                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{h.detail}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                        {h.detail}
+                      </p>
                     )}
                   </article>
                 ))}
@@ -266,7 +286,9 @@ function SidebarColumn({ profile: c }: { profile: Profile }) {
               <li key={i} className="rounded-lg border bg-surface px-3 py-2">
                 <span className="font-semibold text-foreground">{cert.name}</span>
                 {cert.issuer && <span className="text-muted-foreground"> · {cert.issuer}</span>}
-                {cert.year && <p className="mt-0.5 text-[11px] text-muted-foreground">{cert.year}</p>}
+                {cert.year && (
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{cert.year}</p>
+                )}
               </li>
             ))}
           </ul>
@@ -299,13 +321,7 @@ function SidebarColumn({ profile: c }: { profile: Profile }) {
   );
 }
 
-function ChipList({
-  items,
-  variant,
-}: {
-  items: string[];
-  variant: "brand" | "outline";
-}) {
+function ChipList({ items, variant }: { items: string[]; variant: "brand" | "outline" }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((s) => (
@@ -338,11 +354,7 @@ function CVSection({
   return (
     <section>
       <div className="mb-3 flex items-center gap-2">
-        <span
-          className={cnSectionIcon(prominent)}
-        >
-          {icon}
-        </span>
+        <span className={cnSectionIcon(prominent)}>{icon}</span>
         <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary">
           {title}
         </h3>
@@ -361,7 +373,9 @@ function cnSectionIcon(prominent?: boolean) {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="border-b px-4 py-3 sm:border-b-0 sm:border-r last:border-r-0">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
@@ -370,21 +384,15 @@ function Metric({ label, value }: { label: string; value: string }) {
 function ResearchStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border bg-surface-2 px-3 py-3">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-lg font-semibold text-primary">{value}</p>
     </div>
   );
 }
 
-function CredentialLine({
-  label,
-  value,
-  dark,
-}: {
-  label: string;
-  value?: string;
-  dark?: boolean;
-}) {
+function CredentialLine({ label, value, dark }: { label: string; value?: string; dark?: boolean }) {
   if (!value) return null;
   return (
     <div className="flex items-start justify-between gap-4">

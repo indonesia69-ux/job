@@ -14,8 +14,9 @@ import {
   type JobCustomField,
 } from "@/lib/jobCustomFields";
 
-function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
+function safeJsonParse<T>(value: any, fallback: T): T {
   if (!value) return fallback;
+  if (typeof value !== "string") return value as T;
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -28,19 +29,22 @@ function mapStatus(apiStatus: string): ApplicantStatus {
   return display as ApplicantStatus;
 }
 
-function mapFromFormProfile(profile: FormProfile, app: {
-  id: string;
-  status: string;
-  appliedOn: string;
-  jobId: string;
-  cvSource?: string;
-  cvUrl?: string;
-  cvCloudinaryId?: string;
-  uploadedCvName?: string;
-  uploadedCvMime?: string;
-  uploadedCvData?: string;
-  candidate: Record<string, unknown>;
-}): Candidate {
+function mapFromFormProfile(
+  profile: FormProfile,
+  app: {
+    id: string;
+    status: string;
+    appliedOn: string;
+    jobId: string;
+    cvSource?: string;
+    cvUrl?: string;
+    cvCloudinaryId?: string;
+    uploadedCvName?: string;
+    uploadedCvMime?: string;
+    uploadedCvData?: string;
+    candidate: Record<string, unknown>;
+  },
+): Candidate {
   const c = app.candidate;
   const initials =
     profile.avatar ||
@@ -86,7 +90,8 @@ function mapFromFormProfile(profile: FormProfile, app: {
       year: e.year,
     })),
     certifications: (profile.certifications || []).map(
-      (cert) => `${cert.name}${cert.issuer ? ` · ${cert.issuer}` : ""}${cert.year ? ` (${cert.year})` : ""}`,
+      (cert) =>
+        `${cert.name}${cert.issuer ? ` · ${cert.issuer}` : ""}${cert.year ? ` (${cert.year})` : ""}`,
     ),
     experience: (profile.experience || []).map((e) => ({
       role: e.role,
@@ -110,7 +115,7 @@ function mapFromFormProfile(profile: FormProfile, app: {
     uploadedCvData: (app.uploadedCvData || c.uploadedCvData) as string | undefined,
     supportingDocuments: safeJsonParse<any[]>(
       (app as any).supportingDocuments || c.supportingDocuments || undefined,
-      []
+      [],
     ),
   } as Candidate;
 }
@@ -141,6 +146,26 @@ export function mapApiCandidate(app: {
   customFieldResponses?: CustomFieldResponses;
   job?: { customApplicationFields?: JobCustomField[] };
   candidate: Record<string, unknown>;
+  // New workflow fields
+  interviewDate?: string | null;
+  interviewType?: string | null;
+  meetingLink?: string | null;
+  venue?: string | null;
+  interviewerName?: string | null;
+  interviewerEmail?: string | null;
+  interviewNotes?: string | null;
+  interviewRound?: number;
+  interviewHistory?: any;
+  candidateResponseNote?: string | null;
+  interviewOutcomeNote?: string | null;
+  requestedDocumentList?: string[];
+  documentRequestNote?: string | null;
+  offerLetterUrl?: string | null;
+  offerLetterCloudinaryId?: string | null;
+  joiningDate?: string | null;
+  joiningNote?: string | null;
+  finalStatusNote?: string | null;
+  applicationDocuments?: any[];
 }): Candidate {
   const c = app.candidate;
   const appCvSource = app.cvSource || (c.cvSource as string);
@@ -151,15 +176,36 @@ export function mapApiCandidate(app: {
     (app.customFieldResponses || {}) as CustomFieldResponses,
   );
 
+  const workflowFields = {
+    interviewDate: app.interviewDate,
+    interviewType: app.interviewType,
+    meetingLink: app.meetingLink,
+    venue: app.venue,
+    interviewerName: app.interviewerName,
+    interviewerEmail: app.interviewerEmail,
+    interviewNotes: app.interviewNotes,
+    interviewRound: app.interviewRound,
+    interviewHistory: app.interviewHistory,
+    candidateResponseNote: app.candidateResponseNote,
+    interviewOutcomeNote: app.interviewOutcomeNote,
+    requestedDocumentList: app.requestedDocumentList,
+    documentRequestNote: app.documentRequestNote,
+    offerLetterUrl: app.offerLetterUrl,
+    offerLetterCloudinaryId: app.offerLetterCloudinaryId,
+    joiningDate: app.joiningDate,
+    joiningNote: app.joiningNote,
+    finalStatusNote: app.finalStatusNote,
+    applicationDocuments: app.applicationDocuments,
+  };
+
   if (profile && appCvSource !== "upload") {
     const mapped = mapFromFormProfile(profile, app);
-    return { ...mapped, customAnswers } as Candidate;
+    return { ...mapped, customAnswers, ...workflowFields } as Candidate;
   }
 
-  const education = safeJsonParse<{ degree: string; institution?: string; institute?: string; year: string }[]>(
-    c.education as string | undefined,
-    [],
-  );
+  const education = safeJsonParse<
+    { degree: string; institution?: string; institute?: string; year: string }[]
+  >(c.education as string | undefined, []);
   const experience = safeJsonParse<
     {
       role: string;
@@ -173,10 +219,9 @@ export function mapApiCandidate(app: {
       highlights?: string[];
     }[]
   >(c.experience as string | undefined, []);
-  const certifications = safeJsonParse<{ name: string; issuer?: string; year?: string }[] | string[]>(
-    c.certifications as string | undefined,
-    [],
-  );
+  const certifications = safeJsonParse<
+    { name: string; issuer?: string; year?: string }[] | string[]
+  >(c.certifications as string | undefined, []);
 
   return {
     id: String(c.id),
@@ -232,10 +277,21 @@ export function mapApiCandidate(app: {
     uploadedCvMime: (app.uploadedCvMime as string) || (c.uploadedCvMime as string),
     uploadedCvData: (app.uploadedCvData as string) || (c.uploadedCvData as string),
     supportingDocuments: safeJsonParse<any[]>(
-      (app as any).supportingDocuments || (c.supportingDocuments as string | undefined) || undefined,
-      []
+      (app as any).supportingDocuments ||
+        (c.supportingDocuments as string | undefined) ||
+        undefined,
+      [],
     ),
+    locked: c.locked as boolean | undefined,
+    expectedSalaryMin: c.expectedSalaryMin as number | undefined,
+    expectedSalaryMax: c.expectedSalaryMax as number | undefined,
+    currentSalaryMin: c.currentSalaryMin as number | undefined,
+    currentSalaryMax: c.currentSalaryMax as number | undefined,
+    noticePeriod: c.noticePeriod as string | undefined,
+    preferredLocations: safeJsonParse<string[]>(c.preferredLocations as string | undefined, []),
+    availabilityStatus: c.availabilityStatus as string | undefined,
     customAnswers,
+    ...workflowFields,
   } as Candidate;
 }
 
@@ -281,7 +337,9 @@ export async function loadHospitalProfile(): Promise<HospitalProfile | null> {
   return res.json();
 }
 
-export async function saveHospitalProfile(data: Partial<HospitalProfile>): Promise<HospitalProfile> {
+export async function saveHospitalProfile(
+  data: Partial<HospitalProfile>,
+): Promise<HospitalProfile> {
   const res = await fetch(`${apiBase()}/api/hospitals/me`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...authHeader() },
@@ -311,7 +369,7 @@ export async function loadDashboardStats(): Promise<DashboardStats> {
       { label: "New Applicants", value: String(data.newApplicants || 0), delta: "Requires review" },
       { label: "Shortlisted", value: String(data.shortlisted || 0), delta: "In pipeline" },
     ],
-    chart: [], // Data to be supplied by chart API
+    chart: Array.isArray(data.chart) ? data.chart : [],
     suggested: [],
   };
 }
@@ -319,30 +377,45 @@ export async function loadDashboardStats(): Promise<DashboardStats> {
 export type RecruiterDashboardData = {
   candidates: ReturnType<typeof mapApiCandidate>[];
   jobs: unknown[];
+  totalCandidates: number;
+  page: number;
+  limit: number;
 };
 
-export async function loadRecruiterDashboard(): Promise<RecruiterDashboardData> {
+export async function loadRecruiterDashboard(
+  page = 1,
+  limit = 50,
+): Promise<RecruiterDashboardData> {
   const user = getUser();
   const headers = authHeader();
   const hospitalParam = user?.hospitalId ? `?hospitalId=${user.hospitalId}` : "";
   const [appsRes, jobsRes] = await Promise.all([
-    fetch(`${apiBase()}/api/applications`, { headers }),
+    fetch(`${apiBase()}/api/applications?page=${page}&limit=${limit}`, { headers }),
     fetch(`${apiBase()}/api/jobs${hospitalParam}`, { headers }),
   ]);
-  
+
   if (appsRes.status === 401 || jobsRes.status === 401) {
     logout();
     if (typeof window !== "undefined") window.location.href = "/auth/login";
-    return { candidates: [], jobs: [] };
+    return { candidates: [], jobs: [], totalCandidates: 0, page: 1, limit: 50 };
   }
 
   if (!appsRes.ok || !jobsRes.ok) {
     throw new Error("Failed to fetch dashboard data");
   }
-  const applications = await appsRes.json();
+  const applicationsData = await appsRes.json();
   const jobs = await jobsRes.json();
-  const candidates = applications.map((app: Parameters<typeof mapApiCandidate>[0]) => mapApiCandidate(app));
-  return { candidates, jobs };
+
+  // Handle backward compatibility or paginated response
+  const appList = Array.isArray(applicationsData) ? applicationsData : applicationsData.data;
+  const total = applicationsData.total || appList.length;
+  const p = applicationsData.page || 1;
+  const l = applicationsData.limit || 50;
+
+  const candidates = appList.map((app: Parameters<typeof mapApiCandidate>[0]) =>
+    mapApiCandidate(app),
+  );
+  return { candidates, jobs, totalCandidates: total, page: p, limit: l };
 }
 
 export async function closeJob(jobId: string): Promise<void> {
@@ -369,25 +442,73 @@ export async function publishDraft(jobId: string): Promise<void> {
   }
 }
 
-
 export async function updateApplicationStatus(
   applicationId: string,
   status: DisplayApplicantStatus | ApiApplicationStatus,
+  payload: Record<string, any> = {},
 ): Promise<void> {
   const apiStatus =
     typeof status === "string" &&
-      ["New", "Reviewed", "Shortlisted", "Rejected", "Contacted", "JobClosed"].includes(status)
+    [
+      "Applied",
+      "Reviewed",
+      "InterviewScheduled",
+      "InterviewAccepted",
+      "InterviewDeclined",
+      "RescheduleRequested",
+      "InterviewCompleted",
+      "NoShow",
+      "InterviewRescheduled",
+      "Shortlisted",
+      "OnHold",
+      "NextRound",
+      "Rejected",
+      "DocumentsRequested",
+      "DocumentsUploaded",
+      "DocumentsApproved",
+      "AdditionalDocumentsRequired",
+      "DocumentsRejected",
+      "OfferSent",
+      "OfferAccepted",
+      "OfferRejected",
+      "JoiningConfirmed",
+      "Joined",
+      "Onboarded",
+      "Dropped",
+      "JobClosed",
+    ].includes(status)
       ? status
       : displayToApiStatus(status as DisplayApplicantStatus);
+
   const res = await fetch(`${apiBase()}/api/applications/${applicationId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ status: apiStatus }),
+    body: JSON.stringify({ status: apiStatus, ...payload }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Failed to update status");
   }
+}
+
+export async function uploadOfferLetter(
+  applicationId: string,
+  file: File,
+): Promise<{ url: string; publicId: string }> {
+  const formData = new FormData();
+  formData.append("offerLetter", file);
+
+  const res = await fetch(`${apiBase()}/api/applications/${applicationId}/offer-letter`, {
+    method: "POST",
+    headers: authHeader(), // Content-Type omitted so browser sets boundary
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to upload offer letter");
+  }
+  return res.json();
 }
 
 // ── Candidate search ──────────────────────────────────────────────────────────
@@ -397,12 +518,25 @@ export type SearchParams = {
   role?: string;
   type?: "basic" | "premium" | "all";
   degrees?: string[];
+  specialty?: string;
+  experienceMin?: number;
+  experienceMax?: number;
+  location?: string;
+  currentOrg?: string;
+  expectedSalaryMin?: number;
+  expectedSalaryMax?: number;
+  noticePeriod?: string[];
+  currentSalaryMin?: number;
+  currentSalaryMax?: number;
+  preferredLocation?: string;
+  availabilityStatus?: string[];
   take?: number;
   skip?: number;
 };
 
 export type SearchResult = {
   candidates: Candidate[];
+  lockedCandidates?: Candidate[];
   total: number;
   take: number;
   skip: number;
@@ -410,12 +544,32 @@ export type SearchResult = {
 
 export async function searchCandidates(params: SearchParams = {}): Promise<SearchResult> {
   const url = new URL(`${apiBase()}/api/candidates/search`);
-  if (params.q)       url.searchParams.set("q", params.q);
+  if (params.q) url.searchParams.set("q", params.q);
   if (params.role && params.role !== "All") url.searchParams.set("role", params.role);
   if (params.type && params.type !== "all") url.searchParams.set("type", params.type);
-  if (params.degrees?.length)              url.searchParams.set("degrees", params.degrees.join(","));
-  if (params.take)                         url.searchParams.set("take", String(params.take));
-  if (params.skip)                         url.searchParams.set("skip", String(params.skip));
+  if (params.degrees?.length) url.searchParams.set("degrees", params.degrees.join(","));
+  if (params.specialty) url.searchParams.set("specialty", params.specialty);
+  if (params.experienceMin !== undefined)
+    url.searchParams.set("experienceMin", String(params.experienceMin));
+  if (params.experienceMax !== undefined)
+    url.searchParams.set("experienceMax", String(params.experienceMax));
+  if (params.location) url.searchParams.set("location", params.location);
+  if (params.currentOrg) url.searchParams.set("currentOrg", params.currentOrg);
+  if (params.expectedSalaryMin !== undefined)
+    url.searchParams.set("expectedSalaryMin", String(params.expectedSalaryMin));
+  if (params.expectedSalaryMax !== undefined)
+    url.searchParams.set("expectedSalaryMax", String(params.expectedSalaryMax));
+  if (params.noticePeriod?.length)
+    url.searchParams.set("noticePeriod", params.noticePeriod.join(","));
+  if (params.currentSalaryMin !== undefined)
+    url.searchParams.set("currentSalaryMin", String(params.currentSalaryMin));
+  if (params.currentSalaryMax !== undefined)
+    url.searchParams.set("currentSalaryMax", String(params.currentSalaryMax));
+  if (params.preferredLocation) url.searchParams.set("preferredLocation", params.preferredLocation);
+  if (params.availabilityStatus?.length)
+    url.searchParams.set("availabilityStatus", params.availabilityStatus.join(","));
+  if (params.take) url.searchParams.set("take", String(params.take));
+  if (params.skip) url.searchParams.set("skip", String(params.skip));
 
   const res = await fetch(url.toString(), { headers: authHeader() });
   if (!res.ok) {
@@ -432,11 +586,142 @@ export async function searchCandidates(params: SearchParams = {}): Promise<Searc
         appliedOn: new Date().toISOString(),
         jobId: "",
         candidate: c,
-      })
+      }),
     ),
+    ...(data.lockedCandidates && {
+      lockedCandidates: data.lockedCandidates.map(
+        (c: any) =>
+          ({
+            id: c.id,
+            locked: true,
+            specialty: c.specialty,
+            experienceYears: c.experienceYears,
+          }) as Candidate,
+      ),
+    }),
     total: data.total,
     take: data.take,
     skip: data.skip,
   };
 }
 
+// ── Plan management ───────────────────────────────────────────────────────────
+
+export type PlanTier = "Basic" | "Pro" | "Premium";
+
+export type PlanInfo = {
+  plan: PlanTier;
+  planExpiresAt: string | null;
+  pendingPlan: PlanTier | null;
+  pendingPlanAt: string | null;
+  daysRemaining: number;
+  planPrices: Record<string, number>;
+  upgradeCostPreview: Record<string, number>;
+};
+
+export type PlanChangeEntry = {
+  id: string;
+  hospitalId: string;
+  fromPlan: string;
+  toPlan: string;
+  changeType: string;
+  amountPaid: number | null;
+  effectiveAt: string;
+  requestedAt: string;
+  paymentStatus: string;
+  paymentRef: string | null;
+  note: string | null;
+};
+
+export type PaymentOrderInfo = {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+};
+
+export type RazorpayVerifyPayload = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+export async function fetchPlanInfo(): Promise<PlanInfo> {
+  const res = await fetch(`${apiBase()}/api/plan/current`, { headers: authHeader() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to fetch plan info");
+  }
+  return res.json();
+}
+
+export async function upgradeImmediate(newPlan: PlanTier, paymentRef?: string): Promise<PlanInfo> {
+  const res = await fetch(`${apiBase()}/api/plan/upgrade/immediate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ newPlan, paymentRef }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to upgrade plan");
+  }
+  return res.json();
+}
+
+export async function createPaymentOrder(newPlan: PlanTier): Promise<PaymentOrderInfo> {
+  const res = await fetch(`${apiBase()}/api/payment/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ newPlan }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to create payment order");
+  }
+  return res.json();
+}
+
+export async function verifyPayment(
+  payload: RazorpayVerifyPayload,
+): Promise<{ success: boolean; plan: PlanTier; amountPaid: number }> {
+  const res = await fetch(`${apiBase()}/api/payment/verify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to verify payment");
+  }
+  return res.json();
+}
+
+export async function scheduleRenewalChange(newPlan: PlanTier): Promise<void> {
+  const res = await fetch(`${apiBase()}/api/plan/upgrade/renewal`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ newPlan }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to schedule plan change");
+  }
+}
+
+export async function cancelRenewalChange(): Promise<void> {
+  const res = await fetch(`${apiBase()}/api/plan/upgrade/renewal`, {
+    method: "DELETE",
+    headers: authHeader(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to cancel plan change");
+  }
+}
+
+export async function fetchPlanHistory(): Promise<PlanChangeEntry[]> {
+  const res = await fetch(`${apiBase()}/api/plan/history`, { headers: authHeader() });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data ?? [];
+}

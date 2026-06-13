@@ -1,22 +1,66 @@
-import { Outlet, Link, createRootRoute, HeadContent, Scripts, useRouterState, useNavigate } from "@tanstack/react-router";
+import {
+  Outlet,
+  Link,
+  createRootRoute,
+  HeadContent,
+  Scripts,
+  useRouterState,
+  useNavigate,
+} from "@tanstack/react-router";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { AdminStoreProvider } from "@/lib/admin-store";
+import { apiBase } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { AdminPageLoader } from "@/components/common/PageLoader";
 import appCss from "../styles.css?url";
+
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
+        <LottiePlayer
+          src="/404_pagenotfound.json"
+          loop
+          className="mx-auto h-36 w-36 sm:h-48 sm:w-48 lg:h-56 lg:w-56 mb-4"
+        />
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page you're looking for doesn't exist.
+        </p>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Go home</Link>
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Go home
+          </Link>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function GlobalErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center bg-background text-foreground">
+      <div className="rounded-xl border border-destructive/20 bg-destructive/10 p-6 max-w-md w-full">
+        <h2 className="mb-2 text-xl font-bold text-destructive">Something went wrong</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          {error.message || "An unexpected error occurred."}
+        </p>
+        <button
+          onClick={reset}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Try Again
+        </button>
       </div>
     </div>
   );
@@ -28,30 +72,61 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "ApronHanger – Super Admin Dashboard" },
-      { name: "description", content: "Enterprise healthcare hiring platform admin control center" },
+      {
+        name: "description",
+        content: "Enterprise healthcare hiring platform admin control center",
+      },
     ],
     links: [
+      { rel: "preload", as: "fetch", href: "/loading_state.json", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
+  errorComponent: GlobalErrorComponent,
 });
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        {children}
+        <Scripts />
+      </body>
     </html>
   );
 }
 
 function RootComponent() {
+  useEffect(() => {
+    let toastId: string | number | null = null;
+    const timer = setTimeout(() => {
+      toastId = toast.info("Server is warming up...", {
+        description: "Please allow up to 30 seconds for the first request to complete.",
+        duration: 30000,
+      });
+    }, 2000);
+
+    fetch(`${apiBase()}/health`)
+      .then(() => {
+        clearTimeout(timer);
+        if (toastId) toast.dismiss(toastId);
+      })
+      .catch(() => clearTimeout(timer));
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <AuthProvider>
       <AdminStoreProvider>
@@ -75,7 +150,7 @@ function AppShell() {
   }, [isReady, isAuthenticated, isLoginRoute, navigate]);
 
   if (!isReady) {
-    return <div className="min-h-screen bg-background" />;
+    return <AdminPageLoader />;
   }
 
   if (isLoginRoute) {
@@ -83,10 +158,14 @@ function AppShell() {
   }
 
   if (!isAuthenticated) {
-    return <div className="min-h-screen bg-background" />;
+    return <AdminPageLoader />;
   }
 
-  return <Shell><Outlet /></Shell>;
+  return (
+    <Shell>
+      <Outlet />
+    </Shell>
+  );
 }
 
 function Shell({ children }: { children: ReactNode }) {

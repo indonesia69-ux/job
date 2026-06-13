@@ -14,13 +14,13 @@ export interface AuthRequest extends Request {
   };
 }
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  logger.warn('WARNING: JWT_SECRET not set in environment. Falling back to dev secret.');
-}
-const SECRET = JWT_SECRET || 'apronhanger-dev-secret-change-in-prod';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error('FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
+const VERIFIED_SECRET = SECRET as string;
 
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction): void {
+
+
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
   const header = req.headers.authorization;
   if (!header?.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -28,7 +28,36 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, SECRET) as any;
+    const payload = jwt.verify(token, VERIFIED_SECRET) as any;
+    
+    // tokenVersion check for force-logout on password reset
+    if (payload.tokenVersion !== undefined) {
+      const user = await prisma.user.findUnique({ 
+        where: { id: payload.id },
+        select: { tokenVersion: true, isSuspended: true, deletedAt: true, hospital: { select: { isSuspended: true, deletedAt: true } } }
+      });
+      if (!user) {
+        res.status(401).json({ error: 'User not found' });
+        return;
+      }
+      if (user.tokenVersion !== payload.tokenVersion) {
+        res.status(401).json({ error: 'Session invalidated. Please log in again.' });
+        return;
+      }
+      if (user.isSuspended) {
+        res.status(403).json({ error: 'Your account has been suspended. Contact support.' });
+        return;
+      }
+      if (user.deletedAt) {
+        res.status(403).json({ error: 'Account not found.' });
+        return;
+      }
+      if (user.hospital && (user.hospital.isSuspended || user.hospital.deletedAt)) {
+        res.status(403).json({ error: 'Your hospital account has been suspended or deleted.' });
+        return;
+      }
+    }
+
     req.user = {
       id: payload.id,
       email: payload.email,
@@ -77,7 +106,7 @@ export async function requireAdmin(req: AdminAuthRequest, res: Response, next: N
   }
   const token = header.slice(7);
   try {
-    const payload = jwt.verify(token, SECRET) as any;
+    const payload = jwt.verify(token, VERIFIED_SECRET) as any;
     
     // Role check to ensure they didn't just use a normal recruiter/candidate JWT
     if (payload.role !== 'ADMIN') {

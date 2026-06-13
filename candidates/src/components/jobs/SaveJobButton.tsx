@@ -50,9 +50,7 @@ export function SaveJobButton({ jobId, variant = "icon", className }: Props) {
         onClick={handleClick}
         className={cn(
           "inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors",
-          saved
-            ? "border-primary bg-primary/10 text-primary"
-            : "bg-background hover:bg-muted",
+          saved ? "border-primary bg-primary/10 text-primary" : "bg-background hover:bg-muted",
           className,
         )}
       >

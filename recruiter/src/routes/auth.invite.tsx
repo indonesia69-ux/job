@@ -9,7 +9,10 @@ export const Route = createFileRoute("/auth/invite")({
   head: () => ({
     meta: [
       { title: "Join with invite code — ApronHanger" },
-      { name: "description", content: "Join your hospital's recruiter workspace using an invite code." },
+      {
+        name: "description",
+        content: "Join your hospital's recruiter workspace using an invite code.",
+      },
     ],
   }),
   component: InvitePage,

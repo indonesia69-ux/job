@@ -12,11 +12,13 @@ import {
   Settings,
   Inbox,
   X,
+  CreditCard,
 } from "lucide-react";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/hospitals", label: "Hospitals", icon: Network },
+  { to: "/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/recruiters", label: "Recruiters", icon: Building2 },
   { to: "/recruiter-applications", label: "Recruiter Applications", icon: Inbox },
   { to: "/candidates", label: "Candidates", icon: Users },
@@ -57,15 +59,22 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-active">
               <span className="text-sm font-bold text-sidebar-active-foreground">A</span>
             </div>
-            <span className="text-lg font-semibold text-sidebar-active-foreground tracking-tight">ApronHanger</span>
+            <span className="text-lg font-semibold text-sidebar-active-foreground tracking-tight">
+              ApronHanger
+            </span>
           </div>
-          <button onClick={onClose} className="lg:hidden rounded p-1 text-sidebar-foreground hover:text-sidebar-active-foreground">
+          <button
+            onClick={onClose}
+            className="lg:hidden rounded p-1 text-sidebar-foreground hover:text-sidebar-active-foreground"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.to || (item.to !== "/" && location.pathname.startsWith(item.to));
+            const isActive =
+              location.pathname === item.to ||
+              (item.to !== "/" && location.pathname.startsWith(item.to));
             return (
               <Link
                 key={item.to}
@@ -85,7 +94,8 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
         <div className="border-t border-sidebar-border p-4">
           <p className="text-xs text-sidebar-foreground/60 leading-relaxed">
-            ApronHanger acts as a professional networking and hiring facilitation platform and is not responsible for employment decisions.
+            ApronHanger acts as a professional networking and hiring facilitation platform and is
+            not responsible for employment decisions.
           </p>
         </div>
       </aside>

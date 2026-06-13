@@ -3,7 +3,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Briefcase, Building2, Calendar, ChevronRight, Inbox } from "lucide-react";
 import { STATUS_FLOW, type ApplicationStatus } from "@/data/applications";
-import { apiToDisplayStatus, statusPillClass } from "@/lib/applicationStatus";
+import {
+  apiToDisplayStatus,
+  statusPillClass,
+  CANDIDATE_STATUS_STEPS,
+  timelineStepIndex,
+} from "@/lib/applicationStatus";
+import { CandidateActionCard } from "@/features/applications/CandidateActionCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { authHeader } from "@/store/authStore";
 import { requireCandidateAuth } from "@/lib/requireAuth";
@@ -29,7 +35,19 @@ type AppRow = {
   city: string;
   appliedOn: string;
   status: ApplicationStatus;
+  apiStatus: string;
   lastUpdate: string;
+
+  // New workflow fields
+  interviewDate?: string | null;
+  interviewType?: string | null;
+  meetingLink?: string | null;
+  venue?: string | null;
+  interviewerName?: string | null;
+  offerLetterUrl?: string | null;
+  requestedDocumentList?: string[];
+  documentRequestNote?: string | null;
+  joiningDate?: string | null;
 };
 
 function mapStatus(api: string): ApplicationStatus {
@@ -42,6 +60,15 @@ function mapApplication(app: {
   appliedOn: string;
   jobId: string;
   job: { role: string; hospital: string; city?: string | null; location?: string };
+  interviewDate?: string | null;
+  interviewType?: string | null;
+  meetingLink?: string | null;
+  venue?: string | null;
+  interviewerName?: string | null;
+  offerLetterUrl?: string | null;
+  requestedDocumentList?: string[];
+  documentRequestNote?: string | null;
+  joiningDate?: string | null;
 }): AppRow & { appliedAt: string } {
   return {
     id: app.id,
@@ -56,12 +83,22 @@ function mapApplication(app: {
     }),
     appliedAt: app.appliedOn,
     status: mapStatus(app.status),
+    apiStatus: app.status,
     lastUpdate:
       app.status === "JobClosed"
         ? "This job posting has been closed by the recruiter"
-        : app.status === "New"
+        : app.status === "New" || app.status === "Applied"
           ? "Application received by hospital"
           : `Status updated to ${mapStatus(app.status)}`,
+    interviewDate: app.interviewDate,
+    interviewType: app.interviewType,
+    meetingLink: app.meetingLink,
+    venue: app.venue,
+    interviewerName: app.interviewerName,
+    offerLetterUrl: app.offerLetterUrl,
+    requestedDocumentList: app.requestedDocumentList,
+    documentRequestNote: app.documentRequestNote,
+    joiningDate: app.joiningDate,
   };
 }
 
@@ -92,22 +129,20 @@ function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]>("All");
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadApps = () => {
     setLoading(true);
     loadApplicationsData()
       .then((rows) => {
-        if (!cancelled) {
-          setApplications(rows);
-          setLoading(false);
-        }
+        setApplications(rows);
+        setLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
+  };
+
+  useEffect(() => {
+    loadApps();
   }, []);
 
   if (loading) return <PageLoader />;
@@ -128,7 +163,9 @@ function ApplicationsPage() {
       <div className="scrollbar-thin mt-6 flex gap-1 overflow-x-auto border-b">
         {TABS.map((t) => {
           const count =
-            t === "All" ? applications.length : applications.filter((a: AppRow) => a.status === t).length;
+            t === "All"
+              ? applications.length
+              : applications.filter((a: AppRow) => a.status === t).length;
           const active = tab === t;
           return (
             <button
@@ -159,6 +196,7 @@ function ApplicationsPage() {
         <div className="mt-10">
           <EmptyState
             icon={Inbox}
+            lottieFile="nothing_for_the_particular_query.json"
             title="No applications yet"
             description="Start applying to opportunities and track your progress here."
             ctaLabel="Browse opportunities"
@@ -168,10 +206,8 @@ function ApplicationsPage() {
       ) : (
         <div className="mt-6 space-y-3">
           {list.map((a: AppRow) => (
-            <Link
+            <div
               key={a.id}
-              to="/jobs/$jobId"
-              params={{ jobId: a.jobId }}
               className="group block rounded-2xl border bg-card p-5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-card"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -180,7 +216,13 @@ function ApplicationsPage() {
                     <Building2 className="h-5 w-5" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{a.role}</p>
+                    <Link
+                      to="/jobs/$jobId"
+                      params={{ jobId: a.jobId }}
+                      className="text-sm font-semibold text-foreground hover:underline"
+                    >
+                      {a.role}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {a.hospital} · {a.city}
                     </p>
@@ -191,18 +233,22 @@ function ApplicationsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusPill status={a.status} />
-                  <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  <Link to="/jobs/$jobId" params={{ jobId: a.jobId }}>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform hover:text-primary" />
+                  </Link>
                 </div>
               </div>
 
               <div className="mt-5">
-                <Timeline status={a.status} />
+                <Timeline status={a.status} apiStatus={a.apiStatus} />
                 <p className="mt-3 text-xs text-muted-foreground">
                   <Briefcase className="mr-1 inline h-3 w-3" />
                   {a.lastUpdate}
                 </p>
               </div>
-            </Link>
+
+              <CandidateActionCard application={a} onUpdate={loadApps} />
+            </div>
           ))}
         </div>
       )}
@@ -223,7 +269,7 @@ function StatusPill({ status }: { status: ApplicationStatus }) {
   );
 }
 
-function Timeline({ status }: { status: ApplicationStatus }) {
+function Timeline({ status, apiStatus }: { status: ApplicationStatus; apiStatus: string }) {
   if (status === "Job closed") {
     return (
       <div className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -238,10 +284,11 @@ function Timeline({ status }: { status: ApplicationStatus }) {
       </div>
     );
   }
-  const currentIndex = STATUS_FLOW.indexOf(status);
+
+  const currentIndex = timelineStepIndex(apiStatus);
   return (
     <div className="flex items-center gap-1">
-      {STATUS_FLOW.map((s, i) => {
+      {CANDIDATE_STATUS_STEPS.map((s, i) => {
         const done = i <= currentIndex;
         return (
           <div key={s} className="flex flex-1 items-center gap-1">
@@ -249,10 +296,10 @@ function Timeline({ status }: { status: ApplicationStatus }) {
               className={cn(
                 "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold",
                 done
-                  ? s === "Shortlisted"
+                  ? s === "Offer & Joining"
                     ? "bg-emerald-600 text-white"
-                    : s === "Contacted"
-                      ? "bg-sky-600 text-white"
+                    : s === "Documents"
+                      ? "bg-amber-600 text-white"
                       : "bg-brand text-brand-foreground"
                   : "border bg-surface text-muted-foreground",
               )}
@@ -269,7 +316,7 @@ function Timeline({ status }: { status: ApplicationStatus }) {
                 {s}
               </p>
             </div>
-            {i < STATUS_FLOW.length - 1 && (
+            {i < CANDIDATE_STATUS_STEPS.length - 1 && (
               <div
                 className={cn(
                   "h-0.5 flex-1 rounded-full",

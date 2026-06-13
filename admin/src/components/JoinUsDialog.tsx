@@ -7,12 +7,33 @@ interface JoinUsDialogProps {
   onClose: () => void;
 }
 
-const HOSPITAL_TYPES = ["Multi-Specialty", "Super-Specialty", "Clinic", "Diagnostic Center", "Nursing Home"];
+const HOSPITAL_TYPES = [
+  "Multi-Specialty",
+  "Super-Specialty",
+  "Clinic",
+  "Diagnostic Center",
+  "Nursing Home",
+];
 
 const PLANS: { id: PlanTier; price: string; tagline: string; features: string[] }[] = [
-  { id: "Basic", price: "Free", tagline: "Get started", features: ["5 job posts/mo", "Basic analytics", "Email support"] },
-  { id: "Pro", price: "₹4,999/mo", tagline: "Most popular", features: ["50 job posts/mo", "Candidate insights", "Priority support"] },
-  { id: "Premium", price: "₹14,999/mo", tagline: "Enterprise", features: ["Unlimited posts", "Verified badge", "Dedicated manager"] },
+  {
+    id: "Basic",
+    price: "Free",
+    tagline: "Get started",
+    features: ["5 job posts/mo", "Basic analytics", "Email support"],
+  },
+  {
+    id: "Pro",
+    price: "₹4,999/mo",
+    tagline: "Most popular",
+    features: ["50 job posts/mo", "Candidate insights", "Priority support"],
+  },
+  {
+    id: "Premium",
+    price: "₹14,999/mo",
+    tagline: "Enterprise",
+    features: ["Unlimited posts", "Verified badge", "Dedicated manager"],
+  },
 ];
 
 export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
@@ -62,8 +83,17 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
   const close = () => {
     setSubmitted(false);
     setForm({
-      hospitalName: "", hospitalType: HOSPITAL_TYPES[0], registrationNumber: "", city: "",
-      state: "", beds: "", address: "", website: "", phone: "", email: "", plan: "Pro",
+      hospitalName: "",
+      hospitalType: HOSPITAL_TYPES[0],
+      registrationNumber: "",
+      city: "",
+      state: "",
+      beds: "",
+      address: "",
+      website: "",
+      phone: "",
+      email: "",
+      plan: "Pro",
     });
     onClose();
   };
@@ -77,8 +107,12 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
               <Building2 className="h-4.5 w-4.5" />
             </div>
             <div>
-              <h2 className="text-base font-semibold tracking-tight">Join ApronHanger as a Recruiter</h2>
-              <p className="text-xs text-muted-foreground">Submit your hospital for admin verification</p>
+              <h2 className="text-base font-semibold tracking-tight">
+                Join ApronHanger as a Recruiter
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Submit your hospital for admin verification
+              </p>
             </div>
           </div>
           <button onClick={close} className="rounded-md p-1.5 hover:bg-muted">
@@ -93,7 +127,8 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
             </div>
             <h3 className="text-lg font-semibold">Application Submitted</h3>
             <p className="mt-1 text-sm text-muted-foreground max-w-sm mx-auto">
-              Your hospital has been submitted for review. Our Super Admin team will verify your details and notify you via email.
+              Your hospital has been submitted for review. Our Super Admin team will verify your
+              details and notify you via email.
             </p>
             <button
               onClick={close}
@@ -106,36 +141,92 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
           <form onSubmit={onSubmit} className="p-6 space-y-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Hospital Name" required>
-                <input required value={form.hospitalName} onChange={(e) => update("hospitalName", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.hospitalName}
+                  onChange={(e) => update("hospitalName", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Hospital Type" required>
-                <select value={form.hospitalType} onChange={(e) => update("hospitalType", e.target.value)} className={inputCls}>
-                  {HOSPITAL_TYPES.map((t) => <option key={t}>{t}</option>)}
+                <select
+                  value={form.hospitalType}
+                  onChange={(e) => update("hospitalType", e.target.value)}
+                  className={inputCls}
+                >
+                  {HOSPITAL_TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
                 </select>
               </Field>
               <Field label="Registration Number" required>
-                <input required value={form.registrationNumber} onChange={(e) => update("registrationNumber", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.registrationNumber}
+                  onChange={(e) => update("registrationNumber", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Number of Beds" required>
-                <input required type="number" min="0" value={form.beds} onChange={(e) => update("beds", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  type="number"
+                  min="0"
+                  value={form.beds}
+                  onChange={(e) => update("beds", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="City" required>
-                <input required value={form.city} onChange={(e) => update("city", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.city}
+                  onChange={(e) => update("city", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="State" required>
-                <input required value={form.state} onChange={(e) => update("state", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.state}
+                  onChange={(e) => update("state", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Phone Number" required>
-                <input required type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => update("phone", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Email" required>
-                <input required type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => update("email", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Website">
-                <input type="url" placeholder="https://" value={form.website} onChange={(e) => update("website", e.target.value)} className={inputCls} />
+                <input
+                  type="url"
+                  placeholder="https://"
+                  value={form.website}
+                  onChange={(e) => update("website", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
               <Field label="Address" required>
-                <input required value={form.address} onChange={(e) => update("address", e.target.value)} className={inputCls} />
+                <input
+                  required
+                  value={form.address}
+                  onChange={(e) => update("address", e.target.value)}
+                  className={inputCls}
+                />
               </Field>
             </div>
 
@@ -163,7 +254,9 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
                       <p className="text-xs text-muted-foreground">{p.tagline}</p>
                       <ul className="mt-2 space-y-1">
                         {p.features.map((f) => (
-                          <li key={f} className="text-xs text-muted-foreground">• {f}</li>
+                          <li key={f} className="text-xs text-muted-foreground">
+                            • {f}
+                          </li>
                         ))}
                       </ul>
                     </button>
@@ -173,10 +266,17 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
             </div>
 
             <div className="flex items-center justify-end gap-2 pt-2 border-t">
-              <button type="button" onClick={close} className="h-10 px-4 rounded-lg border text-sm font-medium hover:bg-muted">
+              <button
+                type="button"
+                onClick={close}
+                className="h-10 px-4 rounded-lg border text-sm font-medium hover:bg-muted"
+              >
                 Cancel
               </button>
-              <button type="submit" className="h-10 px-5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <button
+                type="submit"
+                className="h-10 px-5 rounded-lg bg-primary text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
                 Submit Application
               </button>
             </div>
@@ -190,11 +290,20 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
 const inputCls =
   "mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30";
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <label className="text-xs font-medium text-muted-foreground">
-        {label}{required && <span className="text-destructive"> *</span>}
+        {label}
+        {required && <span className="text-destructive"> *</span>}
       </label>
       {children}
     </div>

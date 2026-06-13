@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Bell, ChevronDown, Menu, LogOut } from "lucide-react";
 // import { notifications } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
+import { useNavigate } from "@tanstack/react-router";
+import { apiBase, authHeader } from "@/lib/api";
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -11,15 +13,54 @@ const notifications: any[] = [];
 
 export function TopBar({ onMenuClick }: TopBarProps) {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<{
+    hospitals: any[];
+    recruiters: any[];
+    candidates: any[];
+    jobs: any[];
+  } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSearchResults(null);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `${apiBase()}/api/admin/search?q=${encodeURIComponent(searchQuery)}`,
+          {
+            headers: authHeader(),
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <header className="sticky top-0 z-20 flex h-14 sm:h-16 items-center justify-between gap-3 border-b bg-card px-3 sm:px-6">
-      <button onClick={onMenuClick} className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-accent shrink-0">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border hover:bg-accent shrink-0"
+      >
         <Menu className="h-4.5 w-4.5" />
       </button>
 
@@ -29,18 +70,105 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           type="text"
           placeholder="Search..."
           value={searchQuery}
-          onChange={(e) => { setSearchQuery(e.target.value); setShowSearch(e.target.value.length > 0); }}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setShowSearch(e.target.value.length > 0);
+          }}
           onBlur={() => setTimeout(() => setShowSearch(false), 200)}
           className="h-9 sm:h-10 w-full rounded-lg border bg-secondary/50 pl-9 sm:pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30"
         />
-        {showSearch && (
-          <div className="absolute top-full left-0 mt-1 w-full rounded-lg border bg-card p-3 shadow-lg">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Hospitals</p>
-            <p className="text-sm py-1">Apollo Hospitals – Chennai</p>
-            <p className="text-xs font-medium text-muted-foreground mt-3 mb-2">Candidates</p>
-            <p className="text-sm py-1">Dr. Priya Sharma – Cardiology</p>
-            <p className="text-xs font-medium text-muted-foreground mt-3 mb-2">Jobs</p>
-            <p className="text-sm py-1">Senior Cardiologist – Apollo</p>
+        {showSearch && searchQuery.length > 1 && (
+          <div className="absolute top-full left-0 mt-1 w-full rounded-lg border bg-card p-3 shadow-lg max-h-[400px] overflow-y-auto">
+            {isSearching && <p className="text-sm text-muted-foreground p-2">Searching...</p>}
+
+            {!isSearching && searchResults && (
+              <>
+                {searchResults.hospitals.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">
+                      Hospitals
+                    </p>
+                    {searchResults.hospitals.map((h) => (
+                      <div
+                        key={h.id}
+                        onClick={() => {
+                          navigate({ to: "/hospitals" });
+                          setShowSearch(false);
+                        }}
+                        className="text-sm py-1.5 px-2 hover:bg-accent rounded cursor-pointer"
+                      >
+                        {h.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchResults.recruiters.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">
+                      Recruiters
+                    </p>
+                    {searchResults.recruiters.map((r) => (
+                      <div
+                        key={r.id}
+                        onClick={() => {
+                          navigate({ to: "/recruiters" });
+                          setShowSearch(false);
+                        }}
+                        className="text-sm py-1.5 px-2 hover:bg-accent rounded cursor-pointer"
+                      >
+                        {r.name}{" "}
+                        <span className="text-muted-foreground text-xs">({r.hospital?.name})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchResults.candidates.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">
+                      Candidates
+                    </p>
+                    {searchResults.candidates.map((c) => (
+                      <div
+                        key={c.id}
+                        onClick={() => {
+                          navigate({ to: "/candidates" });
+                          setShowSearch(false);
+                        }}
+                        className="text-sm py-1.5 px-2 hover:bg-accent rounded cursor-pointer"
+                      >
+                        {c.name} <span className="text-muted-foreground text-xs">({c.role})</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {searchResults.jobs.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">
+                      Jobs
+                    </p>
+                    {searchResults.jobs.map((j) => (
+                      <div
+                        key={j.id}
+                        onClick={() => {
+                          navigate({ to: "/jobs" });
+                          setShowSearch(false);
+                        }}
+                        className="text-sm py-1.5 px-2 hover:bg-accent rounded cursor-pointer"
+                      >
+                        {j.title}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {searchResults.hospitals.length === 0 &&
+                  searchResults.recruiters.length === 0 &&
+                  searchResults.candidates.length === 0 &&
+                  searchResults.jobs.length === 0 && (
+                    <p className="text-sm text-muted-foreground p-2">No results found.</p>
+                  )}
+              </>
+            )}
           </div>
         )}
       </div>
@@ -48,7 +176,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       <div className="flex items-center gap-2 sm:gap-4">
         <div className="relative">
           <button
-            onClick={() => { setShowNotifications(!showNotifications); setShowProfile(false); }}
+            onClick={() => {
+              setShowNotifications(!showNotifications);
+              setShowProfile(false);
+            }}
             className="relative flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg border bg-secondary/50 transition-colors hover:bg-accent"
           >
             <Bell className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-foreground" />
@@ -65,7 +196,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
               </div>
               <div className="max-h-80 overflow-y-auto">
                 {notifications.map((n) => (
-                  <div key={n.id} className={`border-b px-4 py-3 last:border-0 ${!n.read ? "bg-navy-50/50" : ""}`}>
+                  <div
+                    key={n.id}
+                    className={`border-b px-4 py-3 last:border-0 ${!n.read ? "bg-navy-50/50" : ""}`}
+                  >
                     <p className="text-sm font-medium">{n.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
                     <p className="text-xs text-muted-foreground mt-1">{n.time}</p>
@@ -78,15 +212,22 @@ export function TopBar({ onMenuClick }: TopBarProps) {
 
         <div className="relative">
           <button
-            onClick={() => { setShowProfile(!showProfile); setShowNotifications(false); }}
+            onClick={() => {
+              setShowProfile(!showProfile);
+              setShowNotifications(false);
+            }}
             className="flex items-center gap-2 rounded-lg border px-2 sm:px-3 py-1.5 hover:bg-accent"
           >
             <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-primary">
-              <span className="text-[10px] sm:text-xs font-bold text-primary-foreground">{user?.initials ?? "SA"}</span>
+              <span className="text-[10px] sm:text-xs font-bold text-primary-foreground">
+                {user?.initials ?? "SA"}
+              </span>
             </div>
             <div className="hidden md:block text-left">
               <p className="text-sm font-medium leading-none">{user?.name ?? "Super Admin"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email ?? "admin@apronhanger.in"}</p>
+              <p className="text-xs text-muted-foreground">
+                {user?.email ?? "admin@apronhanger.in"}
+              </p>
             </div>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
           </button>
@@ -97,7 +238,10 @@ export function TopBar({ onMenuClick }: TopBarProps) {
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <button
-                onClick={() => { setShowProfile(false); logout(); }}
+                onClick={() => {
+                  setShowProfile(false);
+                  logout();
+                }}
                 className="flex w-full items-center gap-2 px-4 py-2.5 text-sm hover:bg-accent text-left"
               >
                 <LogOut className="h-4 w-4" /> Sign out

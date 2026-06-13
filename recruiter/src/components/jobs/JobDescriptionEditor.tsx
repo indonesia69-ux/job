@@ -70,9 +70,7 @@ export function JobDescriptionEditor({
         <ToolbarBtn icon={Bold} label="Bold" onClick={() => exec("bold")} />
         <ToolbarBtn icon={Italic} label="Italic" onClick={() => exec("italic")} />
         <ToolbarBtn icon={List} label="Bullet list" onClick={() => exec("insertUnorderedList")} />
-        <span className="ml-auto text-[11px] text-muted-foreground">
-          Text only · no images
-        </span>
+        <span className="ml-auto text-[11px] text-muted-foreground">Text only · no images</span>
       </div>
       <div
         ref={editorRef}

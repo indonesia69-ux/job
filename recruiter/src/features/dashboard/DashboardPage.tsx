@@ -1,20 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
-import {
-  ArrowUpRight,
-  ArrowRight,
-  Briefcase,
-  Users,
-  CheckCircle2,
-  Activity,
-} from "lucide-react";
+import { ArrowUpRight, ArrowRight, Briefcase, Users, CheckCircle2, Activity } from "lucide-react";
 
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,14 +24,15 @@ export function DashboardPage() {
   const recentJobs = JOBS.slice(0, 3);
 
   const { isLocked } = usePlan();
-  
+
   return (
     <div className="mx-auto w-full max-w-[1400px] space-y-8">
       {isLocked && (
         <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <p>
-            <strong>Your account validity has expired.</strong> Your account is locked and you cannot post new jobs or search candidates. Please contact support.
+            <strong>Your account validity has expired.</strong> Your account is locked and you
+            cannot post new jobs or search candidates. Please contact support.
           </p>
         </div>
       )}
@@ -123,7 +112,9 @@ export function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="font-display text-[16px]">Recent job posts</CardTitle>
             <Button asChild variant="ghost" size="sm" className="h-7 text-[12px]">
-              <Link to="/jobs" search={{ q: "" }}>View all</Link>
+              <Link to="/jobs" search={{ q: "" }}>
+                View all
+              </Link>
             </Button>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -165,7 +156,9 @@ export function DashboardPage() {
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="h-7 text-[12px]">
-            <Link to="/applicants" search={{ q: "" }}>View all <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
+            <Link to="/applicants" search={{ q: "" }}>
+              View all <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
           </Button>
         </CardHeader>
         <CardContent className="px-2 pb-2">
@@ -225,38 +218,52 @@ export function DashboardPage() {
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="h-7 text-[12px]">
-            <Link to="/applicants" search={{ q: "" }}>Browse all</Link>
+            <Link to="/applicants" search={{ q: "" }}>
+              Browse all
+            </Link>
           </Button>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {suggested.map((s: { id: string; name: string; initials: string; specialty: string; experienceYears: number; location: string; matchPercent: number }) => (
-            <Card key={s.id} className="border-border bg-card shadow-soft">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground font-display text-[12px] font-semibold">
-                    {s.initials}
+          {suggested.map(
+            (s: {
+              id: string;
+              name: string;
+              initials: string;
+              specialty: string;
+              experienceYears: number;
+              location: string;
+              matchPercent: number;
+            }) => (
+              <Card key={s.id} className="border-border bg-card shadow-soft">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground font-display text-[12px] font-semibold">
+                      {s.initials}
+                    </div>
+                    <MatchRing percent={s.matchPercent} />
                   </div>
-                  <MatchRing percent={s.matchPercent} />
-                </div>
-                <div className="mt-3">
-                  <div className="text-[13px] font-medium leading-tight">{s.name}</div>
-                  <div className="text-[11px] text-muted-foreground">{s.specialty}</div>
-                </div>
-                <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{s.experienceYears} yrs</span>
-                  <span>{s.location}</span>
-                </div>
-                <Button
-                  asChild
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 h-8 w-full text-[12px]"
-                >
-                  <Link to="/applicants" search={{ q: "" }}>View profile</Link>
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="mt-3">
+                    <div className="text-[13px] font-medium leading-tight">{s.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{s.specialty}</div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>{s.experienceYears} yrs</span>
+                    <span>{s.location}</span>
+                  </div>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 h-8 w-full text-[12px]"
+                  >
+                    <Link to="/applicants" search={{ q: "" }}>
+                      View profile
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ),
+          )}
         </div>
       </div>
     </div>
@@ -289,14 +296,7 @@ function MatchRing({ percent }: { percent: number }) {
   return (
     <div className="relative h-9 w-9">
       <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90">
-        <circle
-          cx="18"
-          cy="18"
-          r={radius}
-          fill="none"
-          stroke="var(--muted)"
-          strokeWidth="3"
-        />
+        <circle cx="18" cy="18" r={radius} fill="none" stroke="var(--muted)" strokeWidth="3" />
         <circle
           cx="18"
           cy="18"

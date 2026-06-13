@@ -67,10 +67,7 @@ export function JobCustomFormBuilder({ enabled, onEnabledChange, fields, onChang
       {enabled && (
         <div className="space-y-3">
           {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="rounded-lg border border-border bg-card p-4 shadow-soft"
-            >
+            <div key={field.id} className="rounded-lg border border-border bg-card p-4 shadow-soft">
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                   <GripVertical className="h-3.5 w-3.5 opacity-40" />
@@ -148,7 +145,10 @@ export function JobCustomFormBuilder({ enabled, onEnabledChange, fields, onChang
                       value={(field.options || []).join("\n")}
                       onChange={(e) =>
                         update(field.id, {
-                          options: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean),
+                          options: e.target.value
+                            .split("\n")
+                            .map((l) => l.trim())
+                            .filter(Boolean),
                         })
                       }
                       rows={3}

@@ -30,10 +30,7 @@ import {
 import { Logo } from "@/components/brand/Logo";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 
-import {
-  loadHospitalProfile,
-  type HospitalProfile,
-} from "@/lib/recruiterData";
+import { loadHospitalProfile, type HospitalProfile } from "@/lib/recruiterData";
 
 import { usePlan } from "@/features/search/PlanContext";
 
@@ -73,7 +70,9 @@ export function AppSidebar() {
     jobPostsRemaining,
     jobValidityDays,
     isLocked,
-    setPlan,
+    planExpiresAt,
+    pendingPlan,
+    daysRemaining,
   } = usePlan();
 
   const pct = Math.min(100, Math.round((used / quota) * 100));
@@ -84,9 +83,7 @@ export function AppSidebar() {
   }, []);
 
   const isActive = (url: string, exact?: boolean) =>
-    exact
-      ? pathname === url
-      : pathname === url || pathname.startsWith(url + "/");
+    exact ? pathname === url : pathname === url || pathname.startsWith(url + "/");
 
   const initials = (hospital?.shortName || hospital?.name || "H")
     .split(" ")
@@ -95,15 +92,22 @@ export function AppSidebar() {
     .slice(0, 2)
     .toUpperCase();
 
+  const formatDate = (iso: string | null) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "2-digit",
+    });
+  };
+
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
       <SidebarHeader className="px-3 py-4">
         {collapsed ? (
           <div className="flex justify-center">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <span className="font-display text-sm font-semibold">
-                {initials[0]}
-              </span>
+              <span className="font-display text-sm font-semibold">{initials[0]}</span>
             </span>
           </div>
         ) : (
@@ -128,10 +132,7 @@ export function AppSidebar() {
                       tooltip={item.title}
                       className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground hover:bg-sidebar-accent"
                     >
-                      <Link
-                        to={item.url}
-                        className="flex items-center gap-2"
-                      >
+                      <Link to={item.url} className="flex items-center gap-2">
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </Link>
@@ -156,9 +157,18 @@ export function AppSidebar() {
                   {plan} Plan
                 </span>
               </div>
-              <span className="rounded-full border border-[oklch(0.72_0.14_85_/_0.4)] bg-[oklch(0.72_0.14_85_/_0.12)] px-2 py-0.5 text-[9.5px] font-medium text-[oklch(0.88_0.12_85)]">
-                Active
-              </span>
+              {pendingPlan ? (
+                <span
+                  className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[9px] font-medium text-amber-200"
+                  title={`Changing to ${pendingPlan} at renewal`}
+                >
+                  Pending Change
+                </span>
+              ) : (
+                <span className="rounded-full border border-[oklch(0.72_0.14_85_/_0.4)] bg-[oklch(0.72_0.14_85_/_0.12)] px-2 py-0.5 text-[9.5px] font-medium text-[oklch(0.88_0.12_85)]">
+                  Active
+                </span>
+              )}
             </div>
 
             {/* Divider */}
@@ -195,7 +205,9 @@ export function AppSidebar() {
                 <span className="text-[10.5px] font-medium text-white">
                   {jobPostsUsed}
                   <span className="text-white/40"> / {jobPostsQuota}</span>
-                  <span className="ml-1 text-[9.5px] text-white/45">({jobPostsRemaining} left)</span>
+                  <span className="ml-1 text-[9.5px] text-white/45">
+                    ({jobPostsRemaining} left)
+                  </span>
                 </span>
               </div>
               <div className="h-1 overflow-hidden rounded-full bg-white/10">
@@ -206,35 +218,30 @@ export function AppSidebar() {
               </div>
             </div>
 
-            <div className="mt-2.5 flex items-center gap-1 text-[10.5px] text-white/55">
-              <CalendarDays className="h-3 w-3 shrink-0" />
-              <span>
-                Account validity:{" "}
-                {isLocked ? (
-                  <span className="font-medium text-red-400">Expired</span>
-                ) : (
-                  <>
-                    <span className="font-medium text-white/80">{jobValidityDays} days left</span>
-                  </>
-                )}
-              </span>
+            <div className="mt-2.5 flex items-center justify-between text-[10.5px]">
+              <div className="flex items-center gap-1 text-white/55">
+                <CalendarDays className="h-3 w-3 shrink-0" />
+                <span>Expires: {formatDate(planExpiresAt)}</span>
+              </div>
+              {daysRemaining <= 0 || isLocked ? (
+                <span className="font-medium text-red-400">Expired</span>
+              ) : (
+                <span className="font-medium text-white/80">{daysRemaining} days left</span>
+              )}
             </div>
 
             {/* Divider */}
             <div className="my-2.5 h-px bg-white/10" />
 
             {/* Upgrade button */}
-            <button
-              onClick={() => {
-                const tiers = ["Basic", "Pro", "Premium"] as const;
-                const next = tiers[(tiers.indexOf(plan) + 1) % tiers.length];
-                setPlan(next);
-              }}
+            <Link
+              to="/settings"
+              search={{ tab: "plan" }}
               className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[oklch(0.78_0.14_85_/_0.4)] bg-[oklch(0.78_0.14_85_/_0.12)] py-1.5 text-[10.5px] font-medium text-[oklch(0.88_0.12_85)] transition-colors hover:bg-[oklch(0.78_0.14_85_/_0.25)]"
             >
               <Sparkles className="h-3 w-3" />
               Upgrade Plan
-            </button>
+            </Link>
           </div>
         )}
 
@@ -248,9 +255,7 @@ export function AppSidebar() {
 
               <div className="min-w-0">
                 <div className="truncate text-[13px] font-medium text-sidebar-foreground">
-                  {hospital?.shortName ||
-                    hospital?.name ||
-                    "Your hospital"}
+                  {hospital?.shortName || hospital?.name || "Your hospital"}
                 </div>
 
                 <div className="truncate text-[11px] text-muted-foreground">

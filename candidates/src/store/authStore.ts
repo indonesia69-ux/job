@@ -31,7 +31,7 @@ export function getUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(USER_KEY);
     if (raw === cachedRawUser) return cachedParsedUser;
-    
+
     cachedRawUser = raw;
     cachedParsedUser = raw ? JSON.parse(raw) : null;
     return cachedParsedUser;

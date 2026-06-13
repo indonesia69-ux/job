@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Eye,
 } from "lucide-react";
+import { AdminEmptyState as EmptyState } from "@/components/common/EmptyState";
 
 export const Route = createFileRoute("/hospitals")({
   component: HospitalsPage,
@@ -57,16 +58,27 @@ function HospitalsPage() {
         hospital={hospital?.name}
         recruiter={recruiter?.name}
         job={job?.title}
-        onHospitals={() => { setHospitalId(null); setRecruiterId(null); setJobId(null); }}
-        onRecruiters={() => { setRecruiterId(null); setJobId(null); }}
-        onJobs={() => { setJobId(null); }}
+        onHospitals={() => {
+          setHospitalId(null);
+          setRecruiterId(null);
+          setJobId(null);
+        }}
+        onRecruiters={() => {
+          setRecruiterId(null);
+          setJobId(null);
+        }}
+        onJobs={() => {
+          setJobId(null);
+        }}
       />
 
-      {level === "hospitals" && (
-        <HospitalsList onOpen={(id) => setHospitalId(id)} />
-      )}
+      {level === "hospitals" && <HospitalsList onOpen={(id) => setHospitalId(id)} />}
       {level === "recruiters" && hospital && (
-        <RecruitersList hospitalId={hospital.id} onOpen={(id) => setRecruiterId(id)} onBack={() => setHospitalId(null)} />
+        <RecruitersList
+          hospitalId={hospital.id}
+          onOpen={(id) => setRecruiterId(id)}
+          onBack={() => setHospitalId(null)}
+        />
       )}
       {level === "jobs" && hospital && recruiter && (
         <JobsList
@@ -102,7 +114,10 @@ function Breadcrumbs({
 }) {
   return (
     <nav className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-      <button onClick={onHospitals} className="font-medium hover:text-foreground inline-flex items-center gap-1">
+      <button
+        onClick={onHospitals}
+        className="font-medium hover:text-foreground inline-flex items-center gap-1"
+      >
         <Building2 className="h-3.5 w-3.5" /> Hospitals
       </button>
       {hospital && (
@@ -157,7 +172,9 @@ function HospitalsList({ onOpen }: { onOpen: (id: string) => void }) {
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold truncate">{h.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{h.location} · Joined {h.joined}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {h.location} · Joined {h.joined}
+                  </p>
                 </div>
               </div>
               <VerifiedBadge verified={h.verified} />
@@ -203,19 +220,38 @@ function HospitalsList({ onOpen }: { onOpen: (id: string) => void }) {
                 onClick={async () => {
                   try {
                     await store.toggleHospitalBlock(h.id);
-                    toast.success(h.status === "Active" ? `${h.name} has been blocked.` : `${h.name} has been unblocked.`);
+                    toast.success(
+                      `Hospital ${h.status === "Active" ? "suspended" : "reactivated"}`,
+                    );
                   } catch (err: any) {
-                    toast.error(err?.message || "Action failed. Please try again.");
+                    toast.error(err?.message || "Action failed.");
                   }
                 }}
                 className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium ${
                   h.status === "Active"
                     ? "border-destructive/30 text-destructive hover:bg-destructive/10"
-                    : "hover:bg-accent"
+                    : "text-success border-success/30 hover:bg-success/10"
                 }`}
+                title={h.status === "Active" ? "Suspend hospital" : "Reactivate hospital"}
               >
                 <Ban className="h-3.5 w-3.5" />
-                {h.status === "Active" ? "Block" : "Unblock"}
+                {h.status === "Active" ? "Suspend" : "Reactivate"}
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm("Are you sure you want to delete this hospital?")) return;
+                  try {
+                    await store.deleteHospital(h.id);
+                    toast.success("Hospital deleted.");
+                  } catch (err: any) {
+                    toast.error(err?.message || "Action failed.");
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium text-destructive border-destructive/20 hover:bg-destructive/10"
+                title="Delete hospital"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
               </button>
             </div>
           </div>
@@ -228,7 +264,10 @@ function HospitalsList({ onOpen }: { onOpen: (id: string) => void }) {
 function Stat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
     <div className="rounded-lg border p-2">
-      <p className="text-xs text-muted-foreground mb-1 inline-flex items-center justify-center gap-1">{icon}{label}</p>
+      <p className="text-xs text-muted-foreground mb-1 inline-flex items-center justify-center gap-1">
+        {icon}
+        {label}
+      </p>
       <p className="text-lg font-semibold">{value}</p>
     </div>
   );
@@ -260,18 +299,35 @@ function RecruitersList({
         <div className="flex items-center gap-4">
           {hospital.inviteCode && (
             <div className="flex flex-col items-end gap-1 shrink-0">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Activation Code</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Activation Code
+              </span>
               <div className="flex items-center gap-2">
-                <code className="text-sm font-mono font-bold text-primary">{hospital.inviteCode}</code>
-                <button 
+                <code className="text-sm font-mono font-bold text-primary">
+                  {hospital.inviteCode}
+                </code>
+                <button
                   onClick={() => {
                     navigator.clipboard.writeText(hospital.inviteCode!);
-                    alert('Activation code copied to clipboard!');
+                    alert("Activation code copied to clipboard!");
                   }}
                   className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                   title="Copy activation code"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                  </svg>
                 </button>
               </div>
             </div>
@@ -291,7 +347,9 @@ function RecruitersList({
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Recruiter</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Email</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Verification</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Verification
+                </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Jobs</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
@@ -308,40 +366,51 @@ function RecruitersList({
                     <td className="px-4 py-3">
                       <VerifiedBadge verified={store.isRecruiterVerified(r.id)} />
                     </td>
-                    <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={r.status} />
+                    </td>
                     <td className="px-4 py-3">{jobCount}</td>
                     <td className="px-4 py-3">
-                       <div className="flex items-center gap-1">
-                         <button
-                           onClick={() => onOpen(r.id)}
-                           className="rounded p-1.5 hover:bg-accent"
-                           title="View jobs"
-                         >
-                           <Eye className="h-3.5 w-3.5" />
-                         </button>
-                         <button
-                           onClick={async () => {
-                             try {
-                               await store.toggleRecruiterBlock(r.id);
-                               toast.success(r.status === "Active" ? `${r.name} has been blocked.` : `${r.name} has been unblocked.`);
-                             } catch (err: any) {
-                               toast.error(err?.message || "Action failed. Please try again.");
-                             }
-                           }}
-                           className={`rounded p-1.5 hover:bg-accent ${r.status === "Active" ? "text-destructive" : ""}`}
-                           title={r.status === "Active" ? "Block recruiter" : "Unblock recruiter"}
-                         >
-                           <Ban className="h-3.5 w-3.5" />
-                         </button>
-                       </div>
-                     </td>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onOpen(r.id)}
+                          className="rounded p-1.5 hover:bg-accent"
+                          title="View jobs"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await store.toggleRecruiterBlock(r.id);
+                              toast.success(
+                                r.status === "Active"
+                                  ? `${r.name} has been blocked.`
+                                  : `${r.name} has been unblocked.`,
+                              );
+                            } catch (err: any) {
+                              toast.error(err?.message || "Action failed. Please try again.");
+                            }
+                          }}
+                          className={`rounded p-1.5 hover:bg-accent ${r.status === "Active" ? "text-destructive" : ""}`}
+                          title={r.status === "Active" ? "Block recruiter" : "Unblock recruiter"}
+                        >
+                          <Ban className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
               {recs.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No recruiters under this hospital yet.
+                  <td colSpan={7} className="px-4 py-10">
+                    <EmptyState
+                      icon={Users}
+                      lottieFile="nothing_for_the_particular_query.json"
+                      title="No recruiters"
+                      description="No recruiters under this hospital yet."
+                    />
                   </td>
                 </tr>
               )}
@@ -367,7 +436,9 @@ function JobsList({
 }) {
   const store = useAdminStore();
   const recruiter = store.recruiters.find((r) => r.id === recruiterId)!;
-  const list = store.jobs.filter((j) => j.recruiterId === recruiterId && j.hospitalId === hospitalId);
+  const list = store.jobs.filter(
+    (j) => j.recruiterId === recruiterId && j.hospitalId === hospitalId,
+  );
 
   return (
     <div className="space-y-4">
@@ -376,7 +447,9 @@ function JobsList({
       <div className="rounded-xl border bg-card shadow-sm p-5 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-semibold">{recruiter.name}</p>
-          <p className="text-xs text-muted-foreground">{recruiter.email} · {recruiter.role}</p>
+          <p className="text-xs text-muted-foreground">
+            {recruiter.email} · {recruiter.role}
+          </p>
         </div>
         <VerifiedBadge verified={store.isRecruiterVerified(recruiter.id)} />
       </div>
@@ -389,7 +462,9 @@ function JobsList({
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Job Title</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Applicants</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Applicants
+                </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
               </tr>
@@ -401,12 +476,18 @@ function JobsList({
                   <tr key={j.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{j.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{j.location}</td>
-                    <td className="px-4 py-3"><StatusBadge status={j.status} /></td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={j.status} />
+                    </td>
                     <td className="px-4 py-3">{apps}</td>
                     <td className="px-4 py-3 text-muted-foreground">{j.posted}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button onClick={() => onOpen(j.id)} className="rounded p-1.5 hover:bg-accent" title="View applicants">
+                        <button
+                          onClick={() => onOpen(j.id)}
+                          className="rounded p-1.5 hover:bg-accent"
+                          title="View applicants"
+                        >
                           <Eye className="h-3.5 w-3.5" />
                         </button>
                         <button
@@ -425,8 +506,13 @@ function JobsList({
               })}
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    This recruiter has not posted any jobs yet.
+                  <td colSpan={6} className="px-4 py-10">
+                    <EmptyState
+                      icon={Briefcase}
+                      lottieFile="nothing_for_the_particular_query.json"
+                      title="No jobs"
+                      description="This recruiter has not posted any jobs yet."
+                    />
                   </td>
                 </tr>
               )}
@@ -454,7 +540,9 @@ function ApplicantsList({ jobId, onBack }: { jobId: string; onBack: () => void }
             <FileText className="h-4 w-4 text-muted-foreground" />
             {job.title}
           </p>
-          <p className="text-xs text-muted-foreground">{job.location} · Posted {job.posted}</p>
+          <p className="text-xs text-muted-foreground">
+            {job.location} · Posted {job.posted}
+          </p>
         </div>
         <StatusBadge status={job.status} />
       </div>
@@ -467,7 +555,9 @@ function ApplicantsList({ jobId, onBack }: { jobId: string; onBack: () => void }
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Candidate</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Specialty</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Application</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Application
+                </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Verified</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Account</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Applied</th>
@@ -483,9 +573,15 @@ function ApplicantsList({ jobId, onBack }: { jobId: string; onBack: () => void }
                     <td className="px-4 py-3 font-medium">{c.name}</td>
                     <td className="px-4 py-3 text-muted-foreground">{c.role}</td>
                     <td className="px-4 py-3">{c.specialty}</td>
-                    <td className="px-4 py-3"><StatusBadge status={a.status} /></td>
-                    <td className="px-4 py-3"><VerifiedBadge verified={c.verified} /></td>
-                    <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={a.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <VerifiedBadge verified={c.verified} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={c.status} />
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{a.applied}</td>
                     <td className="px-4 py-3">
                       <button
@@ -501,8 +597,13 @@ function ApplicantsList({ jobId, onBack }: { jobId: string; onBack: () => void }
               })}
               {apps.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                    No applications received yet.
+                  <td colSpan={8} className="px-4 py-10">
+                    <EmptyState
+                      icon={FileText}
+                      lottieFile="nothing_for_the_particular_query.json"
+                      title="No applications"
+                      description="No applications received yet."
+                    />
                   </td>
                 </tr>
               )}

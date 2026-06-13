@@ -9,6 +9,14 @@ export const CV_ACCEPT =
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024;
 
+function backendBaseUrl(): string {
+  const configured = import.meta.env.VITE_API_BASE || "";
+  if (import.meta.env.PROD && !configured) {
+    throw new Error("VITE_API_BASE is required for production uploads.");
+  }
+  return configured || "http://127.0.0.1:3000";
+}
+
 export type UploadedFile = {
   file: File;
   name: string;
@@ -47,12 +55,14 @@ export async function fileToUploaded(file: File): Promise<UploadedFile> {
 }
 
 // Upload file to our backend Cloudinary proxy route
-export async function uploadCvToBackend(file: File, token: string): Promise<{ url: string; publicId: string; name?: string; mime?: string }> {
+export async function uploadCvToBackend(
+  file: File,
+  token: string,
+): Promise<{ url: string; publicId: string; name?: string; mime?: string }> {
   const formData = new FormData();
   formData.append("cv", file);
 
-  // We need apiBase, but we can't easily import it here due to circular dep, so we'll expect the caller to pass it or we fetch it from env
-  const backendUrl = typeof window !== "undefined" ? (import.meta.env.VITE_API_BASE || "/api") : "http://127.0.0.1:3000";
+  const backendUrl = backendBaseUrl();
 
   const res = await fetch(`${backendUrl}/api/upload/cv`, {
     method: "POST",
@@ -69,13 +79,16 @@ export async function uploadCvToBackend(file: File, token: string): Promise<{ ur
 }
 
 // Upload multiple supporting documents
-export async function uploadDocumentsToBackend(files: File[], token: string): Promise<{ url: string; publicId: string; name?: string; mime?: string }[]> {
+export async function uploadDocumentsToBackend(
+  files: File[],
+  token: string,
+): Promise<{ url: string; publicId: string; name?: string; mime?: string }[]> {
   const formData = new FormData();
   for (const file of files) {
     formData.append("documents", file);
   }
 
-  const backendUrl = typeof window !== "undefined" ? (import.meta.env.VITE_API_BASE || "/api") : "http://127.0.0.1:3000";
+  const backendUrl = backendBaseUrl();
 
   const res = await fetch(`${backendUrl}/api/upload/documents`, {
     method: "POST",

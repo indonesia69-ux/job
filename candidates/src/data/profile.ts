@@ -89,6 +89,10 @@ export type Profile = {
   availability: string;
   expectedSalaryMin: number;
   expectedSalaryMax: number;
+  currentSalaryMin: number;
+  currentSalaryMax: number;
+  preferredLocations: string[];
+  availabilityStatus: string;
   linkedinUrl: string;
   documentChecklist: string[];
   cvUrl?: string;
@@ -162,7 +166,8 @@ export const SAMPLE_PROFILE: Profile = {
       patientLoad: "Managed CCU rounds and daily cardiology OPD",
       rota: "Senior resident emergency and CCU rota",
       keyProcedures: ["Echocardiography", "Temporary pacing", "Coronary angiography"],
-      summary: "Completed intensive cath lab and CCU training while publishing peer-reviewed work in heart failure.",
+      summary:
+        "Completed intensive cath lab and CCU training while publishing peer-reviewed work in heart failure.",
     },
   ],
   clinicalSkills: [
@@ -216,7 +221,8 @@ export const SAMPLE_PROFILE: Profile = {
     {
       category: "Audit / QI",
       title: "Door-to-balloon time improvement",
-      detail: "Reduced median STEMI door-to-balloon time by 18 minutes through cath lab escalation redesign.",
+      detail:
+        "Reduced median STEMI door-to-balloon time by 18 minutes through cath lab escalation redesign.",
       year: "2023",
     },
     {
@@ -230,6 +236,10 @@ export const SAMPLE_PROFILE: Profile = {
   availability: "30 days notice",
   expectedSalaryMin: 32,
   expectedSalaryMax: 48,
+  currentSalaryMin: 24,
+  currentSalaryMax: 26,
+  preferredLocations: ["Kolkata", "Delhi"],
+  availabilityStatus: "Serving Notice Period",
   linkedinUrl: "https://www.linkedin.com/in/ananya-sengupta-md",
   documentChecklist: [
     "Medical registration certificate",
@@ -285,6 +295,10 @@ export const EMPTY_PROFILE: Profile = {
   availability: "30 days notice",
   expectedSalaryMin: 0,
   expectedSalaryMax: 0,
+  currentSalaryMin: 0,
+  currentSalaryMax: 0,
+  preferredLocations: [],
+  availabilityStatus: "",
   linkedinUrl: "",
   documentChecklist: [],
   cvUrl: undefined,
@@ -335,7 +349,10 @@ export function deriveHeadline(p: Profile): string {
 }
 
 export function initialsFor(name: string): string {
-  const parts = name.replace(/^Dr\.?\s+/i, "").trim().split(/\s+/);
+  const parts = name
+    .replace(/^Dr\.?\s+/i, "")
+    .trim()
+    .split(/\s+/);
   const first = parts[0]?.[0] ?? "A";
   const last = parts[parts.length - 1]?.[0] ?? "H";
   return (first + last).toUpperCase();

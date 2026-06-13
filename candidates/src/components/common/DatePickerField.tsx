@@ -109,7 +109,9 @@ export function DatePickerField({
           {selected && (
             <button
               type="button"
-              onClick={() => { onChange(""); }}
+              onClick={() => {
+                onChange("");
+              }}
               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
               Clear

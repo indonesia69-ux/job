@@ -74,8 +74,8 @@
   --radius: 0.875rem;
 
   /* Page surfaces */
-  --background: oklch(0.985 0.005 250);          /* #F7F9FC */
-  --foreground: oklch(0.22 0.05 265);            /* deep navy ink */
+  --background: oklch(0.985 0.005 250); /* #F7F9FC */
+  --foreground: oklch(0.22 0.05 265); /* deep navy ink */
 
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.22 0.05 265);
@@ -84,7 +84,7 @@
   --popover-foreground: oklch(0.22 0.05 265);
 
   /* Brand: deep navy */
-  --primary: oklch(0.24 0.07 265);               /* ~ #0F1B3D */
+  --primary: oklch(0.24 0.07 265); /* ~ #0F1B3D */
   --primary-foreground: oklch(0.985 0.005 250);
 
   --secondary: oklch(0.96 0.012 250);
@@ -93,19 +93,19 @@
   --muted: oklch(0.965 0.008 250);
   --muted-foreground: oklch(0.5 0.03 260);
 
-  --accent: oklch(0.55 0.09 255);                /* soft blue accent ~ #3B6FA0 */
+  --accent: oklch(0.55 0.09 255); /* soft blue accent ~ #3B6FA0 */
   --accent-foreground: oklch(0.985 0.005 250);
 
   --destructive: oklch(0.55 0.18 25);
   --destructive-foreground: oklch(0.985 0.005 250);
 
-  --success: oklch(0.5 0.08 155);                /* quiet green */
+  --success: oklch(0.5 0.08 155); /* quiet green */
   --success-foreground: oklch(0.985 0.005 250);
 
-  --warning: oklch(0.62 0.1 75);                 /* quiet amber */
+  --warning: oklch(0.62 0.1 75); /* quiet amber */
   --warning-foreground: oklch(0.22 0.05 265);
 
-  --border: oklch(0.92 0.012 250);               /* hairline */
+  --border: oklch(0.92 0.012 250); /* hairline */
   --input: oklch(0.92 0.012 250);
   --ring: oklch(0.55 0.09 255);
 
@@ -165,7 +165,8 @@
     border-color: var(--color-border);
   }
 
-  html, body {
+  html,
+  body {
     font-family: var(--font-sans);
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -174,17 +175,30 @@
     font-feature-settings: "ss01", "cv11";
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-display);
     letter-spacing: -0.015em;
   }
 }
 
 @layer utilities {
-  .font-display { font-family: var(--font-display); }
-  .shadow-soft { box-shadow: var(--shadow-soft); }
-  .shadow-pop { box-shadow: var(--shadow-pop); }
-  .text-balance { text-wrap: balance; }
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-pop {
+    box-shadow: var(--shadow-pop);
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
 
   .bg-grid-faint {
     background-image:

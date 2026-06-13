@@ -2,7 +2,7 @@ import logger from '../lib/logger';
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
-import { formatCandidate, ensureUsageReset, getSearchLimit, syncFormProfile } from '../lib/helpers';
+import { formatCandidate, formatLockedCandidate, ensureUsageReset, getSearchLimit, syncFormProfile } from '../lib/helpers';
 
 const router = Router();
 
@@ -28,6 +28,23 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
     const take     = Math.min(100, Math.max(1, parseInt(req.query.take as string) || 50));
     const skip     = Math.max(0, parseInt(req.query.skip as string) || 0);
 
+    const specialtyFilter = (req.query.specialty as string | undefined)?.trim();
+    const experienceMin = parseInt(req.query.experienceMin as string);
+    const experienceMax = parseInt(req.query.experienceMax as string);
+    const locationFilter = (req.query.location as string | undefined)?.trim();
+    const currentOrg = (req.query.currentOrg as string | undefined)?.trim();
+    const expectedSalaryMin = parseInt(req.query.expectedSalaryMin as string);
+    const expectedSalaryMax = parseInt(req.query.expectedSalaryMax as string);
+    const noticePeriod = (req.query.noticePeriod as string | undefined)
+      ? (req.query.noticePeriod as string).split(',').map(d => d.trim()).filter(Boolean)
+      : undefined;
+    const currentSalaryMin = parseInt(req.query.currentSalaryMin as string);
+    const currentSalaryMax = parseInt(req.query.currentSalaryMax as string);
+    const preferredLocation = (req.query.preferredLocation as string | undefined)?.trim();
+    const availabilityStatus = (req.query.availabilityStatus as string | undefined)
+      ? (req.query.availabilityStatus as string).split(',').map(d => d.trim()).filter(Boolean)
+      : undefined;
+
     // Build the WHERE clause using Prisma's typed API where possible,
     // falling back to $queryRaw for JSON-column text search on PostgreSQL.
     // Strategy: fetch with scalar filters first, then post-filter in JS for JSON fields
@@ -46,32 +63,91 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
         res.status(403).json({ error: `You have reached your limit of ${limit} premium searches this month.`, code: 'PLAN_QUOTA_EXCEEDED' });
         return;
       }
-      // Increment search usage
-      await prisma.user.update({
-        where: { id: updatedUser.id },
-        data: { premiumSearchesThisMonth: updatedUser.premiumSearchesThisMonth + 1 }
-      });
+      // Increment search usage only for the first page
+      if (skip === 0) {
+        await prisma.user.update({
+          where: { id: updatedUser.id },
+          data: { premiumSearchesThisMonth: updatedUser.premiumSearchesThisMonth + 1 }
+        });
+      }
     }
 
     // Scalar filter conditions
-    const scalarWhere: any = {};
+    const scalarWhere: any = {
+      isSuspended: false,
+      deletedAt: null
+    };
 
     if (roleFilter && roleFilter !== 'All') {
       scalarWhere.role = { equals: roleFilter, mode: 'insensitive' as const };
     }
+    
+    if (specialtyFilter) {
+      scalarWhere.specialty = { contains: specialtyFilter, mode: 'insensitive' as const };
+    }
+    if (!isNaN(experienceMin) || !isNaN(experienceMax)) {
+      scalarWhere.experienceYears = {};
+      if (!isNaN(experienceMin)) scalarWhere.experienceYears.gte = experienceMin;
+      if (!isNaN(experienceMax)) scalarWhere.experienceYears.lte = experienceMax;
+    }
+    if (locationFilter) {
+      scalarWhere.location = { contains: locationFilter, mode: 'insensitive' as const };
+    }
+    if (currentOrg) {
+      scalarWhere.currentEmployer = { contains: currentOrg, mode: 'insensitive' as const };
+    }
+    if (!isNaN(expectedSalaryMin)) {
+      scalarWhere.expectedSalaryMax = { gte: expectedSalaryMin };
+    }
+    if (!isNaN(expectedSalaryMax)) {
+      scalarWhere.expectedSalaryMin = { lte: expectedSalaryMax };
+    }
+    if (noticePeriod && noticePeriod.length > 0) {
+      scalarWhere.noticePeriod = { in: noticePeriod };
+    }
+    if (!isNaN(currentSalaryMin)) {
+      scalarWhere.currentSalaryMax = { gte: currentSalaryMin };
+    }
+    if (!isNaN(currentSalaryMax)) {
+      scalarWhere.currentSalaryMin = { lte: currentSalaryMax };
+    }
+    if (preferredLocation) {
+      scalarWhere.preferredLocations = { string_contains: preferredLocation };
+    }
+    if (availabilityStatus && availabilityStatus.length > 0) {
+      scalarWhere.availabilityStatus = { in: availabilityStatus };
+    }
+
+    const andConditions: any[] = [];
 
     if (q) {
-      scalarWhere.OR = [
-        { name:      { contains: q, mode: 'insensitive' as const } },
-        { role:      { contains: q, mode: 'insensitive' as const } },
-        { specialty: { contains: q, mode: 'insensitive' as const } },
-        { location:  { contains: q, mode: 'insensitive' as const } },
-        { summary:   { contains: q, mode: 'insensitive' as const } },
-        // JSON columns stored as text — PostgreSQL ILIKE on cast
-        { skills:    { contains: q, mode: 'insensitive' as const } },
-        { education: { contains: q, mode: 'insensitive' as const } },
-        { procedures:{ contains: q, mode: 'insensitive' as const } },
-      ];
+      andConditions.push({
+        OR: [
+          { name:      { contains: q, mode: 'insensitive' } },
+          { role:      { contains: q, mode: 'insensitive' } },
+          { specialty: { contains: q, mode: 'insensitive' } },
+          { location:  { contains: q, mode: 'insensitive' } },
+          { summary:   { contains: q, mode: 'insensitive' } },
+          { skills:    { string_contains: q } },
+          { education: { string_contains: q } },
+          { procedures:{ contains: q, mode: 'insensitive' } },
+        ]
+      });
+    }
+
+    const doctorConditions = degrees.flatMap(deg => [
+      { education: { string_contains: deg } },
+      { profileJson: { string_contains: deg } }
+    ]);
+
+    if (type === 'premium') {
+      andConditions.push({ OR: doctorConditions });
+    } else if (type === 'basic') {
+      andConditions.push({ NOT: { OR: doctorConditions } });
+    }
+
+    if (andConditions.length > 0) {
+      scalarWhere.AND = andConditions;
     }
 
     let candidates = await prisma.candidate.findMany({
@@ -80,31 +156,14 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
         { matchPercent: 'desc' },
         { name: 'asc' },
       ],
-      take: take + skip, // fetch extra so we can post-filter before slicing
+      take,
+      skip
     });
 
-    // ── Post-filter: basic vs premium split ──────────────────────────────────
-    // "Premium" = has a doctor-level degree in their education JSON
-    // "Basic"   = everyone else (nurses, technicians, allied health)
-    if (type === 'premium' || type === 'basic') {
-      candidates = candidates.filter((c) => {
-        const educationText = (c.education || '').toUpperCase();
-        const profileText   = (c.profileJson || '').toUpperCase();
-        const combinedText  = educationText + ' ' + profileText;
-        const isDoctor = degrees.some((deg) => {
-          // word-boundary style match: degree must appear as a standalone token
-          return new RegExp(`(^|[^A-Z])${deg}([^A-Z]|$)`).test(combinedText);
-        });
-        return type === 'premium' ? isDoctor : !isDoctor;
-      });
-    }
-
-    // Apply skip/take after post-filtering
-    const paginated = candidates.slice(skip, skip + take);
-    const total = candidates.length;
+    const total = await prisma.candidate.count({ where: scalarWhere });
 
     res.json({
-      candidates: paginated.map(formatCandidate),
+      candidates: candidates.map(formatCandidate),
       total,
       take,
       skip,
@@ -118,11 +177,43 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
 // GET /api/candidates
 router.get('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
   try {
-    const candidates = await prisma.candidate.findMany({
-      orderBy: { matchPercent: 'desc' },
-      take: 50, // Added basic limit
+    const user = await prisma.user.findUnique({ where: { id: req.user!.id }, include: { hospital: true } });
+    if (!user || !user.hospital) {
+      res.status(400).json({ error: 'No hospital linked to your account' });
+      return;
+    }
+    
+    if (user.hospital.onboardingPlan === 'Basic') {
+      res.status(403).json({ error: 'Upgrade to Pro or Premium to browse all candidates.', code: 'PLAN_UPGRADE_REQUIRED' });
+      return;
+    }
+
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const skip = (page - 1) * limit;
+
+    const where = {
+      isSuspended: false,
+      deletedAt: null
+    };
+
+    const [candidates, total] = await prisma.$transaction([
+      prisma.candidate.findMany({
+        where,
+        orderBy: { matchPercent: 'desc' },
+        take: limit,
+        skip,
+      }),
+      prisma.candidate.count({ where })
+    ]);
+
+    res.json({
+      candidates: candidates.map(formatCandidate),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+      limit
     });
-    res.json(candidates.map(formatCandidate));
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -185,7 +276,7 @@ router.put('/me', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest
     // Fallback direct update
     const data: any = { ...rest };
     if (profileJson !== undefined) {
-      data.profileJson = typeof profileJson === 'string' ? profileJson : JSON.stringify(profileJson);
+      data.profileJson = profileJson;
     }
     if (cvUrl) data.cvUrl = String(cvUrl);
     if (cvCloudinaryId) data.cvCloudinaryId = String(cvCloudinaryId);

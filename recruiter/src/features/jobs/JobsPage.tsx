@@ -12,6 +12,7 @@ import {
   Send,
   Users,
 } from "lucide-react";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -204,13 +205,13 @@ export function JobsPage() {
 
               <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
                 <Meta icon={<MapPin className="h-3.5 w-3.5" />}>{j.location}</Meta>
-                <Meta icon={<Briefcase className="h-3.5 w-3.5" />}>{j.type} · {j.shift}</Meta>
+                <Meta icon={<Briefcase className="h-3.5 w-3.5" />}>
+                  {j.type} · {j.shift}
+                </Meta>
                 <Meta icon={<Banknote className="h-3.5 w-3.5" />}>
                   {fmtSalary(j.salaryMin, j.salaryMax)}
                 </Meta>
-                <Meta icon={<Users className="h-3.5 w-3.5" />}>
-                  {j.applicants} applicants
-                </Meta>
+                <Meta icon={<Users className="h-3.5 w-3.5" />}>{j.applicants} applicants</Meta>
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -238,6 +239,19 @@ export function JobsPage() {
           </Card>
         ))}
       </div>
+
+      {filtered.length === 0 && (
+        <Card className="border-border bg-card shadow-soft mt-8">
+          <CardContent className="py-16 text-center text-muted-foreground flex flex-col items-center">
+            <LottiePlayer
+              src="/nothing_for_the_particular_query.json"
+              loop
+              className="h-32 w-32 mb-4"
+            />
+            No jobs match your filters.
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { PageLoader } from "@/components/common/PageLoader";
 
 export const Route = createFileRoute("/_app/search")({
   staleTime: 0,
-  loader: loadRecruiterDashboard,
+  loader: () => loadRecruiterDashboard(1, 50),
   pendingComponent: PageLoader,
   head: () => ({
     meta: [

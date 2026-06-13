@@ -10,7 +10,14 @@ interface KPICardProps {
   className?: string;
 }
 
-export function KPICard({ title, value, icon, change, changeType = "neutral", className }: KPICardProps) {
+export function KPICard({
+  title,
+  value,
+  icon,
+  change,
+  changeType = "neutral",
+  className,
+}: KPICardProps) {
   return (
     <div className={cn("rounded-xl border bg-card p-5 shadow-sm", className)}>
       <div className="flex items-center justify-between">
@@ -19,9 +26,20 @@ export function KPICard({ title, value, icon, change, changeType = "neutral", cl
           {icon}
         </div>
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight">{typeof value === "number" ? value.toLocaleString("en-IN") : value}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight">
+        {typeof value === "number" ? value.toLocaleString("en-IN") : value}
+      </p>
       {change && (
-        <p className={cn("mt-1 text-xs font-medium", changeType === "up" ? "text-success" : changeType === "down" ? "text-destructive" : "text-muted-foreground")}>
+        <p
+          className={cn(
+            "mt-1 text-xs font-medium",
+            changeType === "up"
+              ? "text-success"
+              : changeType === "down"
+                ? "text-destructive"
+                : "text-muted-foreground",
+          )}
+        >
           {change}
         </p>
       )}

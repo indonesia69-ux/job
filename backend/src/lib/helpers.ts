@@ -3,13 +3,10 @@ import prisma from './prisma';
 
 // ─── JSON helpers ────────────────────────────────────────────────────────────
 
-export function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
-  if (!value) return fallback;
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
-  }
+export function safeJsonParse<T>(val: any, fallback: T): T {
+  if (!val) return fallback;
+  if (typeof val !== 'string') return val as T;
+  try { return JSON.parse(val) as T; } catch { return fallback; }
 }
 
 // ─── Hospital helpers ────────────────────────────────────────────────────────
@@ -42,19 +39,27 @@ export function formatHospital(h: any) {
   };
 }
 
-export function getHospitalValidity(hospital: { approvedAt?: Date | null; submittedAt?: Date | null }) {
+export function getHospitalValidity(hospital: {
+  approvedAt?: Date | null;
+  submittedAt?: Date | null;
+  planExpiresAt?: Date | null;
+}) {
   if (!hospital) return { isLocked: true, daysRemaining: 0 };
-  
-  const start = hospital.approvedAt || hospital.submittedAt;
-  if (!start) return { isLocked: true, daysRemaining: 0 };
 
-  const expirationDate = new Date(start);
-  expirationDate.setDate(expirationDate.getDate() + 30);
-  
+  let expirationDate: Date | null = hospital.planExpiresAt ?? null;
+
+  if (!expirationDate) {
+    const start = hospital.approvedAt || hospital.submittedAt;
+    if (!start) return { isLocked: true, daysRemaining: 0 };
+
+    expirationDate = new Date(start);
+    expirationDate.setDate(expirationDate.getDate() + 30);
+  }
+
   const now = new Date();
   const diffMs = expirationDate.getTime() - now.getTime();
   const daysRemaining = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
-  
+
   return {
     isLocked: daysRemaining === 0,
     daysRemaining,
@@ -71,8 +76,16 @@ export const formatCandidate = (c: any) => ({
   education: safeJsonParse(c.education, []),
   certifications: safeJsonParse(c.certifications, []),
   experience: safeJsonParse(c.experience, []),
+  preferredLocations: safeJsonParse(c.preferredLocations, []),
   profile: c.profileJson ? safeJsonParse(c.profileJson, null) : null,
   supportingDocuments: safeJsonParse(c.supportingDocuments, []),
+});
+
+export const formatLockedCandidate = (c: any) => ({
+  id: c.id,
+  locked: true,
+  specialty: c.specialty,       // safe — broad clinical category
+  experienceYears: c.experienceYears, // safe — number only
 });
 
 export async function syncFormProfile(
@@ -106,18 +119,18 @@ export async function syncFormProfile(
 
   // Build the update data
   const updateData: any = {
-    name: String(profile.name || ''),
+    name: String(profile.name || '').slice(0, 100),
     initials,
-    role: String(profile.role || ''),
-    specialty: profile.specialty
+    role: String(profile.role || '').slice(0, 100),
+    specialty: (profile.specialty
       ? String(profile.specialty)
       : profile.clinicalSkills?.[0]
         ? String(profile.clinicalSkills[0])
-        : String(profile.role || ''),
+        : String(profile.role || '')).slice(0, 100),
     experienceYears: Number(profile.yearsExperience || 0),
-    location: String(profile.state || profile.city || ''),
-    currentEmployer: profile.experience?.[0]?.hospital ? String(profile.experience[0].hospital) : null,
-    summary: String(profile.summary || ''),
+    location: String(profile.state || profile.city || '').slice(0, 150),
+    currentEmployer: profile.experience?.[0]?.hospital ? String(profile.experience[0].hospital).slice(0, 150) : null,
+    summary: String(profile.summary || '').slice(0, 5000),
     verified: Boolean(profile.verified),
     registration: profile.registrationNumber
       ? `${profile.registrationNumber}${profile.registrationCouncil ? ` (${profile.registrationCouncil})` : ''}`
@@ -126,13 +139,20 @@ export async function syncFormProfile(
     phone: profile.phone ? String(profile.phone) : null,
     languages: JSON.stringify(profile.languages || []),
     procedures: JSON.stringify(profile.procedures || []),
-    skills: JSON.stringify([...(profile.clinicalSkills || []), ...(profile.technicalSkills || [])]),
-    education: JSON.stringify(profile.qualifications || []),
-    certifications: JSON.stringify(profile.certifications || []),
-    experience: JSON.stringify(experienceMapped),
+    skills: [...(profile.clinicalSkills || []), ...(profile.technicalSkills || [])],
+    education: profile.qualifications || [],
+    certifications: profile.certifications || [],
+    experience: experienceMapped,
     matchPercent: Number(profile.completeness || 70),
-    profileJson: JSON.stringify(profile),
+    profileJson: profile,
     cvSource: 'form',
+    expectedSalaryMin: Number(profile.expectedSalaryMin || 0) || null,
+    expectedSalaryMax: Number(profile.expectedSalaryMax || 0) || null,
+    currentSalaryMin: Number(profile.currentSalaryMin || 0) || null,
+    currentSalaryMax: Number(profile.currentSalaryMax || 0) || null,
+    noticePeriod: profile.availability || null,
+    preferredLocations: profile.preferredLocations || [],
+    availabilityStatus: profile.availabilityStatus || null,
   };
 
   // Only update Cloudinary CV fields if a new file was uploaded.
@@ -147,20 +167,39 @@ export async function syncFormProfile(
   }
 
   if (supportingDocsUpload && supportingDocsUpload.length > 0) {
-    updateData.supportingDocuments = JSON.stringify(supportingDocsUpload);
+    updateData.supportingDocuments = supportingDocsUpload;
   }
 
-  return prisma.candidate.update({
+  const updatedCandidate = await prisma.candidate.update({
     where: { id: candidateId },
     data: updateData,
   });
+
+  // Keep the core User.mobile in sync with Candidate.phone so SMS password reset works properly
+  if (updateData.phone) {
+    await prisma.user.updateMany({
+      where: { candidate: { id: candidateId } },
+      data: { mobile: updateData.phone, name: updateData.name },
+    });
+  }
+
+  return updatedCandidate;
 }
 
 
 // ─── Job helpers ─────────────────────────────────────────────────────────────
 
-export function parseJobCustomFields(raw: string | null | undefined): any[] {
-  return safeJsonParse(raw, [] as any[]);
+export function parseJobCustomFields(raw: any): any[] {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 const CUSTOM_FIELD_TYPES = new Set(['text', 'textarea', 'number', 'select', 'checkbox']);
@@ -285,7 +324,7 @@ export const formatJob = (job: any, profile?: any) => ({
   requirements: safeJsonParse(job.requirements, []),
   perks: safeJsonParse(job.perks, []),
   customApplicationFields: parseJobCustomFields(job.customApplicationFields),
-  applicants: job.applications?.length ?? 0,
+  applicants: job._count?.applications ?? job.applications?.length ?? 0,
   shortlisted: job.applications?.filter((a: any) => a.status === 'Shortlisted').length ?? 0,
   matchPercent: profile ? computeJobMatch(job, profile) : undefined,
 });
@@ -293,6 +332,9 @@ export const formatJob = (job: any, profile?: any) => ({
 export const formatApp = (app: any) => ({
   ...app,
   customFieldResponses: safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
+  interviewHistory: safeJsonParse(app.interviewHistory, null),
+  requestedDocumentList: safeJsonParse(app.requestedDocumentList, [] as string[]),
+  supportingDocuments: safeJsonParse(app.supportingDocuments, []),
   candidate: formatCandidate(app.candidate),
   job: app.job
     ? {

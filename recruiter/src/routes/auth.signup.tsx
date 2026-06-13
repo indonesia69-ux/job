@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { login as saveAuth } from "@/store/authStore";
 import { apiBase } from "@/lib/api";
 import { loginErrorMessage } from "@/lib/authMessages";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/auth/signup")({
   head: () => ({
@@ -36,8 +37,9 @@ function SignupPage() {
   const [agreeCertify, setAgreeCertify] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
-  
+
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -106,8 +108,10 @@ function SignupPage() {
 
     const errs: Record<string, string> = {};
     if (!username || username.length < 3) errs.username = "Username must be at least 3 characters.";
-    if (!fullName || fullName.length < 2) errs.fullName = "Full name must be at least 2 characters.";
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Enter a valid email address.";
+    if (!fullName || fullName.length < 2)
+      errs.fullName = "Full name must be at least 2 characters.";
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      errs.email = "Enter a valid email address.";
     if (!mobile || mobile.length < 10) errs.mobile = "Enter a valid mobile number.";
     if (!password || password.length < 8) errs.password = "Password must be at least 8 characters.";
     if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match.";
@@ -148,13 +152,17 @@ function SignupPage() {
       }
 
       saveAuth(data.token, data.user);
-      toast.success(`Welcome to ApronHanger! You're now a recruiter for ${hospitalInfo.hospitalName}.`);
-      navigate({ to: "/" });
+      toast.success(
+        `Welcome to ApronHanger! You're now a recruiter for ${hospitalInfo.hospitalName}.`,
+      );
+      setLoginSuccess(true);
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 1200);
     } catch {
       const msg = "Network error. Is the backend running?";
       setFormError(msg);
       toast.error(msg);
-    } finally {
       setLoading(false);
     }
   };
@@ -186,7 +194,9 @@ function SignupPage() {
             <Input
               id="inviteCode"
               value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 12))}
+              onChange={(e) =>
+                setInviteCode(e.target.value.replace(/[^A-Za-z0-9]/g, "").slice(0, 12))
+              }
               placeholder="Enter 12-character code"
               className="h-11 font-mono text-base tracking-widest uppercase pr-10"
               aria-invalid={!!codeError}
@@ -201,7 +211,9 @@ function SignupPage() {
             )}
           </div>
           {inviteCode.length > 0 && inviteCode.length < 12 && (
-            <p className="text-[11px] text-muted-foreground">{12 - inviteCode.length} more characters needed</p>
+            <p className="text-[11px] text-muted-foreground">
+              {12 - inviteCode.length} more characters needed
+            </p>
           )}
           {codeError && <p className="text-xs text-destructive">{codeError}</p>}
         </div>
@@ -214,7 +226,9 @@ function SignupPage() {
                 <Building2 className="h-5 w-5" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-foreground truncate">{hospitalInfo.hospitalName}</p>
+                <p className="text-[13px] font-semibold text-foreground truncate">
+                  {hospitalInfo.hospitalName}
+                </p>
                 <p className="text-[12px] text-muted-foreground">
                   {[hospitalInfo.city, hospitalInfo.state].filter(Boolean).join(", ")}
                 </p>
@@ -223,7 +237,8 @@ function SignupPage() {
                     {hospitalInfo.plan} Plan
                   </span>
                   <span className="text-[11px] text-muted-foreground">
-                    {hospitalInfo.spotsLeft} recruiter spot{hospitalInfo.spotsLeft !== 1 ? "s" : ""} remaining
+                    {hospitalInfo.spotsLeft} recruiter spot{hospitalInfo.spotsLeft !== 1 ? "s" : ""}{" "}
+                    remaining
                   </span>
                   <span className="inline-flex items-center gap-1 text-[11px] text-success font-medium">
                     <ShieldCheck className="h-3 w-3" /> Verified Hospital
@@ -249,7 +264,9 @@ function SignupPage() {
                 aria-invalid={!!fieldErrors.username}
                 required
               />
-              {fieldErrors.username && <p className="text-xs text-destructive">{fieldErrors.username}</p>}
+              {fieldErrors.username && (
+                <p className="text-xs text-destructive">{fieldErrors.username}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -264,7 +281,9 @@ function SignupPage() {
                 aria-invalid={!!fieldErrors.fullName}
                 required
               />
-              {fieldErrors.fullName && <p className="text-xs text-destructive">{fieldErrors.fullName}</p>}
+              {fieldErrors.fullName && (
+                <p className="text-xs text-destructive">{fieldErrors.fullName}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -282,7 +301,7 @@ function SignupPage() {
               />
               {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
             </div>
-            
+
             <div className="space-y-1.5">
               <Label htmlFor="mobile">
                 Mobile Number <span className="text-destructive">*</span>
@@ -296,7 +315,9 @@ function SignupPage() {
                 aria-invalid={!!fieldErrors.mobile}
                 required
               />
-              {fieldErrors.mobile && <p className="text-xs text-destructive">{fieldErrors.mobile}</p>}
+              {fieldErrors.mobile && (
+                <p className="text-xs text-destructive">{fieldErrors.mobile}</p>
+              )}
             </div>
 
             <div className="space-y-1.5">
@@ -316,7 +337,7 @@ function SignupPage() {
               )}
               <p className="text-[11px] text-muted-foreground">Minimum 8 characters.</p>
             </div>
-            
+
             <div className="space-y-1.5">
               <Label htmlFor="confirmPassword">
                 Confirm Password <span className="text-destructive">*</span>
@@ -349,7 +370,10 @@ function SignupPage() {
                   onCheckedChange={(v) => setAgreeTerms(Boolean(v))}
                   className="mt-0.5"
                 />
-                <span>I agree to APRONHANGER <span className="text-accent hover:underline">Terms & Conditions</span>.</span>
+                <span>
+                  I agree to APRONHANGER{" "}
+                  <span className="text-accent hover:underline">Terms & Conditions</span>.
+                </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
                 <Checkbox
@@ -357,21 +381,33 @@ function SignupPage() {
                   onCheckedChange={(v) => setAgreePrivacy(Boolean(v))}
                   className="mt-0.5"
                 />
-                <span>I agree to APRONHANGER <span className="text-accent hover:underline">Privacy Policy</span>.</span>
+                <span>
+                  I agree to APRONHANGER{" "}
+                  <span className="text-accent hover:underline">Privacy Policy</span>.
+                </span>
               </label>
             </div>
 
             <Button
               type="submit"
               className="h-11 w-full text-[14px] font-medium mt-2"
-              disabled={loading}
+              disabled={loading || loginSuccess}
             >
-              {loading ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating account…</>
+              {loading || loginSuccess ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating account…
+                </>
               ) : (
                 "Create account"
               )}
             </Button>
+            {loginSuccess && (
+              <LottiePlayer
+                src="/successful_signup_signin.json"
+                loop={false}
+                className="mx-auto mt-4 h-14 w-14 sm:h-16 sm:w-16"
+              />
+            )}
           </>
         )}
       </form>

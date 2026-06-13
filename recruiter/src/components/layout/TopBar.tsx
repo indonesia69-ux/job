@@ -18,7 +18,13 @@ import { NotificationsMenu } from "@/components/common/NotificationsMenu";
 export function TopBar() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const initials = user?.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() ?? "AH";
+  const initials =
+    user?.name
+      ?.split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() ?? "AH";
   const hospitalName = user?.name ?? "My Hospital";
 
   const handleSignOut = () => {

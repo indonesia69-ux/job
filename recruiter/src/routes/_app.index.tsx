@@ -1,6 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
-import { loadRecruiterDashboard, loadDashboardStats, loadHospitalProfile } from "@/lib/recruiterData";
+import {
+  loadRecruiterDashboard,
+  loadDashboardStats,
+  loadHospitalProfile,
+} from "@/lib/recruiterData";
 import { PageLoader } from "@/components/common/PageLoader";
 
 async function loadDashboardPage() {
@@ -19,7 +23,10 @@ export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
       { title: "Dashboard — ApronHanger" },
-      { name: "description", content: "Overview of your hospital's hiring activity on ApronHanger." },
+      {
+        name: "description",
+        content: "Overview of your hospital's hiring activity on ApronHanger.",
+      },
     ],
   }),
   component: DashboardPage,

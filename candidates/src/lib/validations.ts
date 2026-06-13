@@ -57,6 +57,10 @@ export type WizardFormState = {
   summary: string;
   expectedSalaryMin: number;
   expectedSalaryMax: number;
+  currentSalaryMin: number;
+  currentSalaryMax: number;
+  preferredLocations: string[];
+  availabilityStatus: string;
   procedures: { name: string; count: number }[];
   certifications: { name: string; issuer: string; year: string }[];
   publications: string[];
@@ -206,7 +210,12 @@ export function validateWizardStep(step: number, s: WizardFormState): string | n
         if (!p.journal.trim()) return `Publication ${i + 1}: journal or venue is required`;
         if (p.year.trim()) {
           const y = Number(p.year.trim());
-          if (!/^\d{4}$/.test(p.year.trim()) || Number.isNaN(y) || y < 1950 || y > new Date().getFullYear() + 1) {
+          if (
+            !/^\d{4}$/.test(p.year.trim()) ||
+            Number.isNaN(y) ||
+            y < 1950 ||
+            y > new Date().getFullYear() + 1
+          ) {
             return `Publication ${i + 1}: enter a valid publication year`;
           }
         }
@@ -237,10 +246,16 @@ export function validateWizardStep(step: number, s: WizardFormState): string | n
     }
     case 11: {
       if (s.expectedSalaryMin < 0 || s.expectedSalaryMax < 0) {
-        return "Salary values cannot be negative";
+        return "Expected salary cannot be negative";
       }
       if (s.expectedSalaryMin > s.expectedSalaryMax) {
-        return "Minimum salary cannot be greater than maximum salary";
+        return "Minimum expected salary cannot exceed maximum";
+      }
+      if (s.currentSalaryMin < 0 || s.currentSalaryMax < 0) {
+        return "Current salary cannot be negative";
+      }
+      if (s.currentSalaryMin > s.currentSalaryMax) {
+        return "Minimum current salary cannot exceed maximum";
       }
       return null;
     }
@@ -263,6 +278,7 @@ export const authSignInSchema = z.object({
 export const authSignUpSchema = authSignInSchema.extend({
   name: z.string().min(2, "Name must be at least 2 characters"),
   password: z.string().min(6, "Password must be at least 6 characters"),
+  mobile: phoneSchema,
 });
 
 export const uploadApplySchema = z.object({

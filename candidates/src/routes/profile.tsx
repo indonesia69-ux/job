@@ -756,14 +756,16 @@ function EmptyState() {
         </div>
         <h1 className="ph-empty-title">Your CV hasn't been built yet</h1>
         <p className="ph-empty-body">
-          ApronHanger builds your professional CV from a single structured form. Once it's done,
-          you can Quick Apply to any verified role with one tap.
+          ApronHanger builds your professional CV from a single structured form. Once it's done, you
+          can Quick Apply to any verified role with one tap.
         </p>
-        <Link to="/build-cv">
-          <button className="ph-btn-primary" style={{ margin: "0 auto" }}>
-            <FileText size={14} /> Fill the form
-          </button>
-        </Link>
+        <button
+          className="ph-btn-primary"
+          style={{ margin: "0 auto", opacity: 0.5, cursor: "not-allowed" }}
+          disabled
+        >
+          <FileText size={14} /> CV Builder Coming Soon
+        </button>
       </div>
     </div>
   );
@@ -777,7 +779,6 @@ function ProfileFull({ c }: { c: Profile }) {
 
   return (
     <div className="ph-wrapper">
-
       {/* ── HERO ── */}
       <div className="ph-hero">
         <div className="ph-hero-inner">
@@ -788,13 +789,15 @@ function ProfileFull({ c }: { c: Profile }) {
                 <div className="ph-avatar-outer">
                   <div className="ph-avatar-inner">
                     <Avatar style={{ width: 58, height: 58 }}>
-                      <AvatarFallback style={{
-                        background: "linear-gradient(135deg, #eef4ff, #c7d9f8)",
-                        color: "var(--ph-teal)",
-                        fontSize: "1.125rem",
-                        fontWeight: 600,
-                        fontFamily: "var(--ph-font-display)",
-                      }}>
+                      <AvatarFallback
+                        style={{
+                          background: "linear-gradient(135deg, #eef4ff, #c7d9f8)",
+                          color: "var(--ph-teal)",
+                          fontSize: "1.125rem",
+                          fontWeight: 600,
+                          fontFamily: "var(--ph-font-display)",
+                        }}
+                      >
                         {c.avatar}
                       </AvatarFallback>
                     </Avatar>
@@ -809,25 +812,33 @@ function ProfileFull({ c }: { c: Profile }) {
                     <ShieldCheck size={10} /> Verified {c.role}
                   </div>
                 )}
-                <h1 className="ph-name">
-                  {c.name}
-                </h1>
+                <h1 className="ph-name">{c.name}</h1>
                 <p className="ph-headline">{c.headline}</p>
                 <div className="ph-contact-row">
                   {location && (
-                    <span className="ph-contact-item"><MapPin size={12} /> {location}</span>
+                    <span className="ph-contact-item">
+                      <MapPin size={12} /> {location}
+                    </span>
                   )}
                   {c.email && (
-                    <span className="ph-contact-item"><Mail size={12} /> {c.email}</span>
+                    <span className="ph-contact-item">
+                      <Mail size={12} /> {c.email}
+                    </span>
                   )}
                   {c.phone && (
-                    <span className="ph-contact-item"><Phone size={12} /> {c.phone}</span>
+                    <span className="ph-contact-item">
+                      <Phone size={12} /> {c.phone}
+                    </span>
                   )}
                   {c.linkedinUrl && (
                     <span className="ph-contact-item">
                       <Linkedin size={12} />
                       <a
-                        href={c.linkedinUrl.startsWith("http") ? c.linkedinUrl : `https://${c.linkedinUrl}`}
+                        href={
+                          c.linkedinUrl.startsWith("http")
+                            ? c.linkedinUrl
+                            : `https://${c.linkedinUrl}`
+                        }
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -842,10 +853,14 @@ function ProfileFull({ c }: { c: Profile }) {
             {/* Actions */}
             <div className="ph-hero-actions">
               <Link to="/build-cv">
-                <button className="ph-btn-ghost"><Pencil size={13} /> Edit profile</button>
+                <button className="ph-btn-ghost">
+                  <Pencil size={13} /> Edit profile
+                </button>
               </Link>
               <Link to="/cv-preview">
-                <button className="ph-btn-primary"><Download size={13} /> View CV</button>
+                <button className="ph-btn-primary">
+                  <Download size={13} /> View CV
+                </button>
               </Link>
             </div>
           </div>
@@ -859,10 +874,19 @@ function ProfileFull({ c }: { c: Profile }) {
             { label: "Certifications", value: String(c.certifications.length), d: "0.42s" },
             {
               label: "Expected CTC",
-              value: (c.expectedSalaryMin || c.expectedSalaryMax) > 0
-                ? formatLPA(c.expectedSalaryMin, c.expectedSalaryMax)
-                : "—",
-              d: "0.48s"
+              value:
+                (c.expectedSalaryMin || c.expectedSalaryMax) > 0
+                  ? formatLPA(c.expectedSalaryMin, c.expectedSalaryMax)
+                  : "—",
+              d: "0.48s",
+            },
+            {
+              label: "Current CTC",
+              value:
+                (c.currentSalaryMin || c.currentSalaryMax) > 0
+                  ? formatLPA(c.currentSalaryMin, c.currentSalaryMax)
+                  : "—",
+              d: "0.54s",
             },
           ].map((s) => (
             <div key={s.label} className="ph-stat" style={{ animationDelay: s.d }}>
@@ -875,7 +899,6 @@ function ProfileFull({ c }: { c: Profile }) {
 
       {/* ── BODY ── */}
       <div className="ph-body">
-
         {/* Main */}
         <div className="ph-main">
           {c.summary && (
@@ -889,13 +912,28 @@ function ProfileFull({ c }: { c: Profile }) {
               {c.experience.map((e, i) => (
                 <div key={i} className="ph-tl-item">
                   {i < c.experience.length - 1 && <span className="ph-tl-line" />}
-                  <span className="ph-tl-dot"><Briefcase size={12} /></span>
+                  <span className="ph-tl-dot">
+                    <Briefcase size={12} />
+                  </span>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        alignItems: "baseline",
+                        justifyContent: "space-between",
+                        gap: 6,
+                      }}
+                    >
                       <p className="ph-tl-role">{e.role}</p>
-                      <p className="ph-tl-dates">{e.start} — {e.end}</p>
+                      <p className="ph-tl-dates">
+                        {e.start} — {e.end}
+                      </p>
                     </div>
-                    <p className="ph-tl-hosp">{e.hospital}{e.city ? ` · ${e.city}` : ""}</p>
+                    <p className="ph-tl-hosp">
+                      {e.hospital}
+                      {e.city ? ` · ${e.city}` : ""}
+                    </p>
                     {e.summary && <p className="ph-tl-summary">{e.summary}</p>}
                   </div>
                 </div>
@@ -908,7 +946,9 @@ function ProfileFull({ c }: { c: Profile }) {
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {c.qualifications.map((q, i) => (
                   <div key={i} className="ph-edu">
-                    <span className="ph-edu-icon"><GraduationCap size={14} /></span>
+                    <span className="ph-edu-icon">
+                      <GraduationCap size={14} />
+                    </span>
                     <div>
                       <p className="ph-edu-degree">{q.degree}</p>
                       <p className="ph-edu-inst">{q.institution}</p>
@@ -951,7 +991,9 @@ function ProfileFull({ c }: { c: Profile }) {
             <Card title="Publications & research" icon={BookOpen} delay="0.24s">
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {c.publications.map((pub, i) => (
-                  <div key={i} className="ph-pub">{pub}</div>
+                  <div key={i} className="ph-pub">
+                    {pub}
+                  </div>
                 ))}
               </div>
             </Card>
@@ -964,9 +1006,19 @@ function ProfileFull({ c }: { c: Profile }) {
           {(c.cvUrl || c.uploadedCvData) && (
             <Card title="Attached CV" icon={FileText} compact delay="0.06s">
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span className="ph-dl-value" style={{ fontSize: "0.8125rem" }} title={c.uploadedCvName}>
-                    {c.uploadedCvName ? (c.uploadedCvName.length > 25 ? c.uploadedCvName.slice(0, 25) + '...' : c.uploadedCvName) : "CV Document"}
+                <div
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+                >
+                  <span
+                    className="ph-dl-value"
+                    style={{ fontSize: "0.8125rem" }}
+                    title={c.uploadedCvName}
+                  >
+                    {c.uploadedCvName
+                      ? c.uploadedCvName.length > 25
+                        ? c.uploadedCvName.slice(0, 25) + "..."
+                        : c.uploadedCvName
+                      : "CV Document"}
                   </span>
                   <button
                     onClick={() => {
@@ -1003,9 +1055,24 @@ function ProfileFull({ c }: { c: Profile }) {
             <Card title="Supporting Documents" icon={FileText} compact delay="0.08s">
               <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
                 {c.supportingDocuments.map((doc, idx) => (
-                  <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <span className="ph-dl-value" style={{ fontSize: "0.8125rem" }} title={doc.name}>
-                      {doc.name ? (doc.name.length > 25 ? doc.name.slice(0, 25) + '...' : doc.name) : `Document ${idx + 1}`}
+                  <div
+                    key={idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      className="ph-dl-value"
+                      style={{ fontSize: "0.8125rem" }}
+                      title={doc.name}
+                    >
+                      {doc.name
+                        ? doc.name.length > 25
+                          ? doc.name.slice(0, 25) + "..."
+                          : doc.name
+                        : `Document ${idx + 1}`}
                     </span>
                     <button
                       onClick={() => window.open(doc.url, "_blank")}
@@ -1051,7 +1118,29 @@ function ProfileFull({ c }: { c: Profile }) {
 
           {c.availability && (
             <Card title="Availability" icon={Calendar} compact delay="0.12s">
-              <p style={{ fontSize: "0.875rem", color: "var(--ph-ink-2)", margin: 0 }}>{c.availability}</p>
+              <p style={{ fontSize: "0.875rem", color: "var(--ph-ink-2)", margin: 0 }}>
+                {c.availability}
+              </p>
+            </Card>
+          )}
+
+          {c.availabilityStatus && (
+            <Card title="Availability Status" icon={Calendar} compact delay="0.13s">
+              <p style={{ fontSize: "0.875rem", color: "var(--ph-ink-2)", margin: 0 }}>
+                {c.availabilityStatus}
+              </p>
+            </Card>
+          )}
+
+          {c.preferredLocations && c.preferredLocations.length > 0 && (
+            <Card title="Preferred Locations" icon={MapPin} compact delay="0.14s">
+              <div className="ph-chips">
+                {c.preferredLocations.map((s) => (
+                  <span key={s} className="ph-chip ph-chip--teal">
+                    {s}
+                  </span>
+                ))}
+              </div>
             </Card>
           )}
 
@@ -1059,7 +1148,9 @@ function ProfileFull({ c }: { c: Profile }) {
             <Card title="Clinical skills" icon={Stethoscope} compact delay="0.16s">
               <div className="ph-chips">
                 {c.clinicalSkills.map((s) => (
-                  <span key={s} className="ph-chip ph-chip--teal">{s}</span>
+                  <span key={s} className="ph-chip ph-chip--teal">
+                    {s}
+                  </span>
                 ))}
               </div>
             </Card>
@@ -1069,7 +1160,9 @@ function ProfileFull({ c }: { c: Profile }) {
             <Card title="Technical skills" icon={Wrench} compact delay="0.20s">
               <div className="ph-chips">
                 {c.technicalSkills.map((s) => (
-                  <span key={s} className="ph-chip ph-chip--neutral">{s}</span>
+                  <span key={s} className="ph-chip ph-chip--neutral">
+                    {s}
+                  </span>
                 ))}
               </div>
             </Card>
@@ -1079,7 +1172,9 @@ function ProfileFull({ c }: { c: Profile }) {
             <Card title="Languages" icon={Languages} compact delay="0.24s">
               <div className="ph-chips">
                 {c.languages.map((s) => (
-                  <span key={s} className="ph-chip ph-chip--neutral">{s}</span>
+                  <span key={s} className="ph-chip ph-chip--neutral">
+                    {s}
+                  </span>
                 ))}
               </div>
             </Card>
@@ -1091,7 +1186,10 @@ function ProfileFull({ c }: { c: Profile }) {
               Hospitals see this profile when you apply. Keep it updated for better shortlist rates.
             </p>
             <Link to="/applications">
-              <button className="ph-btn-primary" style={{ width: "100%", justifyContent: "center", position: "relative" }}>
+              <button
+                className="ph-btn-primary"
+                style={{ width: "100%", justifyContent: "center", position: "relative" }}
+              >
                 View my applications
               </button>
             </Link>
@@ -1122,7 +1220,10 @@ function ProfileStrengthCard({
           <svg viewBox="0 0 52 52" style={{ transform: "rotate(-90deg)", width: 56, height: 56 }}>
             <circle cx="26" cy="26" r={r} fill="none" stroke="#eef4ff" strokeWidth={3.5} />
             <circle
-              cx="26" cy="26" r={r} fill="none"
+              cx="26"
+              cy="26"
+              r={r}
+              fill="none"
               stroke="var(--ph-teal)"
               strokeWidth={3.5}
               strokeDasharray={circ}
@@ -1135,7 +1236,9 @@ function ProfileStrengthCard({
         </div>
         <div>
           <div className="ph-strength-title">Profile strength</div>
-          <div className="ph-strength-sub">{doneCount} of {checklist.length} complete</div>
+          <div className="ph-strength-sub">
+            {doneCount} of {checklist.length} complete
+          </div>
         </div>
       </div>
 
@@ -1145,9 +1248,11 @@ function ProfileStrengthCard({
             key={item.label}
             className={`ph-check ${item.done ? "ph-check--done" : "ph-check--todo"}`}
           >
-            {item.done
-              ? <CheckCircle2 size={13} style={{ color: "var(--ph-teal)", flexShrink: 0 }} />
-              : <Circle size={13} style={{ flexShrink: 0 }} />}
+            {item.done ? (
+              <CheckCircle2 size={13} style={{ color: "var(--ph-teal)", flexShrink: 0 }} />
+            ) : (
+              <Circle size={13} style={{ flexShrink: 0 }} />
+            )}
             {item.label}
           </div>
         ))}
@@ -1155,7 +1260,10 @@ function ProfileStrengthCard({
 
       {completeness < 100 && (
         <Link to="/build-cv">
-          <button className="ph-btn-ghost" style={{ marginTop: "0.875rem", width: "100%", justifyContent: "center" }}>
+          <button
+            className="ph-btn-ghost"
+            style={{ marginTop: "0.875rem", width: "100%", justifyContent: "center" }}
+          >
             Complete profile
           </button>
         </Link>
@@ -1187,7 +1295,9 @@ function Card({
           </span>
           <span className="ph-card-hd-title">{title}</span>
         </div>
-        <Link to="/build-cv" className="ph-card-hd-edit">Edit</Link>
+        <Link to="/build-cv" className="ph-card-hd-edit">
+          Edit
+        </Link>
       </div>
       <div className={compact ? "ph-card-bd--sm" : "ph-card-bd"}>{children}</div>
     </section>

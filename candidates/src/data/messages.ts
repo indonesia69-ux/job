@@ -29,7 +29,12 @@ export const CONVERSATIONS: Conversation[] = [
       { id: "m1", from: "them", text: "Hi Dr. Sengupta, thanks for applying.", time: "10:32 AM" },
       { id: "m2", from: "them", text: "We loved your profile.", time: "10:33 AM" },
       { id: "m3", from: "me", text: "Thank you, happy to discuss further.", time: "10:38 AM" },
-      { id: "m4", from: "them", text: "Are you available for a call on Wednesday?", time: "10:42 AM" },
+      {
+        id: "m4",
+        from: "them",
+        text: "Are you available for a call on Wednesday?",
+        time: "10:42 AM",
+      },
     ],
   },
   {
@@ -41,7 +46,12 @@ export const CONVERSATIONS: Conversation[] = [
     lastTime: "Yesterday",
     unread: 0,
     messages: [
-      { id: "m1", from: "them", text: "Sharing the JD for the radiology lead role.", time: "Yesterday" },
+      {
+        id: "m1",
+        from: "them",
+        text: "Sharing the JD for the radiology lead role.",
+        time: "Yesterday",
+      },
     ],
   },
   {
@@ -53,7 +63,12 @@ export const CONVERSATIONS: Conversation[] = [
     lastTime: "2d",
     unread: 1,
     messages: [
-      { id: "m1", from: "them", text: "Please confirm your earliest joining date.", time: "2 days ago" },
+      {
+        id: "m1",
+        from: "them",
+        text: "Please confirm your earliest joining date.",
+        time: "2 days ago",
+      },
     ],
   },
   {

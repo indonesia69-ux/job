@@ -1,12 +1,7 @@
 import { Download, Printer } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Candidate } from "@/lib/mock";
@@ -90,17 +85,13 @@ export function CvDialog({
             >
               <div className="border-b border-border bg-muted/20 px-4 py-2">
                 <TabsList>
-                  {formProfile && (
-                    <TabsTrigger value="structured">Structured CV</TabsTrigger>
-                  )}
+                  {formProfile && <TabsTrigger value="structured">Structured CV</TabsTrigger>}
                   {isUpload && (
                     <TabsTrigger value="uploaded">
                       {formProfile ? "Attached File" : "Uploaded CV"}
                     </TabsTrigger>
                   )}
-                  {formProfile && (
-                    <TabsTrigger value="print">Print preview</TabsTrigger>
-                  )}
+                  {formProfile && <TabsTrigger value="print">Print preview</TabsTrigger>}
                 </TabsList>
               </div>
 
@@ -126,7 +117,9 @@ export function CvDialog({
                       />
                     ) : (
                       <div className="mx-auto max-w-md rounded-md bg-card p-8 text-center shadow-pop">
-                        <p className="text-sm font-medium">{candidate?.uploadedCvName ?? "Document"}</p>
+                        <p className="text-sm font-medium">
+                          {candidate?.uploadedCvName ?? "Document"}
+                        </p>
                         <p className="mt-2 text-xs text-muted-foreground">
                           DOCX preview not available — use the Download button above.
                         </p>

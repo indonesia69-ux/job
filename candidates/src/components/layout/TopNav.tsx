@@ -43,10 +43,10 @@ export function TopNav() {
   const navItems = authed ? AUTH_NAV : PUBLIC_NAV;
 
   const handleSignOut = () => {
-    clearProfile();       // wipe cached profile before clearing token
-    setSavedIds([]);      // wipe saved-job cache
-    resetHydration();     // allow fresh fetch for next user
-    logout();             // clear auth token + user from localStorage
+    clearProfile(); // wipe cached profile before clearing token
+    setSavedIds([]); // wipe saved-job cache
+    resetHydration(); // allow fresh fetch for next user
+    logout(); // clear auth token + user from localStorage
     navigate({ to: "/" });
   };
 
@@ -109,7 +109,9 @@ export function TopNav() {
                       <p className="text-xs font-semibold leading-tight text-foreground">
                         {displayName.split(" ").slice(0, 2).join(" ")}
                       </p>
-                      <p className="text-[10px] leading-tight text-muted-foreground">{displayRole}</p>
+                      <p className="text-[10px] leading-tight text-muted-foreground">
+                        {displayRole}
+                      </p>
                     </div>
                   </button>
                 </DropdownMenuTrigger>
@@ -122,7 +124,9 @@ export function TopNav() {
                     </Avatar>
                     <div>
                       <p className="text-sm font-semibold">{displayName}</p>
-                      <p className="text-[11px] font-normal text-muted-foreground">{displayEmail}</p>
+                      <p className="text-[11px] font-normal text-muted-foreground">
+                        {displayEmail}
+                      </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -136,6 +140,7 @@ export function TopNav() {
                       <User className="h-4 w-4" /> View profile
                     </Link>
                   </DropdownMenuItem>
+                  {/* Hidden for now until CV Builder is ready
                   <DropdownMenuItem asChild>
                     <Link
                       to={profile ? "/cv-preview" : "/build-cv"}
@@ -144,6 +149,7 @@ export function TopNav() {
                       <Briefcase className="h-4 w-4" /> {profile ? "My CV" : "Build my CV"}
                     </Link>
                   </DropdownMenuItem>
+                  */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit3, ShieldCheck, Check, Lock } from "lucide-react";
+import { Edit3, ShieldCheck, Check, Lock, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { saveHospitalProfile, type HospitalProfile } from "@/lib/recruiterData";
 import { authHeader, getUser } from "@/store/authStore";
 import { apiBase } from "@/lib/api";
 import { Route } from "@/routes/_app.settings";
+import { PlanTab } from "@/features/settings/PlanTab";
 
 const EMPTY: HospitalProfile = {
   id: "",
@@ -38,7 +39,9 @@ export function SettingsPage() {
   const user = getUser();
   const { hospital: loaded } = Route.useLoaderData();
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState<HospitalProfile>(() => (loaded ? { ...EMPTY, ...loaded } : EMPTY));
+  const [form, setForm] = useState<HospitalProfile>(() =>
+    loaded ? { ...EMPTY, ...loaded } : EMPTY,
+  );
   // Recruiter's own name (separate from hospital name)
   const [recruiterName, setRecruiterName] = useState(user?.name ?? "");
   const [savingName, setSavingName] = useState(false);
@@ -50,7 +53,7 @@ export function SettingsPage() {
   const save = async () => {
     try {
       const updated = await saveHospitalProfile({
-        city:  form.city,
+        city: form.city,
         state: form.state,
       });
       setForm((f) => ({ ...f, ...updated }));
@@ -95,12 +98,19 @@ export function SettingsPage() {
         </div>
         <Button
           variant={editing ? "default" : "outline"}
-          onClick={() => { if (editing) void save(); else setEditing(true); }}
+          onClick={() => {
+            if (editing) void save();
+            else setEditing(true);
+          }}
         >
           {editing ? (
-            <><Check className="mr-1.5 h-4 w-4" /> Save changes</>
+            <>
+              <Check className="mr-1.5 h-4 w-4" /> Save changes
+            </>
           ) : (
-            <><Edit3 className="mr-1.5 h-4 w-4" /> Edit location</>
+            <>
+              <Edit3 className="mr-1.5 h-4 w-4" /> Edit location
+            </>
           )}
         </Button>
       </div>
@@ -109,13 +119,16 @@ export function SettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Hospital profile</TabsTrigger>
           <TabsTrigger value="myaccount">My account</TabsTrigger>
+          <TabsTrigger value="plan" className="gap-1.5">
+            <CreditCard className="h-3.5 w-3.5" />
+            Plan &amp; Billing
+          </TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="notif">Notifications</TabsTrigger>
         </TabsList>
 
         {/* ── Hospital Profile Tab ── */}
         <TabsContent value="profile" className="mt-5 space-y-5">
-
           {/* Preview card */}
           <Card className="border-border bg-card shadow-soft">
             <CardContent className="p-6">
@@ -125,7 +138,9 @@ export function SettingsPage() {
                 </span>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-display text-[20px] font-semibold">{form.name || "Your hospital"}</h2>
+                    <h2 className="font-display text-[20px] font-semibold">
+                      {form.name || "Your hospital"}
+                    </h2>
                     {form.verified && <VerifiedBadge label="Verified Hospital" size="md" />}
                   </div>
                   <div className="text-[13px] text-muted-foreground">
@@ -135,7 +150,9 @@ export function SettingsPage() {
                 </div>
               </div>
               {form.about && (
-                <p className="mt-4 text-[13.5px] leading-relaxed text-foreground/85">{form.about}</p>
+                <p className="mt-4 text-[13.5px] leading-relaxed text-foreground/85">
+                  {form.about}
+                </p>
               )}
             </CardContent>
           </Card>
@@ -158,18 +175,20 @@ export function SettingsPage() {
           {/* Editable fields grid */}
           <Card className="border-border bg-card shadow-soft">
             <CardContent className="grid gap-4 p-6 md:grid-cols-2">
-
               {/* ── LOCKED fields ── */}
-              <LockedField label="Hospital name"         value={form.name || ""} />
-              <LockedField label="Hospital type"         value={form.type || ""} />
-              <LockedField label="Registration number"   value={form.registrationNumber || ""} />
-              <LockedField label="Number of beds"        value={form.beds != null ? String(form.beds) : ""} />
-              <LockedField label="Website"               value={form.website || ""} />
-              <LockedField label="Phone"                 value={form.phone || ""} />
-              <LockedField label="Recruitment email"     value={form.email || ""} />
+              <LockedField label="Hospital name" value={form.name || ""} />
+              <LockedField label="Hospital type" value={form.type || ""} />
+              <LockedField label="Registration number" value={form.registrationNumber || ""} />
+              <LockedField
+                label="Number of beds"
+                value={form.beds != null ? String(form.beds) : ""}
+              />
+              <LockedField label="Website" value={form.website || ""} />
+              <LockedField label="Phone" value={form.phone || ""} />
+              <LockedField label="Recruitment email" value={form.email || ""} />
               <LockedField label="Address" className="md:col-span-2" value={form.address || ""} />
 
-              {/* ── EDITABLE: City & State ── */} 
+              {/* ── EDITABLE: City & State ── */}
               <div className="space-y-1.5">
                 <Label className="text-[12.5px]">
                   City <span className="text-[10px] font-normal text-success ml-1">(editable)</span>
@@ -184,7 +203,8 @@ export function SettingsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[12.5px]">
-                  State <span className="text-[10px] font-normal text-success ml-1">(editable)</span>
+                  State{" "}
+                  <span className="text-[10px] font-normal text-success ml-1">(editable)</span>
                 </Label>
                 <Input
                   value={form.state || ""}
@@ -196,9 +216,8 @@ export function SettingsPage() {
               </div>
 
               <div className="md:col-span-2 text-[12px] text-muted-foreground border-t border-border pt-4">
-                Signed in as{" "}
-                <span className="text-foreground font-medium">{user?.name}</span>{" "}
-                ({user?.email})
+                Signed in as <span className="text-foreground font-medium">{user?.name}</span> (
+                {user?.email})
               </div>
             </CardContent>
           </Card>
@@ -218,7 +237,8 @@ export function SettingsPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-[12.5px]">
-                    Your name <span className="text-[10px] font-normal text-success ml-1">(editable)</span>
+                    Your name{" "}
+                    <span className="text-[10px] font-normal text-success ml-1">(editable)</span>
                   </Label>
                   <Input
                     value={recruiterName}
@@ -231,15 +251,17 @@ export function SettingsPage() {
               </div>
 
               <div className="flex justify-end border-t border-border pt-4">
-                <Button
-                  onClick={saveRecruiterName}
-                  disabled={savingName || !recruiterName.trim()}
-                >
+                <Button onClick={saveRecruiterName} disabled={savingName || !recruiterName.trim()}>
                   {savingName ? "Saving…" : "Save name"}
                 </Button>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Plan & Billing Tab ── */}
+        <TabsContent value="plan" className="mt-5">
+          <PlanTab />
         </TabsContent>
 
         {/* ── Verification Tab ── */}
@@ -287,7 +309,9 @@ export function SettingsPage() {
 
 /** A read-only field that visually indicates it is locked */
 function LockedField({
-  label, value, className,
+  label,
+  value,
+  className,
 }: {
   label: string;
   value: string;

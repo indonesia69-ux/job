@@ -1,10 +1,9 @@
+import { LottiePlayer } from "./LottiePlayer";
+
 export function PageLoader({ label = "Loading…" }: { label?: string }) {
   return (
     <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 px-6">
-      <div
-        className="h-9 w-9 animate-spin rounded-full border-2 border-primary border-t-transparent"
-        aria-hidden
-      />
+      <LottiePlayer src="/loading_state.json" loop={true} className="h-20 w-20 sm:h-24 sm:w-24" />
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>
   );

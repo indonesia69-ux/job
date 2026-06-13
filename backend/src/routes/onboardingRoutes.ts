@@ -2,6 +2,7 @@ import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { getRecruiterLimit } from '../lib/helpers';
+import { sendOTP } from '../lib/otp';
 
 const router = Router();
 
@@ -126,9 +127,26 @@ router.post('/hospitals', async (req: Request, res: Response) => {
       }
     });
 
+    let otpSent = false;
+    if (phone) {
+      try {
+        await sendOTP(String(phone));
+        otpSent = true;
+      } catch (err: any) {
+        logger.error(`[onboarding/hospitals] OTP send failed for ${phone}: ${err.message}`);
+        // Keep the application in mobile-verification flow so the user can resend later.
+      }
+    }
+
     res.status(201).json({
-      message: 'Onboarding application submitted successfully. You will hear from us within 48 hours.',
+      message: phone
+        ? (otpSent
+          ? 'Application submitted. Please verify your mobile number to complete submission.'
+          : 'Application submitted, but OTP could not be sent. Please use resend OTP.')
+        : 'Onboarding application submitted successfully. You will hear from us within 48 hours.',
       applicationId: hospital.id,
+      requiresVerification: Boolean(phone),
+      otpSent
     });
   } catch (error) {
     logger.error(error);

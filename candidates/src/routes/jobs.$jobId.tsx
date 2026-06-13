@@ -1,25 +1,36 @@
 import { apiBase } from "@/lib/api";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Building2, Calendar, IndianRupee, MapPin, Briefcase, CheckCircle2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  Calendar,
+  IndianRupee,
+  MapPin,
+  Briefcase,
+  CheckCircle2,
+} from "lucide-react";
 import { SaveJobButton } from "@/components/jobs/SaveJobButton";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/common/VerifiedBadge";
 import { JobCard } from "@/components/jobs/JobCard";
 import { formatExp, formatLPA } from "@/lib/format";
 import { isHtmlContent } from "@/lib/renderHtml";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/jobs/$jobId")({
   loader: async ({ params }) => {
     const res = await fetch(`${apiBase()}/api/jobs/${params.jobId}`);
     if (!res.ok) throw notFound();
     const job = await res.json();
-    
+
     // Fetch similar jobs (just fetching all and filtering for simplicity right now)
     const allRes = await fetch(`${apiBase()}/api/jobs`);
     let similar = [];
     if (allRes.ok) {
       const allJobs = await allRes.json();
-      similar = allJobs.filter((j: any) => j.id !== job.id && j.category === job.category).slice(0, 4);
+      similar = allJobs
+        .filter((j: any) => j.id !== job.id && j.category === job.category)
+        .slice(0, 4);
     }
     return { job, similar };
   },
@@ -33,9 +44,16 @@ export const Route = createFileRoute("/jobs/$jobId")({
   }),
   notFoundComponent: () => (
     <div className="mx-auto max-w-md py-20 text-center">
+      <LottiePlayer
+        src="/nothing_for_the_particular_query.json"
+        loop={true}
+        className="mx-auto mb-4 h-28 w-28 sm:h-32 sm:w-32"
+      />
       <h2 className="text-xl font-semibold">Job not found</h2>
       <Button asChild className="mt-4">
-        <Link to="/" search={{ q: "", city: "" }}>Browse opportunities</Link>
+        <Link to="/" search={{ q: "", city: "" }}>
+          Browse opportunities
+        </Link>
       </Button>
     </div>
   ),
@@ -168,10 +186,22 @@ function JobDetails() {
               <span className="text-base font-medium text-muted-foreground"> LPA</span>
             </p>
             <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-              <Stat label="Experience" value={job.experienceMin != null && job.experienceMax != null && (job.experienceMin > 0 || job.experienceMax > 0) ? formatExp(job.experienceMin, job.experienceMax) : job.experience || "—"} />
+              <Stat
+                label="Experience"
+                value={
+                  job.experienceMin != null &&
+                  job.experienceMax != null &&
+                  (job.experienceMin > 0 || job.experienceMax > 0)
+                    ? formatExp(job.experienceMin, job.experienceMax)
+                    : job.experience || "—"
+                }
+              />
               <Stat label="Job type" value={job.type || "—"} />
               <Stat label="Location" value={job.city || "—"} />
-              <Stat label="Posted" value={job.postedDays === 0 ? "Today" : `${job.postedDays}d ago`} />
+              <Stat
+                label="Posted"
+                value={job.postedDays === 0 ? "Today" : `${job.postedDays}d ago`}
+              />
             </div>
             <div className="mt-5 grid gap-2">
               {job.status === "Closed" ? (

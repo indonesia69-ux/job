@@ -17,6 +17,7 @@ import { type UploadedFile, uploadCvToBackend } from "@/lib/fileUpload";
 import { uploadApplySchema } from "@/lib/validations";
 import { useAuth } from "@/store/authStore";
 import { Route as ApplyParentRoute } from "./apply.$jobId";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/apply/$jobId/upload")({
   component: UploadApplyPage,
@@ -38,6 +39,11 @@ function UploadApplyPage() {
   if (alreadyApplied) {
     return (
       <div className="mx-auto max-w-lg px-6 py-16 text-center">
+        <LottiePlayer
+          src="/successful_signup_signin.json"
+          loop={false}
+          className="mx-auto h-20 w-20 mb-4"
+        />
         <h1 className="text-xl font-semibold">Already applied</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           You have already submitted an application for {job.role}.
@@ -77,7 +83,7 @@ function UploadApplyPage() {
     setSubmitting(true);
     try {
       const uploadResult = await uploadCvToBackend(cv.file, token ?? "");
-      
+
       await submitUploadApplication(
         job.id,
         uploadResult.url,
@@ -123,9 +129,7 @@ function UploadApplyPage() {
               onChange={(e) => setName(e.target.value)}
               aria-invalid={!!fieldErrors.name}
             />
-            {fieldErrors.name && (
-              <p className="text-xs text-destructive">{fieldErrors.name}</p>
-            )}
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </FieldRow>
           <FieldRow label="Email" required>
             <Input
@@ -134,9 +138,7 @@ function UploadApplyPage() {
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={!!fieldErrors.email}
             />
-            {fieldErrors.email && (
-              <p className="text-xs text-destructive">{fieldErrors.email}</p>
-            )}
+            {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
           </FieldRow>
           <FieldRow label="Phone" required className="md:col-span-2">
             <Input
@@ -144,9 +146,7 @@ function UploadApplyPage() {
               onChange={(e) => setPhone(e.target.value)}
               aria-invalid={!!fieldErrors.phone}
             />
-            {fieldErrors.phone && (
-              <p className="text-xs text-destructive">{fieldErrors.phone}</p>
-            )}
+            {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone}</p>}
           </FieldRow>
         </div>
 

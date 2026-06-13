@@ -39,9 +39,12 @@ function CVPreview() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-soft text-primary">
           <FileText className="h-6 w-6" strokeWidth={1.75} />
         </div>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">You've uploaded a CV</h1>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+          You've uploaded a CV
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Your CV document <strong>{c.uploadedCvName}</strong> has been uploaded and will be sent with your applications.
+          Your CV document <strong>{c.uploadedCvName}</strong> has been uploaded and will be sent
+          with your applications.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Button
@@ -78,7 +81,7 @@ function CVPreview() {
           </h1>
         </div>
         <div className="flex gap-2">
-          { (c.cvUrl || c.uploadedCvData) && (
+          {(c.cvUrl || c.uploadedCvData) && (
             <Button
               variant="outline"
               onClick={() => {

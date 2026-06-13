@@ -56,7 +56,10 @@ function AuthLayout() {
       <main className="flex min-h-screen flex-col bg-background">
         <div className="flex items-center justify-between px-6 py-5 lg:hidden">
           <Logo />
-          <Link to="/auth/login" className="text-[13px] text-muted-foreground hover:text-foreground">
+          <Link
+            to="/auth/login"
+            className="text-[13px] text-muted-foreground hover:text-foreground"
+          >
             Sign in
           </Link>
         </div>

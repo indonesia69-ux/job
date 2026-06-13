@@ -12,7 +12,7 @@ import {
   Loader2,
   ShieldCheck,
   Phone,
-  Stethoscope
+  Stethoscope,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,13 +27,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ChipInput } from "@/components/ui/chip-input";
 import { apiBase } from "@/lib/api";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/auth/onboarding")({
   head: () => ({
     meta: [
       { title: "Hospital Onboarding — ApronHanger" },
-      { name: "description", content: "Register your hospital on ApronHanger to start hiring top medical professionals." },
+      {
+        name: "description",
+        content: "Register your hospital on ApronHanger to start hiring top medical professionals.",
+      },
     ],
   }),
   component: OnboardingPage,
@@ -120,7 +125,7 @@ type FormData = {
   numberOfDoctors: string;
   numberOfEmployees: string;
   averageMonthlyHiring: string;
-  preferredHiringStates: string;
+  preferredHiringStates: string[];
   emergencyHiringRequirement: "Yes" | "No" | "";
   internshipHiring: "Yes" | "No" | "";
   campusRecruitment: "Yes" | "No" | "";
@@ -164,7 +169,7 @@ const INITIAL: FormData = {
   numberOfDoctors: "",
   numberOfEmployees: "",
   averageMonthlyHiring: "",
-  preferredHiringStates: "",
+  preferredHiringStates: [],
   emergencyHiringRequirement: "",
   internshipHiring: "",
   campusRecruitment: "",
@@ -182,6 +187,10 @@ export function OnboardingPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [requiresVerification, setRequiresVerification] = useState(false);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -194,12 +203,14 @@ export function OnboardingPage() {
       if (!form.hospitalName.trim()) errs.hospitalName = "Organization Name is required.";
       if (!form.hospitalType) errs.hospitalType = "Organization Type is required.";
     }
-    if (s === 2) { // Location
+    if (s === 2) {
+      // Location
       if (!form.city.trim()) errs.city = "City is required.";
       if (!form.state.trim()) errs.state = "State is required.";
       if (!form.address.trim()) errs.address = "Address is required.";
     }
-    if (s === 3) { // Contact & Billing
+    if (s === 3) {
+      // Contact & Billing
       if (!form.contactName.trim()) errs.contactName = "Primary Contact Name is required.";
       if (!form.phone.trim()) errs.phone = "Mobile Number is required.";
       if (!form.email.trim()) errs.email = "Official Email is required.";
@@ -230,7 +241,7 @@ export function OnboardingPage() {
           founded: form.founded,
           website: form.website,
           about: form.about,
-          
+
           registrationNumber: form.registrationNumber,
           registrationAuthority: form.registrationAuthority,
           nabhStatus: form.nabhStatus,
@@ -238,7 +249,7 @@ export function OnboardingPage() {
           gstNumber: form.gstNumber,
           panNumber: form.panNumber,
           ownershipType: form.ownershipType,
-          
+
           address: form.address,
           city: form.city,
           state: form.state,
@@ -251,7 +262,7 @@ export function OnboardingPage() {
           contactWhatsapp: form.contactWhatsapp,
           email: form.email,
           contactAlternatePhone: form.contactAlternatePhone,
-          
+
           billingName: form.billingName,
           billingGstNumber: form.billingGstNumber,
           billingAddress: form.billingAddress,
@@ -262,8 +273,8 @@ export function OnboardingPage() {
           icuBeds: form.icuBeds,
           numberOfDoctors: form.numberOfDoctors,
           numberOfEmployees: form.numberOfEmployees,
-          averageMonthlyHiring: form.averageMonthlyHiring,
-          preferredHiringStates: form.preferredHiringStates,
+          averageMonthlyHiring: parseInt(form.averageMonthlyHiring, 10) || 0,
+          preferredHiringStates: form.preferredHiringStates.join(", "),
           emergencyHiringRequirement: form.emergencyHiringRequirement === "Yes",
           internshipHiring: form.internshipHiring === "Yes",
           campusRecruitment: form.campusRecruitment === "Yes",
@@ -279,7 +290,12 @@ export function OnboardingPage() {
         return;
       }
 
-      setSubmitted(true);
+      if (data.requiresVerification) {
+        setApplicationId(data.applicationId);
+        setRequiresVerification(true);
+      } else {
+        setSubmitted(true);
+      }
     } catch {
       toast.error("Network error. Please check your connection and try again.");
     } finally {
@@ -287,12 +303,105 @@ export function OnboardingPage() {
     }
   };
 
+  const handleVerifyOtp = async () => {
+    setVerifying(true);
+    try {
+      const res = await fetch(`${apiBase()}/api/onboarding/verify-mobile`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, otp }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to verify OTP");
+        return;
+      }
+      setRequiresVerification(false);
+      setSubmitted(true);
+    } catch {
+      toast.error("Network error.");
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      const res = await fetch(`${apiBase()}/api/onboarding/resend-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to resend OTP");
+        return;
+      }
+      toast.success("OTP resent successfully.");
+    } catch {
+      toast.error("Network error.");
+    }
+  };
+
+  if (requiresVerification) {
+    return (
+      <div className="flex flex-col items-center gap-6 py-8 text-center">
+        <LottiePlayer src="/mail_sent.json" loop={false} className="h-20 w-20 mx-auto mb-4" />
+        <div>
+          <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">
+            Verify Mobile Number
+          </h2>
+          <p className="mt-2 text-[14px] text-muted-foreground max-w-sm">
+            We sent a 6-digit OTP to{" "}
+            <span className="font-semibold text-foreground">{form.phone}</span>.
+          </p>
+        </div>
+        <div className="w-full max-w-xs space-y-4 text-left">
+          <div className="space-y-1.5">
+            <Label htmlFor="otp">OTP Code</Label>
+            <Input
+              id="otp"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+              placeholder="123456"
+              className="h-11 text-center tracking-widest text-lg font-semibold"
+            />
+          </div>
+          <Button
+            onClick={handleVerifyOtp}
+            disabled={verifying || otp.length < 6}
+            className="w-full h-11"
+          >
+            {verifying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying…
+              </>
+            ) : (
+              "Verify OTP"
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full h-11"
+            onClick={handleResendOtp}
+            disabled={verifying}
+          >
+            Resend OTP
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="flex flex-col items-center gap-6 py-8 text-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/15">
-          <CheckCircle2 className="h-10 w-10 text-success" />
-        </div>
+        <LottiePlayer
+          src="/successful_signup_signin.json"
+          loop={false}
+          className="h-28 w-28 mx-auto"
+        />
         <div>
           <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">
             Application Submitted!
@@ -300,16 +409,19 @@ export function OnboardingPage() {
           <p className="mt-2 text-[14px] text-muted-foreground max-w-sm">
             Your hospital onboarding application for{" "}
             <span className="font-semibold text-foreground">{form.hospitalName}</span> has been
-            received. Our team will review it within{" "}
-            <span className="font-medium">48 hours</span>.
+            received. Our team will review it within <span className="font-medium">48 hours</span>.
           </p>
         </div>
         <div className="w-full rounded-xl border border-border bg-muted/30 p-4 text-left text-sm space-y-2">
           <p className="font-medium text-foreground">What happens next?</p>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground text-[13px]">
             <li>Our admin team reviews your application and documents.</li>
-            <li>Upon approval, you'll receive a unique <strong>12-character invite code</strong>.</li>
-            <li>Share this code with your recruiters so they can sign up and start posting jobs.</li>
+            <li>
+              Upon approval, you'll receive a unique <strong>12-character invite code</strong>.
+            </li>
+            <li>
+              Share this code with your recruiters so they can sign up and start posting jobs.
+            </li>
           </ol>
         </div>
         <Link to="/auth/login" className="text-[13px] font-medium text-accent hover:underline">
@@ -336,7 +448,9 @@ export function OnboardingPage() {
       {/* Progress */}
       <div className="space-y-3">
         <div className="flex items-center justify-between text-[12px] text-muted-foreground">
-          <span>Step {step + 1} of {STEPS.length}</span>
+          <span>
+            Step {step + 1} of {STEPS.length}
+          </span>
           <span className="font-medium text-foreground">{STEPS[step].label}</span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
@@ -362,7 +476,7 @@ export function OnboardingPage() {
               >
                 {i < step ? <Check className="h-3 w-3" /> : <Icon className="h-3 w-3" />}
                 <span className="hidden sm:inline">{s.label}</span>
-                <span className="sm:hidden">{i+1}</span>
+                <span className="sm:hidden">{i + 1}</span>
               </div>
             );
           })}
@@ -373,9 +487,15 @@ export function OnboardingPage() {
       {step === 0 && (
         <div className="grid gap-4">
           <div className="space-y-1.5">
-            <Label htmlFor="hospitalType">Organization Type <span className="text-destructive">*</span></Label>
+            <Label htmlFor="hospitalType">
+              Organization Type <span className="text-destructive">*</span>
+            </Label>
             <Select value={form.hospitalType} onValueChange={(v) => set("hospitalType", v)}>
-              <SelectTrigger id="hospitalType" className="h-11" aria-invalid={!!errors.hospitalType}>
+              <SelectTrigger
+                id="hospitalType"
+                className="h-11"
+                aria-invalid={!!errors.hospitalType}
+              >
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
@@ -396,10 +516,12 @@ export function OnboardingPage() {
             </Select>
             <FieldError msg={errors.hospitalType} />
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="hospitalName">Organization Name <span className="text-destructive">*</span></Label>
+              <Label htmlFor="hospitalName">
+                Organization Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="hospitalName"
                 value={form.hospitalName}
@@ -486,7 +608,7 @@ export function OnboardingPage() {
               />
             </div>
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="nabhStatus">NABH Status</Label>
@@ -538,7 +660,7 @@ export function OnboardingPage() {
               />
             </div>
           </div>
-          
+
           <div className="space-y-1.5">
             <Label htmlFor="ownershipType">Ownership Type</Label>
             <Select value={form.ownershipType} onValueChange={(v) => set("ownershipType", v)}>
@@ -575,7 +697,9 @@ export function OnboardingPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="city">City <span className="text-destructive">*</span></Label>
+              <Label htmlFor="city">
+                City <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="city"
                 value={form.city}
@@ -599,7 +723,9 @@ export function OnboardingPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="state">State <span className="text-destructive">*</span></Label>
+              <Label htmlFor="state">
+                State <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="state"
                 value={form.state}
@@ -631,7 +757,9 @@ export function OnboardingPage() {
             <h3 className="text-sm font-semibold text-foreground">Primary Contact Person</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="contactName">Full Name <span className="text-destructive">*</span></Label>
+                <Label htmlFor="contactName">
+                  Full Name <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="contactName"
                   value={form.contactName}
@@ -644,7 +772,10 @@ export function OnboardingPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="contactDesignation">Designation</Label>
-                <Select value={form.contactDesignation} onValueChange={(v) => set("contactDesignation", v)}>
+                <Select
+                  value={form.contactDesignation}
+                  onValueChange={(v) => set("contactDesignation", v)}
+                >
                   <SelectTrigger id="contactDesignation" className="h-11">
                     <SelectValue placeholder="Select designation" />
                   </SelectTrigger>
@@ -662,10 +793,12 @@ export function OnboardingPage() {
                 </Select>
               </div>
             </div>
-            
+
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Mobile Number <span className="text-destructive">*</span></Label>
+                <Label htmlFor="phone">
+                  Mobile Number <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -692,7 +825,9 @@ export function OnboardingPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Official Email <span className="text-destructive">*</span></Label>
+                <Label htmlFor="email">
+                  Official Email <span className="text-destructive">*</span>
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -742,7 +877,7 @@ export function OnboardingPage() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-1.5">
               <Label htmlFor="billingAddress">Billing Address</Label>
               <Input
@@ -812,7 +947,7 @@ export function OnboardingPage() {
               />
             </div>
           </div>
-          
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="numberOfDoctors">Number of Doctors</Label>
@@ -852,12 +987,11 @@ export function OnboardingPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="preferredHiringStates">Preferred Hiring States</Label>
-              <Input
-                id="preferredHiringStates"
-                value={form.preferredHiringStates}
-                onChange={(e) => set("preferredHiringStates", e.target.value)}
-                placeholder="e.g. MH, KA, DL"
-                className="h-11"
+              <ChipInput
+                values={form.preferredHiringStates}
+                onChange={(v) => set("preferredHiringStates", v)}
+                placeholder="Type state and press Enter"
+                suggestions={["MH", "KA", "DL", "TS", "TN", "UP", "WB"]}
               />
             </div>
           </div>
@@ -865,7 +999,10 @@ export function OnboardingPage() {
           <div className="grid gap-4 sm:grid-cols-3 pt-2">
             <div className="space-y-1.5">
               <Label htmlFor="emergencyHiringRequirement">Emergency Hiring?</Label>
-              <Select value={form.emergencyHiringRequirement} onValueChange={(v: "Yes"|"No") => set("emergencyHiringRequirement", v)}>
+              <Select
+                value={form.emergencyHiringRequirement}
+                onValueChange={(v: "Yes" | "No") => set("emergencyHiringRequirement", v)}
+              >
                 <SelectTrigger id="emergencyHiringRequirement" className="h-11">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -877,7 +1014,10 @@ export function OnboardingPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="internshipHiring">Internship Hiring?</Label>
-              <Select value={form.internshipHiring} onValueChange={(v: "Yes"|"No") => set("internshipHiring", v)}>
+              <Select
+                value={form.internshipHiring}
+                onValueChange={(v: "Yes" | "No") => set("internshipHiring", v)}
+              >
                 <SelectTrigger id="internshipHiring" className="h-11">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -889,7 +1029,10 @@ export function OnboardingPage() {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="campusRecruitment">Campus Recruitment?</Label>
-              <Select value={form.campusRecruitment} onValueChange={(v: "Yes"|"No") => set("campusRecruitment", v)}>
+              <Select
+                value={form.campusRecruitment}
+                onValueChange={(v: "Yes" | "No") => set("campusRecruitment", v)}
+              >
                 <SelectTrigger id="campusRecruitment" className="h-11">
                   <SelectValue placeholder="Select" />
                 </SelectTrigger>
@@ -926,9 +1069,7 @@ export function OnboardingPage() {
                   <div
                     className={[
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
-                      form.plan === p.id
-                        ? "border-primary bg-primary"
-                        : "border-muted-foreground",
+                      form.plan === p.id ? "border-primary bg-primary" : "border-muted-foreground",
                     ].join(" ")}
                   >
                     {form.plan === p.id && <Check className="h-3 w-3 text-primary-foreground" />}
@@ -959,36 +1100,64 @@ export function OnboardingPage() {
           <div className="rounded-xl border border-border bg-card p-5 shadow-soft space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">Organization</p>
-                <p className="mt-0.5 font-display text-[18px] font-semibold text-foreground">{form.hospitalName}</p>
-                <p className="text-[13px] text-muted-foreground">{form.hospitalType} · {form.city}, {form.state}{form.beds ? ` · ${form.beds} beds` : ""}</p>
+                <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                  Organization
+                </p>
+                <p className="mt-0.5 font-display text-[18px] font-semibold text-foreground">
+                  {form.hospitalName}
+                </p>
+                <p className="text-[13px] text-muted-foreground">
+                  {form.hospitalType} · {form.city}, {form.state}
+                  {form.beds ? ` · ${form.beds} beds` : ""}
+                </p>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-warning/15 px-3 py-1 text-[11px] font-semibold text-warning">
                 Pending Review
               </span>
             </div>
             <div className="border-t border-border pt-4 grid gap-3 text-[13px] sm:grid-cols-2">
-              <div><p className="text-muted-foreground">Contact</p><p className="font-medium">{form.contactName}</p></div>
-              <div><p className="text-muted-foreground">Official Email</p><p className="font-medium">{form.email}</p></div>
-              <div><p className="text-muted-foreground">Phone</p><p className="font-medium">{form.phone}</p></div>
-              <div><p className="text-muted-foreground">Plan</p><p className="font-semibold text-primary">{form.plan}</p></div>
+              <div>
+                <p className="text-muted-foreground">Contact</p>
+                <p className="font-medium">{form.contactName}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Official Email</p>
+                <p className="font-medium">{form.email}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Phone</p>
+                <p className="font-medium">{form.phone}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Plan</p>
+                <p className="font-semibold text-primary">{form.plan}</p>
+              </div>
               {form.registrationNumber && (
-                <div><p className="text-muted-foreground">Reg. Number</p><p className="font-medium">{form.registrationNumber}</p></div>
+                <div>
+                  <p className="text-muted-foreground">Reg. Number</p>
+                  <p className="font-medium">{form.registrationNumber}</p>
+                </div>
               )}
               {form.gstNumber && (
-                <div><p className="text-muted-foreground">GST</p><p className="font-medium">{form.gstNumber}</p></div>
+                <div>
+                  <p className="text-muted-foreground">GST</p>
+                  <p className="font-medium">{form.gstNumber}</p>
+                </div>
               )}
             </div>
           </div>
           <p className="text-[12px] text-muted-foreground leading-relaxed">
-            By submitting, you confirm that all the details above are accurate and you are authorised to register this organization on ApronHanger.
-            Our team will verify the information within <strong>48 hours</strong>.
+            By submitting, you confirm that all the details above are accurate and you are
+            authorised to register this organization on ApronHanger. Our team will verify the
+            information within <strong>48 hours</strong>.
           </p>
         </div>
       )}
 
       {/* Navigation */}
-      <div className={`pt-4 ${step === STEPS.length - 1 ? "flex flex-col gap-3" : "flex items-center justify-between"}`}>
+      <div
+        className={`pt-4 ${step === STEPS.length - 1 ? "flex flex-col gap-3" : "flex items-center justify-between"}`}
+      >
         {step < STEPS.length - 1 ? (
           <>
             <Button type="button" variant="ghost" onClick={back} disabled={step === 0}>
@@ -1007,12 +1176,22 @@ export function OnboardingPage() {
               className="h-12 w-full text-[15px] font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow"
             >
               {submitting ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting Application…</>
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting Application…
+                </>
               ) : (
-                <><CheckCircle2 className="h-4 w-4 mr-2" /> Submit Application</>
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Submit Application
+                </>
               )}
             </Button>
-            <Button type="button" variant="ghost" onClick={back} disabled={submitting} className="w-full text-[13px]">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={back}
+              disabled={submitting}
+              className="w-full text-[13px]"
+            >
               <ChevronLeft className="h-4 w-4 mr-1" /> Go Back & Review
             </Button>
           </>

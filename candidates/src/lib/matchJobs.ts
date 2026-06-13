@@ -1,6 +1,9 @@
 import type { Profile } from "@/data/profile";
 
-export function scoreJobMatch(job: Record<string, any>, profile: Profile | null | undefined): number {
+export function scoreJobMatch(
+  job: Record<string, any>,
+  profile: Profile | null | undefined,
+): number {
   if (!profile) return 0;
   let score = 40;
   const role = String(profile.role || "").toLowerCase();
@@ -14,14 +17,20 @@ export function scoreJobMatch(job: Record<string, any>, profile: Profile | null 
   else if (years >= min - 1) score += 10;
   const city = String(profile.city || "").toLowerCase();
   const loc = String(job.city || job.location || "").toLowerCase();
-  if (city && loc && (city.includes(loc.split(",")[0]) || loc.includes(city.split(",")[0]))) score += 15;
-  const skills = [...profile.clinicalSkills, ...profile.technicalSkills].map((s) => s.toLowerCase());
+  if (city && loc && (city.includes(loc.split(",")[0]) || loc.includes(city.split(",")[0])))
+    score += 15;
+  const skills = [...profile.clinicalSkills, ...profile.technicalSkills].map((s) =>
+    s.toLowerCase(),
+  );
   const tags = (Array.isArray(job.tags) ? job.tags : []) as string[];
   if (tags.some((t) => skills.some((s) => s.includes(String(t).toLowerCase())))) score += 5;
   return Math.min(98, Math.max(52, score));
 }
 
-export function computeJobMatches<T extends Record<string, any>>(jobs: T[], profile: Profile | null | undefined): (T & { matchPercent: number })[] {
+export function computeJobMatches<T extends Record<string, any>>(
+  jobs: T[],
+  profile: Profile | null | undefined,
+): (T & { matchPercent: number })[] {
   if (!profile || profile.completeness < 20) {
     return jobs
       .map((j) => ({ ...j, matchPercent: (j.matchPercent as number) ?? 0 }))

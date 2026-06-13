@@ -1,4 +1,3 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,9 +43,7 @@ export function JobCustomFieldsForm({
             {field.label}
             {field.required && <span className="ml-0.5 text-destructive">*</span>}
           </Label>
-          {field.helpText && (
-            <p className="text-[11px] text-muted-foreground">{field.helpText}</p>
-          )}
+          {field.helpText && <p className="text-[11px] text-muted-foreground">{field.helpText}</p>}
           {field.type === "textarea" && (
             <Textarea
               value={String(values[field.id] ?? "")}
@@ -91,13 +88,28 @@ export function JobCustomFieldsForm({
             </Select>
           )}
           {field.type === "checkbox" && (
-            <label className="flex items-center gap-2 text-[13px]">
-              <Checkbox
-                checked={Boolean(values[field.id])}
-                onCheckedChange={(v) => set(field.id, Boolean(v))}
-              />
-              Yes
-            </label>
+            <div className="flex gap-4">
+              {["Yes", "No"].map((opt) => (
+                <label
+                  key={opt}
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-surface px-4 py-2 text-[13px] transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-brand-soft"
+                >
+                  <input
+                    type="radio"
+                    name={`checkbox-field-${field.id}`}
+                    value={opt}
+                    checked={
+                      values[field.id] !== undefined
+                        ? (values[field.id] ? "Yes" : "No") === opt
+                        : false
+                    }
+                    onChange={() => set(field.id, opt === "Yes")}
+                    className="accent-primary"
+                  />
+                  {opt}
+                </label>
+              ))}
+            </div>
           )}
         </div>
       ))}

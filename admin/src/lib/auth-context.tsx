@@ -46,7 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = data.user as AdminUser;
     // Add initials if backend doesn't provide them
     if (!u.initials) {
-      u.initials = u.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
+      u.initials = u.name
+        .split(" ")
+        .map((w: string) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
     }
     const session = { ...u, token: data.token };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(session));

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerificationsRouteImport } from './routes/verifications'
 import { Route as SystemLogsRouteImport } from './routes/system-logs'
+import { Route as SubscriptionsRouteImport } from './routes/subscriptions'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RecruitersRouteImport } from './routes/recruiters'
 import { Route as RecruiterApplicationsRouteImport } from './routes/recruiter-applications'
@@ -30,6 +31,11 @@ const VerificationsRoute = VerificationsRouteImport.update({
 const SystemLogsRoute = SystemLogsRouteImport.update({
   id: '/system-logs',
   path: '/system-logs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SubscriptionsRoute = SubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/recruiter-applications': typeof RecruiterApplicationsRoute
   '/recruiters': typeof RecruitersRoute
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/recruiter-applications': typeof RecruiterApplicationsRoute
   '/recruiters': typeof RecruitersRoute
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/recruiter-applications': typeof RecruiterApplicationsRoute
   '/recruiters': typeof RecruitersRoute
   '/settings': typeof SettingsRoute
+  '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/recruiter-applications'
     | '/recruiters'
     | '/settings'
+    | '/subscriptions'
     | '/system-logs'
     | '/verifications'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/recruiter-applications'
     | '/recruiters'
     | '/settings'
+    | '/subscriptions'
     | '/system-logs'
     | '/verifications'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/recruiter-applications'
     | '/recruiters'
     | '/settings'
+    | '/subscriptions'
     | '/system-logs'
     | '/verifications'
   fileRoutesById: FileRoutesById
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   RecruiterApplicationsRoute: typeof RecruiterApplicationsRoute
   RecruitersRoute: typeof RecruitersRoute
   SettingsRoute: typeof SettingsRoute
+  SubscriptionsRoute: typeof SubscriptionsRoute
   SystemLogsRoute: typeof SystemLogsRoute
   VerificationsRoute: typeof VerificationsRoute
 }
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/system-logs'
       fullPath: '/system-logs'
       preLoaderRoute: typeof SystemLogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/subscriptions': {
+      id: '/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/subscriptions'
+      preLoaderRoute: typeof SubscriptionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecruiterApplicationsRoute: RecruiterApplicationsRoute,
   RecruitersRoute: RecruitersRoute,
   SettingsRoute: SettingsRoute,
+  SubscriptionsRoute: SubscriptionsRoute,
   SystemLogsRoute: SystemLogsRoute,
   VerificationsRoute: VerificationsRoute,
 }

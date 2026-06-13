@@ -26,6 +26,7 @@ import { authSignInSchema, authSignUpSchema } from "@/lib/validations";
 import { loginErrorMessage, rolePortalMismatchMessage } from "@/lib/authMessages";
 import { apiBase } from "@/lib/api";
 import { toast } from "sonner";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 type Mode = "signin" | "signup";
 
@@ -61,9 +62,11 @@ function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const nameRef = useRef<HTMLInputElement>(null);
+  const mobileRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
@@ -72,8 +75,11 @@ function AuthPage() {
     const email = emailRef.current?.value ?? "";
     const password = passwordRef.current?.value ?? "";
     const name = nameRef.current?.value ?? "";
+    const mobile = mobileRef.current?.value ?? "";
     const schema = mode === "signin" ? authSignInSchema : authSignUpSchema;
-    const parsed = schema.safeParse(mode === "signin" ? { email, password } : { email, password, name });
+    const parsed = schema.safeParse(
+      mode === "signin" ? { email, password } : { email, password, name, mobile },
+    );
     if (!parsed.success) {
       const errs: Record<string, string> = {};
       for (const issue of parsed.error.errors) {
@@ -92,6 +98,7 @@ function AuthPage() {
       const body: Record<string, string> = { email, password };
       if (mode === "signup") {
         body.name = name;
+        body.mobile = mobile;
         body.role = "CANDIDATE";
       }
       const res = await fetch(`${apiBase()}${endpoint}`, {
@@ -119,20 +126,22 @@ function AuthPage() {
       const { hydrateProfileFromApi } = await import("@/lib/hydrate");
       await hydrateProfileFromApi();
       toast.success(mode === "signin" ? "Welcome back!" : "Account created!");
-      if (
-        redirectAfterLogin &&
-        redirectAfterLogin.startsWith("/") &&
-        !redirectAfterLogin.startsWith("/auth")
-      ) {
-        window.location.assign(redirectAfterLogin);
-      } else {
-        navigate({ to: "/", search: { q: "", city: "" } });
-      }
+      setLoginSuccess(true);
+      setTimeout(() => {
+        if (
+          redirectAfterLogin &&
+          redirectAfterLogin.startsWith("/") &&
+          !redirectAfterLogin.startsWith("/auth")
+        ) {
+          window.location.assign(redirectAfterLogin);
+        } else {
+          navigate({ to: "/", search: { q: "", city: "" } });
+        }
+      }, 1200);
     } catch {
       const msg = "Network error. Please check your connection and try again.";
       setFormError(msg);
       toast.error(msg);
-    } finally {
       setLoading(false);
     }
   };
@@ -207,6 +216,27 @@ function AuthPage() {
                   )}
                 </div>
               )}
+              {mode === "signup" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="mobile" className="text-xs font-medium">
+                    Mobile Number <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="mobile"
+                      ref={mobileRef}
+                      placeholder="+91 9876543210"
+                      className="h-11 pl-9"
+                      aria-invalid={!!fieldErrors.mobile}
+                      required
+                    />
+                  </div>
+                  {fieldErrors.mobile && (
+                    <p className="text-xs text-destructive">{fieldErrors.mobile}</p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-medium">
@@ -235,12 +265,13 @@ function AuthPage() {
                     Password <span className="text-destructive">*</span>
                   </Label>
                   {mode === "signin" && (
-                    <button
-                      type="button"
+                    <Link
+                      to="/auth/forgot-password"
+                      search={{}}
                       className="text-xs font-medium text-brand hover:underline"
                     >
                       Forgot password?
-                    </button>
+                    </Link>
                   )}
                 </div>
                 <div className="relative">
@@ -269,12 +300,23 @@ function AuthPage() {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || loginSuccess}
                 className="h-11 w-full bg-brand text-brand-foreground shadow-soft hover:bg-brand/90"
               >
-                {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
-                {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                {loading || loginSuccess
+                  ? "Please wait…"
+                  : mode === "signin"
+                    ? "Sign in"
+                    : "Create account"}
+                {!(loading || loginSuccess) && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
+              {loginSuccess && (
+                <LottiePlayer
+                  src="/successful_signup_signin.json"
+                  loop={false}
+                  className="mx-auto mt-4 h-14 w-14 sm:h-16 sm:w-16"
+                />
+              )}
 
               {mode === "signup" && (
                 <p className="text-center text-xs text-muted-foreground">
@@ -311,9 +353,6 @@ function AuthPage() {
   );
 }
 
-
-
-
 function SocialButton({
   provider,
   featured = false,
@@ -340,9 +379,7 @@ function SocialButton({
           Recommended
         </span>
       )}
-      {hint && (
-        <span className="sr-only">{hint}</span>
-      )}
+      {hint && <span className="sr-only">{hint}</span>}
     </button>
   );
 }
@@ -393,8 +430,7 @@ function BrandPanel() {
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.10]"
         style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
           backgroundSize: "26px 26px",
         }}
       />
@@ -422,13 +458,14 @@ function BrandPanel() {
         </div>
         <h2 className="text-4xl font-semibold leading-tight tracking-tight xl:text-[2.75rem]">
           <>
-              Where India's clinicians
-              <br />
-              <span className="text-sky-200">find their next role.</span>
-            </>
+            Where India's clinicians
+            <br />
+            <span className="text-sky-200">find their next role.</span>
+          </>
         </h2>
         <p className="mt-4 text-base leading-relaxed text-white/70">
-          A structured CV, role-aware applications, and a private network of India's leading hospitals.
+          A structured CV, role-aware applications, and a private network of India's leading
+          hospitals.
         </p>
       </div>
 
@@ -568,9 +605,7 @@ function RecruiterPreview() {
               <div className="text-xs font-semibold">Dr. Aarav Mehta</div>
               <CheckCircle2 className="h-3 w-3 text-brand" />
             </div>
-            <div className="text-[10px] text-muted-foreground">
-              DM Cardio · 7 yrs · 96% match
-            </div>
+            <div className="text-[10px] text-muted-foreground">DM Cardio · 7 yrs · 96% match</div>
           </div>
         </div>
       </div>

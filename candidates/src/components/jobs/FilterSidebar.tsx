@@ -13,7 +13,13 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 export type Filters = {
@@ -43,7 +49,13 @@ export function FilterSidebar({
   filters: Filters;
   onChange: (f: Filters) => void;
 }) {
-  const cities = useMemo(() => Array.from(new Set(jobs.map((j) => j.city))).filter(Boolean).sort(), [jobs]);
+  const cities = useMemo(
+    () =>
+      Array.from(new Set(jobs.map((j) => j.city)))
+        .filter(Boolean)
+        .sort(),
+    [jobs],
+  );
   const activeCount = getActiveFilterCount(filters);
   const topSalary = useMemo(
     () => jobs.reduce((max, job) => Math.max(max, Number(job.salaryMax || 0)), 0),
@@ -115,7 +127,11 @@ export function FilterSidebar({
           )}
         </div>
 
-        <FilterGroup icon={<Sparkles className="h-4 w-4" />} title="Sort by" subtitle="Control ranking">
+        <FilterGroup
+          icon={<Sparkles className="h-4 w-4" />}
+          title="Sort by"
+          subtitle="Control ranking"
+        >
           <Select
             value={filters.sort}
             onValueChange={(v: Filters["sort"]) => onChange({ ...filters, sort: v })}
@@ -131,7 +147,11 @@ export function FilterSidebar({
           </Select>
         </FilterGroup>
 
-        <FilterGroup icon={<MapPin className="h-4 w-4" />} title="Location" subtitle={`${cities.length} cities available`}>
+        <FilterGroup
+          icon={<MapPin className="h-4 w-4" />}
+          title="Location"
+          subtitle={`${cities.length} cities available`}
+        >
           <div className="scrollbar-thin max-h-48 space-y-2 overflow-y-auto pr-1">
             {cities.map((c) => (
               <PremiumCheckRow
@@ -176,7 +196,11 @@ export function FilterSidebar({
           />
         </FilterGroup>
 
-        <FilterGroup icon={<BriefcaseBusiness className="h-4 w-4" />} title="Job type" subtitle="Role structure">
+        <FilterGroup
+          icon={<BriefcaseBusiness className="h-4 w-4" />}
+          title="Job type"
+          subtitle="Role structure"
+        >
           <div className="space-y-2">
             {TYPES.map((t) => (
               <PremiumCheckRow

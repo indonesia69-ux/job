@@ -2,7 +2,9 @@
  * TanStack Router only runs `clientLoader` on client navigations unless `hydrate` is set.
  * Without it, SSR/hard-refresh shows empty server loader data until the user interacts.
  */
-export function clientLoaderWithHydrate<T extends (...args: never[]) => Promise<unknown>>(fn: T): T {
+export function clientLoaderWithHydrate<T extends (...args: never[]) => Promise<unknown>>(
+  fn: T,
+): T {
   return Object.assign(fn, { hydrate: true }) as T;
 }
 

@@ -1,7 +1,18 @@
 import { createFileRoute, useNavigate, Navigate } from "@tanstack/react-router";
 import { useState, FormEvent } from "react";
 import { useAuth, DEMO_CREDENTIALS } from "@/lib/auth-context";
-import { ShieldCheck, Loader2, Lock, Mail, ArrowRight, Sparkles, Building2, Users, BarChart3 } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  Lock,
+  Mail,
+  ArrowRight,
+  Sparkles,
+  Building2,
+  Users,
+  BarChart3,
+} from "lucide-react";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -14,6 +25,7 @@ function LoginPage() {
   const [password, setPassword] = useState(DEMO_CREDENTIALS.password);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   if (isReady && isAuthenticated) return <Navigate to="/" />;
 
@@ -23,10 +35,12 @@ function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate({ to: "/" });
+      setLoginSuccess(true);
+      setTimeout(() => {
+        navigate({ to: "/" });
+      }, 1200);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
-    } finally {
       setLoading(false);
     }
   };
@@ -38,7 +52,8 @@ function LoginPage() {
         {/* Decorative gradient blobs */}
         <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/40 blur-3xl" />
         <div className="absolute -bottom-32 -right-20 h-[28rem] w-[28rem] rounded-full bg-info/30 blur-3xl" />
-        <div className="absolute inset-0 opacity-[0.04]"
+        <div
+          className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage:
               "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
@@ -61,10 +76,13 @@ function LoginPage() {
               <Sparkles className="h-3 w-3" /> Super Admin Control Center
             </span>
             <h1 className="mt-5 text-4xl font-bold tracking-tight leading-tight">
-              Command every signal across<br />the healthcare hiring network.
+              Command every signal across
+              <br />
+              the healthcare hiring network.
             </h1>
             <p className="mt-3 text-sm text-white/70 max-w-md">
-              Monitor hospitals, verify recruiters, approve onboarding, and govern the entire ApronHanger platform from a single command surface.
+              Monitor hospitals, verify recruiters, approve onboarding, and govern the entire
+              ApronHanger platform from a single command surface.
             </p>
           </div>
 
@@ -76,7 +94,8 @@ function LoginPage() {
         </div>
 
         <p className="relative text-xs text-white/50 leading-relaxed max-w-md">
-          ApronHanger acts as a professional networking and hiring facilitation platform and is not responsible for employment decisions.
+          ApronHanger acts as a professional networking and hiring facilitation platform and is not
+          responsible for employment decisions.
         </p>
       </div>
 
@@ -135,25 +154,42 @@ function LoginPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || loginSuccess}
                 className="group flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60 shadow-lg shadow-primary/20"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
-                  <>Sign In <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" /></>
+                {loading || loginSuccess ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Sign In{" "}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </>
                 )}
               </button>
+              {loginSuccess && (
+                <LottiePlayer
+                  src="/successful_signup_signin.json"
+                  loop={false}
+                  className="mx-auto mt-4 h-14 w-14 sm:h-16 sm:w-16"
+                />
+              )}
             </form>
 
             <div className="mt-5 rounded-lg bg-muted/60 border p-3 text-xs">
               <p className="font-medium text-foreground mb-1">Demo Credentials</p>
-              <p className="text-muted-foreground">Email: <span className="font-mono text-foreground">{DEMO_CREDENTIALS.email}</span></p>
-              <p className="text-muted-foreground">Password: <span className="font-mono text-foreground">{DEMO_CREDENTIALS.password}</span></p>
+              <p className="text-muted-foreground">
+                Email: <span className="font-mono text-foreground">{DEMO_CREDENTIALS.email}</span>
+              </p>
+              <p className="text-muted-foreground">
+                Password:{" "}
+                <span className="font-mono text-foreground">{DEMO_CREDENTIALS.password}</span>
+              </p>
             </div>
-
           </div>
 
           <p className="lg:hidden mt-6 text-center text-xs text-muted-foreground leading-relaxed px-4">
-            ApronHanger acts as a professional networking and hiring facilitation platform and is not responsible for employment decisions.
+            ApronHanger acts as a professional networking and hiring facilitation platform and is
+            not responsible for employment decisions.
           </p>
         </div>
       </div>
@@ -161,7 +197,15 @@ function LoginPage() {
   );
 }
 
-function Highlight({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) {
+function Highlight({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur">
       <Icon className="h-4 w-4 text-white/60" />

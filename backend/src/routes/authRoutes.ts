@@ -5,9 +5,12 @@ import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { getRecruiterLimit, ensureUsageReset, getHospitalValidity } from '../lib/helpers';
+import { sendOTP, verifyOTP, smartResendOTP } from '../lib/otp';
+import { generateResetToken, validateResetToken, deleteResetToken } from '../lib/resetTokenStore';
 
 const router = Router();
-const SECRET = process.env.JWT_SECRET || 'apronhanger-dev-secret-change-in-prod';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error("FATAL: JWT_SECRET environment variable is not set.");
 
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response) => {
@@ -21,6 +24,17 @@ router.post('/register', async (req: Request, res: Response) => {
     res.status(400).json({ error: 'role must be CANDIDATE or RECRUITER' });
     return;
   }
+  if (
+    email.length > 255 || 
+    password.length > 128 || 
+    name.length > 100 || 
+    (fullName && fullName.length > 100) || 
+    (username && username.length > 50) || 
+    (mobile && mobile.length > 20)
+  ) {
+    res.status(400).json({ error: 'Input fields exceed maximum allowed length' });
+    return;
+  }
 
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -29,13 +43,15 @@ router.post('/register', async (req: Request, res: Response) => {
       return;
     }
 
-    if (username) {
-      const existingUsername = await prisma.user.findUnique({ where: { username } });
-      if (existingUsername) {
-        res.status(409).json({ error: 'Username is already taken' });
+    if (mobile) {
+      const existingMobile = await prisma.user.findFirst({ where: { mobile, role } });
+      if (existingMobile) {
+        res.status(409).json({ error: 'Mobile number is already registered for this role' });
         return;
       }
     }
+
+    // Username uniqueness will be enforced by Prisma's @@unique([hospitalId, username]) during create.
 
     const passwordHash = await bcrypt.hash(password, 10);
     let hospitalId: string | undefined = undefined;
@@ -95,7 +111,7 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId, candidateId },
+      { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId, candidateId, tokenVersion: user.tokenVersion },
       SECRET,
       { expiresIn: '30d' }
     );
@@ -129,6 +145,16 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
+    // Block suspended or soft-deleted users from logging in
+    if (user.isSuspended) {
+      res.status(403).json({ error: 'Your account has been suspended. Please contact support.' });
+      return;
+    }
+    if (user.deletedAt) {
+      res.status(401).json({ error: 'Invalid email or password' });
+      return;
+    }
+
     let candidateId: string | null = null;
     if (user.role === 'CANDIDATE') {
       const candidate = await prisma.candidate.findUnique({ where: { userId: user.id } });
@@ -136,7 +162,7 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId: user.hospitalId, candidateId },
+      { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId: user.hospitalId, candidateId, tokenVersion: user.tokenVersion },
       SECRET,
       { expiresIn: '30d' }
     );
@@ -209,7 +235,7 @@ router.patch('/me', requireAuth, async (req: AuthRequest, res: Response) => {
       data: { name: name.trim() }
     });
     
-    // Generate a new token with the updated name
+    // Generate a new token with the updated name (preserve tokenVersion)
     const token = jwt.sign(
       { 
         id: updated.id, 
@@ -217,7 +243,8 @@ router.patch('/me', requireAuth, async (req: AuthRequest, res: Response) => {
         name: updated.name, 
         role: updated.role, 
         hospitalId: updated.hospitalId, 
-        candidateId: req.user!.candidateId 
+        candidateId: req.user!.candidateId,
+        tokenVersion: updated.tokenVersion
       },
       SECRET,
       { expiresIn: '30d' }
@@ -237,6 +264,116 @@ router.patch('/me', requireAuth, async (req: AuthRequest, res: Response) => {
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Failed to update user profile' });
+  }
+});
+
+// ─── Password Reset Flow (OTP) ────────────────────────────────────────────────
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req: Request, res: Response) => {
+  try {
+    const { mobile, role } = req.body;
+    if (!mobile || !role) {
+      res.status(400).json({ error: 'mobile and role are required' });
+      return;
+    }
+    if (role !== 'RECRUITER' && role !== 'CANDIDATE') {
+      res.status(400).json({ error: 'role must be RECRUITER or CANDIDATE' });
+      return;
+    }
+
+    const user = await prisma.user.findFirst({ where: { mobile, role } });
+    if (!user) {
+      // Do not leak whether the mobile number exists.
+      res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
+      return;
+    }
+
+    await sendOTP(mobile, { templateType: 'reset' });
+    res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
+  } catch (err: any) {
+    logger.error(`[auth/forgot-password] ${err.message}`);
+    res.status(500).json({ error: 'Failed to send OTP. Please try again.' });
+  }
+});
+
+// POST /api/auth/verify-otp
+router.post('/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile, otp, role } = req.body;
+    if (!mobile || !otp || !role) {
+      res.status(400).json({ error: 'mobile, otp, and role are required' });
+      return;
+    }
+    if (role !== 'RECRUITER' && role !== 'CANDIDATE') {
+      res.status(400).json({ error: 'role must be RECRUITER or CANDIDATE' });
+      return;
+    }
+
+    await verifyOTP(mobile, otp);
+
+    const reset_token = await generateResetToken(mobile, role);
+    res.json({ message: 'OTP verified', reset_token });
+  } catch (err: any) {
+    const status = err.statusCode === 404 ? 400 : (err.statusCode || 400);
+    res.status(status).json({ error: err.message });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { reset_token, new_password, role } = req.body;
+    if (!reset_token || !new_password || !role) {
+      res.status(400).json({ error: 'reset_token, new_password, and role are required' });
+      return;
+    }
+    if (new_password.length < 8) {
+      res.status(400).json({ error: 'Password must be at least 8 characters' });
+      return;
+    }
+    if (role !== 'RECRUITER' && role !== 'CANDIDATE') {
+      res.status(400).json({ error: 'role must be RECRUITER or CANDIDATE' });
+      return;
+    }
+
+    const mobile = await validateResetToken(reset_token, role);
+    if (!mobile) {
+      res.status(400).json({ error: 'Invalid or expired reset token' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(new_password, 10);
+    await prisma.user.updateMany({
+      where: { mobile, role },
+      data: { 
+        passwordHash,
+        tokenVersion: { increment: 1 } 
+      }
+    });
+    
+    await deleteResetToken(reset_token);
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (err: any) {
+    logger.error(`[auth/reset-password] ${err.message}`);
+    res.status(500).json({ error: 'Password reset failed. Please try again.' });
+  }
+});
+
+// POST /api/auth/resend-otp
+router.post('/resend-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile, role } = req.body;
+    if (!mobile || !role) {
+      res.status(400).json({ error: 'mobile and role are required' });
+      return;
+    }
+
+    await smartResendOTP(mobile, { templateType: 'reset' });
+    res.json({ message: 'OTP resent successfully' });
+  } catch (err: any) {
+    res.status(err.statusCode || 400).json({ error: err.message });
   }
 });
 

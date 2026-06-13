@@ -54,8 +54,8 @@ export function OpportunitiesHero({
             </h1>
 
             <p className="hero-sub mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              Browse verified healthcare openings across India. Build one structured profile and apply
-              with confidence — salary disclosed, credentials checked.
+              Browse verified healthcare openings across India. Build one structured profile and
+              apply with confidence — salary disclosed, credentials checked.
             </p>
 
             <div className="hero-search mt-8 rounded-2xl border border-white/70 bg-white/75 p-2 shadow-pop backdrop-blur-xl">

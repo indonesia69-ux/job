@@ -1,17 +1,6 @@
-export type ApplicationStatus =
-  | "Applied"
-  | "Reviewed"
-  | "Shortlisted"
-  | "Contacted"
-  | "Rejected"
-  | "Job closed";
+import type { DisplayApplicationStatus } from "../lib/applicationStatus";
 
-export const STATUS_FLOW: ApplicationStatus[] = [
-  "Applied",
-  "Reviewed",
-  "Shortlisted",
-  "Contacted",
-];
+export type ApplicationStatus = DisplayApplicationStatus;
 
 export type Application = {
   id: string;
@@ -22,4 +11,25 @@ export type Application = {
   appliedOn: string;
   status: ApplicationStatus;
   lastUpdate: string;
+
+  // ── New Recruitment Workflow Fields ──
+  interviewDate?: string | null;
+  interviewType?: string | null;
+  meetingLink?: string | null;
+  venue?: string | null;
+  interviewerName?: string | null;
+  interviewerEmail?: string | null;
+  interviewNotes?: string | null;
+  interviewRound?: number;
+  interviewHistory?: any;
+  candidateResponseNote?: string | null;
+  interviewOutcomeNote?: string | null;
+  requestedDocumentList?: string[];
+  documentRequestNote?: string | null;
+  offerLetterUrl?: string | null;
+  offerLetterCloudinaryId?: string | null;
+  joiningDate?: string | null;
+  joiningNote?: string | null;
+  finalStatusNote?: string | null;
+  applicationDocuments?: any[];
 };

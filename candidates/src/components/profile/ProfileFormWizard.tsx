@@ -64,6 +64,7 @@ import { FileUploadZone } from "@/components/common/FileUploadZone";
 import { type UploadedFile, uploadCvToBackend, uploadDocumentsToBackend } from "@/lib/fileUpload";
 import { getToken } from "@/store/authStore";
 import { CvMiniPreview } from "@/components/profile/CvMiniPreview";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 type FormExperience = {
   role: string;
@@ -119,6 +120,10 @@ type FormState = {
   availability: string;
   expectedSalaryMin: number;
   expectedSalaryMax: number;
+  currentSalaryMin: number;
+  currentSalaryMax: number;
+  preferredLocations: string[];
+  availabilityStatus: string;
   summary: string;
   documentChecklist: string[];
   documents: UploadedFile[];
@@ -147,7 +152,8 @@ const STEP_META = [
   },
   {
     label: "Clinical Experience",
-    description: "A structured clinical timeline with rota, hospital type and patient-load context.",
+    description:
+      "A structured clinical timeline with rota, hospital type and patient-load context.",
     icon: Briefcase,
   },
   {
@@ -309,7 +315,7 @@ function fromProfile(p: Profile): FormState {
       hospital: e.hospital ?? "",
       city: e.city ?? "",
       start: e.start ?? "",
-      end: e.current ? "" : e.end ?? "",
+      end: e.current ? "" : (e.end ?? ""),
       summary: e.summary ?? "",
       current: Boolean(e.current) || e.end === "Present",
       specialty: e.specialty ?? "",
@@ -335,15 +341,26 @@ function fromProfile(p: Profile): FormState {
     availability: p.availability ?? "30 days notice",
     expectedSalaryMin: p.expectedSalaryMin ?? 0,
     expectedSalaryMax: p.expectedSalaryMax ?? 0,
+    currentSalaryMin: p.currentSalaryMin ?? 0,
+    currentSalaryMax: p.currentSalaryMax ?? 0,
+    preferredLocations: p.preferredLocations ?? [],
+    availabilityStatus: p.availabilityStatus ?? "",
     summary: p.summary ?? "",
     documentChecklist: p.documentChecklist ?? [],
-    documents: [],
+    documents: (p.supportingDocuments ?? []).map((doc) => ({
+      name: doc.name,
+      url: doc.url,
+      publicId: doc.publicId,
+      mime: doc.mime,
+    })),
   };
 }
 
 function toProfile(s: FormState): Profile {
   const publicationDetails = s.publicationDetails.filter((p) =>
-    Boolean(p.title.trim() || p.journal.trim() || p.authors.trim() || p.year.trim() || p.doi.trim()),
+    Boolean(
+      p.title.trim() || p.journal.trim() || p.authors.trim() || p.year.trim() || p.doi.trim(),
+    ),
   );
   const formattedPublications = publicationDetails.map(formatPublicationDetail);
   const publications = Array.from(
@@ -410,8 +427,18 @@ function toProfile(s: FormState): Profile {
     availability: s.availability,
     expectedSalaryMin: s.expectedSalaryMin,
     expectedSalaryMax: s.expectedSalaryMax,
+    currentSalaryMin: s.currentSalaryMin,
+    currentSalaryMax: s.currentSalaryMax,
+    preferredLocations: s.preferredLocations,
+    availabilityStatus: s.availabilityStatus,
     summary: s.summary.trim(),
     documentChecklist: s.documentChecklist,
+    supportingDocuments: s.documents.map((d) => ({
+      name: d.name,
+      url: d.url,
+      publicId: d.publicId || "",
+      mime: d.mime || "",
+    })),
     verified: !!s.registrationNumber && s.licenseStatus === "Active",
   };
   base.avatar = initialsFor(base.name);
@@ -440,6 +467,7 @@ export function ProfileFormWizard({
     existing ? fromProfile(existing) : fromProfile(EMPTY_PROFILE),
   );
   const [step, setStep] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const jobCustomFields: JobCustomField[] = job?.customApplicationFields ?? [];
@@ -479,14 +507,14 @@ export function ProfileFormWizard({
       try {
         const attachment = state.documents[0];
         let cvData = undefined;
-        let supportingDocsUpload = undefined;
-        
+        const supportingDocsUpload = undefined;
+
         // In apply mode, the first file is treated as the job attachment (CV or cover letter)
         // If we want multiple docs, we should handle them differently, but for now applyMode handles CV
         if (attachment?.file) {
           const uploadResult = await uploadCvToBackend(attachment.file, getToken() ?? "");
-          cvData = { 
-            cvUrl: uploadResult.url, 
+          cvData = {
+            cvUrl: uploadResult.url,
             cvCloudinaryId: uploadResult.publicId,
             name: uploadResult.name || attachment.name,
             mime: uploadResult.mime || attachment.mime,
@@ -511,23 +539,33 @@ export function ProfileFormWizard({
       try {
         // Upload any attached documents to Cloudinary before saving the profile.
         // This covers the "save profile" (non-apply) flow in the Document Vault step.
-        let supportingDocsUpload: { url: string; publicId: string; name?: string; mime?: string }[] | undefined = undefined;
-        
-        const validFiles = state.documents.filter(d => d.file).map(d => d.file);
+        let supportingDocsUpload:
+          | { url: string; publicId: string; name?: string; mime?: string }[]
+          | undefined = undefined;
+
+        const validFiles = state.documents.filter((d) => d.file).map((d) => d.file);
         if (validFiles.length > 0) {
           try {
             supportingDocsUpload = await uploadDocumentsToBackend(validFiles, getToken() ?? "");
             toast.success("Documents uploaded to cloud");
           } catch (uploadErr) {
             // Non-fatal — warn the user but still save the rest of the profile
-            toast.warning("Could not upload documents to cloud — profile will be saved without the attachments.");
+            toast.warning(
+              "Could not upload documents to cloud — profile will be saved without the attachments.",
+            );
           }
         }
-        
-        // Pass undefined for cvUploadData since we are not uploading a CV here, 
+
+        // Pass undefined for cvUploadData since we are not uploading a CV here,
         // only supporting documents.
         await syncCandidateProfile(profile, undefined, supportingDocsUpload);
-        toast.success("Profile saved");
+        if (!applyMode) {
+          setSubmitted(true);
+          setTimeout(() => navigate({ to: redirectTo }), 1500);
+          return;
+        } else {
+          toast.success("Profile saved");
+        }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Could not save profile");
       } finally {
@@ -551,7 +589,9 @@ export function ProfileFormWizard({
   const submitLabel = applyMode && job ? "Submit application" : "Save & generate CV";
 
   return (
-    <div className={cn("mx-auto max-w-[1440px] px-6 py-8 animate-fade-in-up", applyMode && "pb-28")}>
+    <div
+      className={cn("mx-auto max-w-[1440px] px-6 py-8 animate-fade-in-up", applyMode && "pb-28")}
+    >
       {job ? (
         <Link
           to="/apply/$jobId"
@@ -580,12 +620,14 @@ export function ProfileFormWizard({
                 {job ? `${job.role} · ${job.hospital}` : "Build a premium clinical profile"}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed opacity-85">
-                Capture the details hospitals actually scan for: registration, specialty,
-                clinical exposure, procedures, research, compliance and document readiness.
+                Capture the details hospitals actually scan for: registration, specialty, clinical
+                exposure, procedures, research, compliance and document readiness.
               </p>
             </div>
             <div className="rounded-xl bg-white/10 px-4 py-3 text-right ring-1 ring-white/15">
-              <p className="text-[11px] uppercase tracking-wider opacity-75">Application readiness</p>
+              <p className="text-[11px] uppercase tracking-wider opacity-75">
+                Application readiness
+              </p>
               <p className="text-2xl font-semibold">{readiness.score}%</p>
             </div>
           </div>
@@ -600,10 +642,7 @@ export function ProfileFormWizard({
           </div>
         </div>
         <div className="h-1.5 w-full overflow-hidden bg-muted">
-          <div
-            className="h-full bg-brand transition-all"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-brand transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
@@ -615,7 +654,9 @@ export function ProfileFormWizard({
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Doctor profile
                 </p>
-                <p className="mt-1 text-lg font-semibold text-foreground">{readiness.score}% ready</p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {readiness.score}% ready
+                </p>
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-soft text-sm font-semibold text-primary">
                 {readiness.score}
@@ -709,7 +750,15 @@ export function ProfileFormWizard({
           )}
 
           <div className="mt-7 space-y-6">
-            {renderStep(step, state, set, !!job, jobCustomFields, customResponses, setCustomResponses)}
+            {renderStep(
+              step,
+              state,
+              set,
+              !!job,
+              jobCustomFields,
+              customResponses,
+              setCustomResponses,
+            )}
           </div>
 
           <div className="mt-10 flex items-center justify-between gap-3 border-t bg-card pt-5">
@@ -756,6 +805,12 @@ export function ProfileFormWizard({
           </div>
         </div>
       )}
+
+      {submitted && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-fade-in">
+          <LottiePlayer src="/successful_signup_signin.json" loop={false} className="h-32 w-32" />
+        </div>
+      )}
     </div>
   );
 }
@@ -777,11 +832,7 @@ function renderStep(
             <Input value={s.fullName} onChange={(e) => set("fullName", e.target.value)} />
           </FieldRow>
           <FieldRow label="Email" required>
-            <Input
-              type="email"
-              value={s.email}
-              onChange={(e) => set("email", e.target.value)}
-            />
+            <Input type="email" value={s.email} onChange={(e) => set("email", e.target.value)} />
           </FieldRow>
           <FieldRow label="Phone" required>
             <Input value={s.phone} onChange={(e) => set("phone", e.target.value)} />
@@ -803,10 +854,7 @@ function renderStep(
               </SelectContent>
             </Select>
           </FieldRow>
-          <FieldRow
-            label="LinkedIn profile"
-            hint="Optional public profile URL"
-          >
+          <FieldRow label="LinkedIn profile" hint="Optional public profile URL">
             <Input
               type="url"
               value={s.linkedinUrl}
@@ -843,7 +891,10 @@ function renderStep(
                 onChange={(e) => set("yearsExperience", Number(e.target.value))}
               />
             </FieldRow>
-            <FieldRow label="Primary specialty" required={s.role === "Doctor" || s.role === "Dentist"}>
+            <FieldRow
+              label="Primary specialty"
+              required={s.role === "Doctor" || s.role === "Dentist"}
+            >
               <ChipInput
                 values={s.specialty ? [s.specialty] : []}
                 onChange={(v) => set("specialty", v.at(-1) ?? "")}
@@ -915,7 +966,10 @@ function renderStep(
             />
           </FieldRow>
           <FieldRow label="License status" required={s.role === "Doctor" || s.role === "Dentist"}>
-            <Select value={s.licenseStatus || undefined} onValueChange={(v) => set("licenseStatus", v)}>
+            <Select
+              value={s.licenseStatus || undefined}
+              onValueChange={(v) => set("licenseStatus", v)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select license status" />
               </SelectTrigger>
@@ -993,7 +1047,15 @@ function renderStep(
               <FieldRow label="Degree / training" required>
                 <Input
                   value={item.degree}
-                  onChange={(e) => update(i, { ...item, degree: e.target.value })}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val.includes(",")) {
+                      toast.error(
+                        "Please add one degree per row using the 'Add qualification' button",
+                      );
+                    }
+                    update(i, { ...item, degree: val.replace(/,/g, "") });
+                  }}
                   placeholder="MBBS, MD, DM, DNB, Fellowship"
                 />
               </FieldRow>
@@ -1130,7 +1192,13 @@ function renderStep(
                   values={item.keyProcedures}
                   onChange={(v) => update(i, { ...item, keyProcedures: v })}
                   placeholder="Add procedure and press Enter"
-                  suggestions={["OPD", "ICU rounds", "Emergency calls", "Surgery assist", "Cath lab"]}
+                  suggestions={[
+                    "OPD",
+                    "ICU rounds",
+                    "Emergency calls",
+                    "Surgery assist",
+                    "Cath lab",
+                  ]}
                 />
               </FieldRow>
               <FieldRow label="Clinical impact summary" className="md:col-span-2">
@@ -1159,7 +1227,13 @@ function renderStep(
             placeholder="Type a skill and press Enter"
             suggestions={
               s.role === "Doctor"
-                ? ["OPD Management", "ICU Care", "Emergency Medicine", "Echocardiography", "Perioperative Care"]
+                ? [
+                    "OPD Management",
+                    "ICU Care",
+                    "Emergency Medicine",
+                    "Echocardiography",
+                    "Perioperative Care",
+                  ]
                 : s.role === "Nurse"
                   ? ["IV Cannulation", "Wound Care", "Ventilator Care", "Triage"]
                   : s.role === "Dentist"
@@ -1466,6 +1540,64 @@ function renderStep(
               )}
             </div>
           </FieldRow>
+
+          <FieldRow
+            label={`Current salary range: ₹${s.currentSalaryMin}-${s.currentSalaryMax} LPA`}
+          >
+            <div className="space-y-4">
+              <div>
+                <p className="mb-1 text-[11px] text-muted-foreground">Minimum (LPA)</p>
+                <Slider
+                  value={[s.currentSalaryMin]}
+                  min={0}
+                  max={120}
+                  step={1}
+                  onValueChange={(v) => {
+                    const min = v[0];
+                    set("currentSalaryMin", min);
+                    if (min > s.currentSalaryMax) set("currentSalaryMax", min);
+                  }}
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] text-muted-foreground">Maximum (LPA)</p>
+                <Slider
+                  value={[s.currentSalaryMax]}
+                  min={s.currentSalaryMin}
+                  max={120}
+                  step={1}
+                  onValueChange={(v) => set("currentSalaryMax", v[0])}
+                />
+              </div>
+              {s.currentSalaryMin > s.currentSalaryMax && (
+                <p className="text-xs text-destructive">Minimum cannot exceed maximum</p>
+              )}
+            </div>
+          </FieldRow>
+
+          <FieldRow label="Preferred Job Locations">
+            <ChipInput
+              values={s.preferredLocations}
+              onChange={(v) => set("preferredLocations", v)}
+              placeholder="Add preferred location (e.g. Mumbai, Remote)"
+            />
+          </FieldRow>
+
+          <FieldRow label="Availability Status">
+            <Select
+              value={s.availabilityStatus}
+              onValueChange={(v) => set("availabilityStatus", v)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Immediate Joiner">Immediate Joiner</SelectItem>
+                <SelectItem value="Serving Notice Period">Serving Notice Period</SelectItem>
+                <SelectItem value="Open to Opportunities">Open to Opportunities</SelectItem>
+              </SelectContent>
+            </Select>
+          </FieldRow>
         </div>
       );
     case 12:
@@ -1481,7 +1613,11 @@ function renderStep(
       );
     case 13:
       return (
-        <FieldRow label="Professional summary" required hint="At least 40 characters; keep it clinical and specific">
+        <FieldRow
+          label="Professional summary"
+          required
+          hint="At least 40 characters; keep it clinical and specific"
+        >
           <Textarea
             rows={6}
             value={s.summary}
@@ -1523,7 +1659,10 @@ function renderStep(
             />
           )}
           <ReviewRow label="Name" value={s.fullName} />
-          <ReviewRow label="Role" value={[s.grade, s.specialty, `${s.yearsExperience} yrs`].filter(Boolean).join(" · ")} />
+          <ReviewRow
+            label="Role"
+            value={[s.grade, s.specialty, `${s.yearsExperience} yrs`].filter(Boolean).join(" · ")}
+          />
           <ReviewRow
             label="Registration"
             value={
@@ -1534,7 +1673,10 @@ function renderStep(
           />
           <ReviewRow label="Qualifications" value={`${s.qualifications.length} entries`} />
           <ReviewRow label="Experience" value={`${s.experience.length} positions`} />
-          <ReviewRow label="Procedures" value={s.procedures.map((p) => `${p.name} (${p.count})`).join(", ")} />
+          <ReviewRow
+            label="Procedures"
+            value={s.procedures.map((p) => `${p.name} (${p.count})`).join(", ")}
+          />
           <ReviewRow
             label="Research"
             value={`${s.publicationDetails.length + s.publications.length} publications · ${s.totalCitations || 0} citations`}
@@ -1675,14 +1817,18 @@ function computeDoctorReadiness(s: FormState) {
   const checks = [
     { label: "Add contact details", done: Boolean(s.fullName && s.email && s.phone) },
     { label: "Select specialty and grade", done: Boolean(s.specialty && s.grade) },
-    { label: "Add active registration details", done: Boolean(s.registrationNumber && s.registrationCouncil && s.licenseStatus) },
+    {
+      label: "Add active registration details",
+      done: Boolean(s.registrationNumber && s.registrationCouncil && s.licenseStatus),
+    },
     { label: "Add at least one qualification", done: s.qualifications.length > 0 },
     { label: "Add structured clinical experience", done: s.experience.length > 0 },
     { label: "Add clinical skills", done: s.clinicalSkills.length > 0 },
     { label: "Add procedure exposure", done: s.procedures.length > 0 },
     {
       label: "Add publications or citation metrics",
-      done: s.publicationDetails.length > 0 || s.publications.length > 0 || Boolean(s.totalCitations),
+      done:
+        s.publicationDetails.length > 0 || s.publications.length > 0 || Boolean(s.totalCitations),
     },
     { label: "Mark verification documents ready", done: s.documentChecklist.length > 0 },
     { label: "Write a professional summary", done: s.summary.trim().length >= 40 },
@@ -1690,6 +1836,9 @@ function computeDoctorReadiness(s: FormState) {
   const score = Math.round((checks.filter((c) => c.done).length / checks.length) * 100);
   return {
     score,
-    missing: checks.filter((c) => !c.done).slice(0, 3).map((c) => c.label),
+    missing: checks
+      .filter((c) => !c.done)
+      .slice(0, 3)
+      .map((c) => c.label),
   };
 }

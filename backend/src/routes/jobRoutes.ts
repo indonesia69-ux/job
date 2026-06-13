@@ -1,5 +1,6 @@
 import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
 import {
@@ -15,10 +16,12 @@ import {
 } from '../lib/helpers';
 
 const router = Router();
-const SECRET = process.env.JWT_SECRET || 'apronhanger-dev-secret-change-in-prod';
+const SECRET = process.env.JWT_SECRET;
+if (!SECRET) throw new Error("FATAL: JWT_SECRET environment variable is not set.");
+const VERIFIED_SECRET = SECRET as string;
 
 async function getCandidateProfileForMatch(req: Request): Promise<any | null> {
-  const payload = extractCandidatePayload(req.headers.authorization, SECRET);
+  const payload = extractCandidatePayload(req.headers.authorization, VERIFIED_SECRET);
   if (!payload) return null;
   try {
     const c = await prisma.candidate.findUnique({ where: { id: payload.candidateId } });
@@ -35,38 +38,80 @@ async function getCandidateProfileForMatch(req: Request): Promise<any | null> {
   }
 }
 
+async function canViewHospitalJobs(req: Request, hospitalId: string): Promise<boolean> {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) return false;
+  try {
+    const payload = jwt.verify(header.slice(7), VERIFIED_SECRET) as any;
+    if (payload.role !== 'RECRUITER' || payload.hospitalId !== hospitalId) return false;
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: {
+        tokenVersion: true,
+        isSuspended: true,
+        deletedAt: true,
+        hospital: { select: { isSuspended: true, deletedAt: true } },
+      },
+    });
+    if (!user || user.isSuspended || user.deletedAt) return false;
+    if (payload.tokenVersion !== undefined && user.tokenVersion !== payload.tokenVersion) return false;
+    if (user.hospital?.isSuspended || user.hospital?.deletedAt) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // GET /api/jobs (supports ?q= search and ?hospitalId=)
 router.get('/', async (req: Request, res: Response) => {
   const { hospitalId, q } = req.query;
   try {
     const profile = await getCandidateProfileForMatch(req);
-    
+    const requestedHospitalId = typeof hospitalId === 'string' ? hospitalId : '';
+    const recruiterOwnHospital = requestedHospitalId
+      ? await canViewHospitalJobs(req, requestedHospitalId)
+      : false;
+
     // Build query
-    const where: any = hospitalId
-      ? { hospitalId: String(hospitalId) }
-      : { 
-          status: 'Active',
-          OR: [
-            { visibilityEndsAt: null },
-            { visibilityEndsAt: { gt: new Date() } }
-          ]
-        };
+    const where: any = {};
+    if (!recruiterOwnHospital) {
+      where.status = 'Active';
+      where.OR = [
+        { visibilityEndsAt: null },
+        { visibilityEndsAt: { gt: new Date() } }
+      ];
+    }
+    if (requestedHospitalId) {
+      where.hospitalId = requestedHospitalId;
+    }
+
+    // Public feed filter: hospital must not be suspended/deleted
+    where.hospital = {
+      isSuspended: false,
+      deletedAt: null
+    };
 
     // Basic search filtering (title or specialty matching)
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerms = q.trim().split(' ').filter(Boolean);
-      where.OR = searchTerms.map(term => ({
+      const searchFilter = searchTerms.map(term => ({
         OR: [
           { role: { contains: term } },
           { specialty: { contains: term } },
           { location: { contains: term } }
         ]
       }));
+      if (where.OR) {
+        where.AND = [{ OR: where.OR }, ...searchFilter];
+        delete where.OR;
+      } else {
+        where.AND = searchFilter;
+      }
     }
 
     const jobs = await prisma.job.findMany({
       where,
-      include: { hospital: true, applications: true },
+      include: { hospital: true, _count: { select: { applications: true } } },
       orderBy: { postedDays: 'asc' } // In SQLite/Postgres might need actual date sorting eventually
     });
     res.json(jobs.map((j) => formatJob(j, profile)));
@@ -79,9 +124,15 @@ router.get('/', async (req: Request, res: Response) => {
 // GET /api/jobs/:id
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const job = await prisma.job.findUnique({
-      where: { id: String(req.params.id) },
-      include: { hospital: true, applications: true }
+    const job = await prisma.job.findFirst({
+      where: { 
+        id: String(req.params.id),
+        hospital: {
+          isSuspended: false,
+          deletedAt: null
+        }
+      },
+      include: { hospital: true, _count: { select: { applications: true } } }
     });
     if (!job) { res.status(404).json({ error: 'Job not found' }); return; }
     res.json(formatJob(job));
@@ -103,6 +154,16 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
     const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId } });
     if (!hospital) {
       res.status(404).json({ error: 'Hospital not found.' });
+      return;
+    }
+
+    if (
+      (b.role && b.role.length > 100) ||
+      (b.specialty && b.specialty.length > 100) ||
+      (b.location && b.location.length > 150) ||
+      (b.description && b.description.length > 5000)
+    ) {
+      res.status(400).json({ error: 'One or more input fields exceed the maximum allowed length' });
       return;
     }
 
@@ -168,16 +229,16 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
         experienceMax:   b.experienceMax != null ? Number(b.experienceMax) : null,
         experience:      b.experience  ? String(b.experience) : null,
         postedDays:      0,
-        tags:            b.tags            ? JSON.stringify(b.tags)            : null,
-        responsibilities: b.responsibilities ? JSON.stringify(b.responsibilities) : null,
+        tags:            b.tags || undefined,
+        responsibilities: b.responsibilities ? JSON.stringify(b.responsibilities) : undefined,
         requirements:    b.requirements
           ? JSON.stringify(Array.isArray(b.requirements) ? b.requirements : [String(b.requirements)])
-          : null,
-        perks:           b.perks           ? JSON.stringify(b.perks)           : null,
+          : undefined,
+        perks:           b.perks           ? JSON.stringify(b.perks)           : undefined,
         customApplicationFields: (() => {
           const parsed = normalizeJobCustomFields(b.customApplicationFields);
           if (!parsed.ok) throw new Error(parsed.error);
-          return parsed.fields.length > 0 ? JSON.stringify(parsed.fields) : null;
+          return parsed.fields.length > 0 ? parsed.fields : undefined;
         })(),
       },
       include: { hospital: true, applications: true },
@@ -210,7 +271,7 @@ router.patch('/:id', requireAuth, requireRole('RECRUITER'), async (req: AuthRequ
       res.status(404).json({ error: 'Job not found' });
       return;
     }
-    if (req.user!.hospitalId && job.hospitalId !== req.user!.hospitalId) {
+    if (!req.user!.hospitalId || job.hospitalId !== req.user!.hospitalId) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }

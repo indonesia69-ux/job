@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { jobMatchesSearch } from "@/lib/jobSearch";
 import { hydrateSavedJobIds } from "@/store/savedJobsStore";
-import { FileText, ArrowRight, X } from "lucide-react";
+import { FileText, ArrowRight, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobCard } from "@/components/jobs/JobCard";
 import { OpportunitiesHero } from "@/components/home/OpportunitiesHero";
@@ -12,6 +12,7 @@ import { RecommendedRail } from "@/components/jobs/RecommendedRail";
 import { authHeader } from "@/store/authStore";
 import { useProfile } from "@/store/profileStore";
 import { PageLoader } from "@/components/common/PageLoader";
+import { EmptyState } from "@/components/common/EmptyState";
 import { clientLoaderWithHydrate } from "@/lib/clientLoader";
 
 async function loadOpportunities() {
@@ -69,10 +70,15 @@ function Opportunities() {
   const runSearch = () => {
     navigate({
       to: "/",
-      search: { q: query.trim(), city: city.trim() },
+      search: {
+        q: query.trim() || undefined,
+        city: city.trim() || undefined,
+      },
     });
     setTimeout(() => {
-      document.getElementById("job-results")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      document
+        .getElementById("job-results")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 50);
   };
 
@@ -84,7 +90,9 @@ function Opportunities() {
       list = list.filter((j: any) => j.specialty.toLowerCase().replace(/\s+/g, "-") === specialty);
     }
     if (filters.cities.length) list = list.filter((j: any) => filters.cities.includes(j.city));
-    list = list.filter((j: any) => j.experienceMin >= filters.minExp || j.experienceMax >= filters.minExp);
+    list = list.filter(
+      (j: any) => j.experienceMin >= filters.minExp || j.experienceMax >= filters.minExp,
+    );
     list = list.filter((j: any) => j.salaryMax >= filters.minSalary);
     if (filters.types.length) list = list.filter((j: any) => filters.types.includes(j.type));
 
@@ -165,15 +173,17 @@ function Opportunities() {
               ))}
             </div>
             {filtered.length === 0 && (
-              <div className="rounded-2xl border bg-surface p-10 text-center">
-                <p className="text-sm font-medium text-foreground">
-                  {JOBS.length === 0 ? "No open positions yet" : "No matches"}
-                </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {JOBS.length === 0
-                    ? "Hospitals post roles from the recruiter portal. Check back soon or widen your search."
-                    : "Try clearing filters or searching for a different role."}
-                </p>
+              <div className="mt-8">
+                <EmptyState
+                  icon={Search}
+                  lottieFile="normal_seach.json"
+                  title={JOBS.length === 0 ? "No open positions yet" : "No matches"}
+                  description={
+                    JOBS.length === 0
+                      ? "Hospitals post roles from the recruiter portal. Check back soon or widen your search."
+                      : "Try clearing filters or searching for a different role."
+                  }
+                />
               </div>
             )}
           </div>

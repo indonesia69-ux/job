@@ -13,6 +13,15 @@
 
 import logger from './logger';
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 function getBrevoConfig() {
@@ -163,7 +172,7 @@ function buildRejectionHtml(institutionName: string, reason: string): string {
   const reasonBlock = reason
     ? `<div class="reason-box">
         <div class="reason-label">Reason for Decision</div>
-        <div class="reason-text">${reason.replace(/\n/g, '<br>')}</div>
+        <div class="reason-text">${escapeHtml(reason).replace(/\n/g, '<br>')}</div>
        </div>`
     : `<div class="reason-box">
         <div class="reason-text">Your application did not meet our current onboarding requirements. Please review the documents submitted and contact our support team for further guidance.</div>
@@ -254,7 +263,7 @@ function buildRequestMoreDocsHtml(institutionName: string, requestedDocs: string
     .split('\n')
     .map(d => d.trim())
     .filter(Boolean)
-    .map(d => `<div class="doc-item"><div class="doc-icon">&#9744;</div><div class="doc-name">${d}</div></div>`)
+    .map(d => `<div class="doc-item"><div class="doc-icon">&#9744;</div><div class="doc-name">${escapeHtml(d)}</div></div>`)
     .join('');
 
   return `<!DOCTYPE html>
@@ -405,3 +414,126 @@ export async function sendRequestMoreDocsEmail(hospital: {
     htmlContent: buildRequestMoreDocsHtml(hospital.name, requestedDocs),
   });
 }
+
+// ─── Template 4: Offer Letter Notification ───────────────────────────────────
+
+function buildOfferLetterHtml(
+  candidateName: string,
+  hospitalName: string,
+  jobRole: string,
+  offerLetterUrl: string,
+  portalUrl: string,
+): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ApronHanger — You've Received an Offer Letter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;padding:0;background:#f5f8fc;font-family:'Inter',Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+.wrapper{width:100%;padding:40px 20px;background:linear-gradient(135deg,#071829 0%,#0D2746 50%,#144A7A 100%);}
+.container{max-width:640px;margin:0 auto;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,0.12);}
+.header{padding:48px 56px;background:linear-gradient(135deg,#0D2746,#144A7A);position:relative;}
+.brand-name{color:#ffffff;font-size:30px;font-weight:700;letter-spacing:-0.5px;}
+.brand-name span{color:#74C7FF;}
+.brand-tag{margin-top:10px;color:#A6D8FF;font-size:11px;text-transform:uppercase;letter-spacing:2px;}
+.hero-title{margin-top:32px;color:#ffffff;font-size:32px;line-height:1.2;font-weight:600;}
+.hero-subtitle{margin-top:16px;color:#D6E7F7;font-size:15px;line-height:1.8;}
+.status-chip{display:inline-block;margin-top:24px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);color:#6EE7B7;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:999px;}
+.content{padding:48px 56px;}
+.welcome{color:#334155;font-size:15px;line-height:1.8;}
+.highlight{font-weight:600;color:#0D2746;}
+.offer-box{margin:32px 0;background:#F0FDF4;border:1px solid #86EFAC;border-left:4px solid #22C55E;border-radius:12px;padding:24px 28px;}
+.offer-label{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#16A34A;margin-bottom:12px;font-weight:600;}
+.offer-role{font-size:20px;font-weight:700;color:#0D2746;}
+.offer-hospital{font-size:14px;color:#475569;margin-top:4px;}
+.section-title{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#4A90C2;margin-bottom:20px;font-weight:600;margin-top:32px;}
+.step{display:flex;margin-bottom:18px;align-items:flex-start;}
+.step-number{width:32px;height:32px;border-radius:10px;background:#E9F4FD;color:#0D2746;font-weight:600;display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0;font-size:13px;}
+.step-text{color:#475569;font-size:14px;line-height:1.8;}
+.cta-wrapper{text-align:center;margin:40px 0 24px;}
+.cta-primary{display:inline-block;background:linear-gradient(135deg,#16A34A,#15803D);color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:999px;font-size:14px;font-weight:600;margin-right:12px;}
+.cta-secondary{display:inline-block;background:transparent;color:#0D2746;text-decoration:none;padding:15px 28px;border-radius:999px;font-size:14px;font-weight:600;border:1.5px solid #0D2746;}
+.divider{height:1px;background:#E2E8F0;margin:32px 0;}
+.support{text-align:center;color:#64748B;font-size:13px;line-height:1.8;}
+.signature{margin-top:32px;color:#334155;line-height:1.8;font-size:14px;}
+.footer{background:#F8FAFC;padding:28px;text-align:center;border-top:1px solid #E2E8F0;}
+.footer-brand{color:#0D2746;font-weight:700;}
+.footer-brand span{color:#1D74C7;}
+.footer-text{margin-top:10px;font-size:12px;color:#94A3B8;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+<div class="header">
+<div class="brand-name">Apron<span>hanger</span></div>
+<div class="brand-tag">Healthcare Talent Platform</div>
+<div class="hero-title">Congratulations! You've Received an Offer</div>
+<div class="hero-subtitle">A healthcare institution has reviewed your application and extended a job offer to you.</div>
+<div class="status-chip">Offer Letter Ready</div>
+</div>
+<div class="content">
+<div class="welcome">
+Dear <span class="highlight">${candidateName}</span>,<br><br>
+We are pleased to inform you that <span class="highlight">${hospitalName}</span> has sent you an offer letter for the position below. Please review the offer carefully and respond at your earliest convenience.
+</div>
+<div class="offer-box">
+<div class="offer-label">Job Offer Details</div>
+<div class="offer-role">${jobRole}</div>
+<div class="offer-hospital">${hospitalName}</div>
+</div>
+<div class="section-title">Next Steps</div>
+<div class="step"><div class="step-number">1</div><div class="step-text">Log in to your ApronHanger candidate portal to view and download the offer letter.</div></div>
+<div class="step"><div class="step-number">2</div><div class="step-text">Review all terms and conditions in the offer document carefully.</div></div>
+<div class="step"><div class="step-number">3</div><div class="step-text">Accept or decline the offer through your portal. Your response will be notified to the recruiter.</div></div>
+<div class="cta-wrapper">
+<a href="${portalUrl}" class="cta-primary">View Offer Letter</a>
+<a href="${offerLetterUrl}" class="cta-secondary">Download PDF</a>
+</div>
+<div class="divider"></div>
+<div class="support">If you have any questions regarding this offer, please reach out to the recruiter directly or contact us at<br><strong>support@apronhanger.in</strong></div>
+<div class="signature">Best wishes,<br><strong>ApronHanger Team</strong><br>Healthcare Talent Platform</div>
+</div>
+<div class="footer">
+<div class="footer-brand">Apron<span>hanger</span></div>
+<div class="footer-text">Connecting Hospitals, Clinics and Healthcare Professionals<br><br>&copy; 2026 ApronHanger. All Rights Reserved.</div>
+</div>
+</div>
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Send the offer letter notification email to a candidate.
+ * Called when recruiter sets application status to OfferSent.
+ * Only email trigger in the recruitment workflow (per product decision).
+ */
+export async function sendOfferLetterEmail(
+  candidate: { name: string; email: string },
+  job: { role: string; hospitalName: string },
+  offerLetterUrl: string,
+): Promise<void> {
+  if (!candidate.email) {
+    logger.warn('[Email] Offer letter email skipped — no email for candidate');
+    return;
+  }
+
+  const portalUrl = process.env.CANDIDATE_PORTAL_URL || 'https://app.apronhanger.com/applications';
+
+  await sendEmail({
+    to: [{ email: candidate.email, name: candidate.name }],
+    subject: `You've Received a Job Offer from ${job.hospitalName} — ApronHanger`,
+    htmlContent: buildOfferLetterHtml(
+      candidate.name,
+      job.hospitalName,
+      job.role,
+      offerLetterUrl,
+      portalUrl,
+    ),
+  });
+}
+

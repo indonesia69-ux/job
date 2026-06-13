@@ -1,84 +1,144 @@
-export type ApiApplicationStatus =
-  | "New"
-  | "Reviewed"
-  | "Shortlisted"
-  | "Rejected"
-  | "Contacted"
-  | "JobClosed";
-
-export type DisplayApplicationStatus =
-  | "Applied"
-  | "Reviewed"
-  | "Shortlisted"
-  | "Rejected"
-  | "Contacted"
-  | "Job closed";
-
-/** Candidate-facing timeline (Rejected is a terminal branch, not in main flow). */
-export const CANDIDATE_STATUS_STEPS: DisplayApplicationStatus[] = [
+export const ALL_STATUSES = [
   "Applied",
   "Reviewed",
+  "InterviewScheduled",
+  "InterviewAccepted",
+  "InterviewDeclined",
+  "RescheduleRequested",
+  "InterviewCompleted",
+  "NoShow",
+  "InterviewRescheduled",
   "Shortlisted",
-  "Contacted",
+  "OnHold",
+  "NextRound",
+  "Rejected",
+  "DocumentsRequested",
+  "DocumentsUploaded",
+  "DocumentsApproved",
+  "AdditionalDocumentsRequired",
+  "DocumentsRejected",
+  "OfferSent",
+  "OfferAccepted",
+  "OfferRejected",
+  "JoiningConfirmed",
+  "Joined",
+  "Onboarded",
+  "Dropped",
+  "JobClosed",
+] as const;
+
+export type ApiApplicationStatus = (typeof ALL_STATUSES)[number];
+export type DisplayApplicationStatus = string;
+
+const STATUS_DISPLAY_MAP: Record<string, string> = {
+  Applied: "Applied",
+  Reviewed: "Reviewed",
+  InterviewScheduled: "Interview Scheduled",
+  InterviewAccepted: "Interview Accepted",
+  InterviewDeclined: "Interview Declined",
+  RescheduleRequested: "Reschedule Requested",
+  InterviewCompleted: "Interview Completed",
+  NoShow: "No Show",
+  InterviewRescheduled: "Interview Rescheduled",
+  Shortlisted: "Shortlisted",
+  OnHold: "On Hold",
+  NextRound: "Next Round",
+  Rejected: "Rejected",
+  DocumentsRequested: "Documents Requested",
+  DocumentsUploaded: "Documents Uploaded",
+  DocumentsApproved: "Documents Approved",
+  AdditionalDocumentsRequired: "Additional Docs Required",
+  DocumentsRejected: "Documents Rejected",
+  OfferSent: "Offer Sent",
+  OfferAccepted: "Offer Accepted",
+  OfferRejected: "Offer Rejected",
+  JoiningConfirmed: "Joining Confirmed",
+  Joined: "Joined",
+  Onboarded: "Onboarded",
+  Dropped: "Dropped",
+  JobClosed: "Job Closed",
+};
+
+/** Candidate-facing timeline high-level milestones. */
+export const CANDIDATE_STATUS_STEPS = [
+  "Applied",
+  "Reviewed",
+  "Interview",
+  "Documents",
+  "Offer & Joining",
 ];
 
 export function apiToDisplayStatus(api: string): DisplayApplicationStatus {
-  const s = api.toLowerCase();
-  if (s === "new") return "Applied";
-  if (s === "reviewed") return "Reviewed";
-  if (s === "shortlisted") return "Shortlisted";
-  if (s === "rejected") return "Rejected";
-  if (s === "contacted") return "Contacted";
-  if (s === "jobclosed") return "Job closed";
-  return "Applied";
+  if (api === "New") return "Applied";
+  if (api === "Contacted") return "Offer Sent"; // Legacy mapping
+  return STATUS_DISPLAY_MAP[api] || api;
 }
 
-export function displayToApiStatus(display: DisplayApplicationStatus): ApiApplicationStatus {
-  if (display === "Applied") return "New";
-  if (display === "Job closed") return "JobClosed";
-  return display as ApiApplicationStatus;
-}
+const TERMINAL_STATUSES: string[] = [
+  "Onboarded",
+  "Dropped",
+  "OfferRejected",
+  "DocumentsRejected",
+  "Rejected",
+  "InterviewDeclined",
+  "JobClosed",
+];
 
-/** Allowed recruiter transitions — no skipping steps. */
-export function getAllowedNextStatuses(current: string): ApiApplicationStatus[] {
-  const s = current.toLowerCase();
-  if (s === "jobclosed") return [];
-  if (s === "new") return ["Reviewed"];
-  if (s === "reviewed") return ["Shortlisted", "Rejected"];
-  if (s === "shortlisted") return ["Contacted"];
-  return [];
-}
-
-/** Rejected and Contacted are final; Shortlisted can only move to Contacted. */
 export function isTerminalApplicationStatus(status: string): boolean {
-  const s = status.toLowerCase();
-  return s === "rejected" || s === "contacted" || s === "jobclosed" || s === "job closed";
+  return TERMINAL_STATUSES.includes(status);
 }
 
 export function isLockedApplicationStatus(status: string): boolean {
-  const s = status.toLowerCase();
-  return (
-    s === "rejected" ||
-    s === "shortlisted" ||
-    s === "contacted" ||
-    s === "jobclosed" ||
-    s === "job closed"
-  );
+  return isTerminalApplicationStatus(status);
 }
 
 export function statusPillClass(status: string): string {
   const s = status.toLowerCase();
-  if (s === "job closed" || s === "jobclosed")
-    return "bg-muted text-muted-foreground border-border";
-  if (s === "rejected") return "bg-destructive/15 text-destructive border-destructive/30";
-  if (s === "shortlisted") return "bg-emerald-500/15 text-emerald-700 border-emerald-500/30";
-  if (s === "contacted") return "bg-sky-500/15 text-sky-800 border-sky-500/30";
-  if (s === "reviewed") return "bg-amber-500/15 text-amber-900 border-amber-500/30";
-  if (s === "new" || s === "applied") return "bg-muted text-foreground border-border";
+
+  if (isTerminalApplicationStatus(status) && !["onboarded"].includes(s)) {
+    return "bg-destructive/15 text-destructive border-destructive/30";
+  }
+
+  if (s.includes("interview") || s === "reschedule requested") {
+    return "bg-indigo-500/15 text-indigo-700 border-indigo-500/30";
+  }
+
+  if (s.includes("document")) {
+    return "bg-amber-500/15 text-amber-900 border-amber-500/30";
+  }
+
+  if (s.includes("offer") || s.includes("join") || s === "shortlisted" || s === "onboarded") {
+    return "bg-emerald-500/15 text-emerald-700 border-emerald-500/30";
+  }
+
+  if (s === "reviewed") return "bg-sky-500/15 text-sky-800 border-sky-500/30";
+  if (s === "applied" || s === "new") return "bg-muted text-foreground border-border";
   return "bg-muted text-muted-foreground border-border";
 }
 
-export function timelineStepIndex(status: DisplayApplicationStatus): number {
-  if (status === "Rejected") return 1;
-  return CANDIDATE_STATUS_STEPS.indexOf(status);
+export function timelineStepIndex(apiStatus: string): number {
+  if (apiStatus === "Applied" || apiStatus === "New") return 0;
+  if (apiStatus === "Reviewed") return 1;
+
+  if (
+    apiStatus.includes("Interview") ||
+    apiStatus.includes("Reschedule") ||
+    apiStatus === "NoShow" ||
+    apiStatus === "Shortlisted" ||
+    apiStatus === "OnHold" ||
+    apiStatus === "NextRound"
+  ) {
+    return 2;
+  }
+
+  if (apiStatus.includes("Document")) {
+    return 3;
+  }
+
+  if (apiStatus.includes("Offer") || apiStatus.includes("Join") || apiStatus === "Onboarded") {
+    return 4;
+  }
+
+  // For Rejected or Dropped, return the step they were dropped AT, or default 1
+  return 1;
 }

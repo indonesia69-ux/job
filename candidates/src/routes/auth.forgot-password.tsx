@@ -1,0 +1,242 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { ArrowRight, Loader2, ArrowLeft, Phone } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { apiBase } from "@/lib/api";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
+
+export const Route = createFileRoute("/auth/forgot-password")({
+  head: () => ({
+    meta: [
+      { title: "Reset Password — ApronHanger" },
+      { name: "description", content: "Reset your ApronHanger account password." },
+    ],
+  }),
+  component: ForgotPasswordPage,
+});
+
+export function ForgotPasswordPage() {
+  const navigate = useNavigate();
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [step, setStep] = useState<"phone" | "otp" | "success">("phone");
+  const [loading, setLoading] = useState(false);
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phone) {
+      toast.error("Please enter your registered mobile number.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiBase()}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: phone, role: "CANDIDATE" }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to send OTP. Please check your number.");
+        return;
+      }
+      toast.success("OTP sent to your mobile number.");
+      setStep("otp");
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || otp.length < 6) {
+      toast.error("Please enter a valid 6-digit OTP.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const verifyRes = await fetch(`${apiBase()}/api/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: phone, otp, role: "CANDIDATE" }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        toast.error(verifyData.error || "Invalid OTP.");
+        setLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${apiBase()}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          reset_token: verifyData.reset_token,
+          new_password: newPassword,
+          role: "CANDIDATE",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Failed to reset password.");
+        return;
+      }
+      toast.success("Password reset successfully! Please sign in with your new password.");
+      setStep("success");
+      setTimeout(() => {
+        navigate({ to: "/auth", search: {} });
+      }, 2500);
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-surface-2 flex items-center justify-center px-6 py-12">
+      <div className="w-full max-w-[400px] flex flex-col justify-center space-y-6">
+        {step === "otp" && (
+          <LottiePlayer
+            src="/mail_sent.json"
+            loop={false}
+            className="mx-auto h-24 w-24 sm:h-28 sm:w-28 mb-4"
+          />
+        )}
+        {step === "success" && (
+          <LottiePlayer
+            src="/rest_sent_flow.json"
+            loop={false}
+            className="mx-auto h-28 w-28 sm:h-32 sm:w-32 mb-4"
+          />
+        )}
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="font-display text-[28px] font-semibold tracking-tight text-foreground">
+            {step === "phone"
+              ? "Reset Password"
+              : step === "success"
+                ? "Success!"
+                : "Verify & Reset"}
+          </h1>
+          <p className="text-[14px] text-muted-foreground">
+            {step === "phone"
+              ? "Enter your registered mobile number to receive an OTP."
+              : step === "success"
+                ? "Your password has been reset successfully."
+                : `Enter the OTP sent to ${phone} and your new password.`}
+          </p>
+        </div>
+
+        {step === "phone" ? (
+          <form onSubmit={handleSendOtp} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="phone">Mobile Number</Label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground/60" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="Enter 10-digit number"
+                  className="pl-10 h-11 text-[15px]"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  autoComplete="tel"
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+            <Button
+              type="submit"
+              className="h-11 w-full bg-brand text-brand-foreground shadow-soft hover:bg-brand/90 text-[15px] font-semibold"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-[18px] w-[18px] animate-spin" />
+                  Sending OTP…
+                </>
+              ) : (
+                <>
+                  Send OTP <ArrowRight className="ml-2 h-[18px] w-[18px]" />
+                </>
+              )}
+            </Button>
+            <div className="text-center">
+              <Link
+                to="/auth"
+                search={{}}
+                className="text-[13px] font-medium text-brand hover:underline inline-flex items-center"
+              >
+                <ArrowLeft className="mr-1 h-3 w-3" /> Back to Sign In
+              </Link>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="otp">OTP</Label>
+              <Input
+                id="otp"
+                type="text"
+                placeholder="123456"
+                className="h-11 text-center tracking-widest text-lg font-semibold"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                maxLength={6}
+                disabled={loading}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="newPassword">New Password</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="Min. 8 characters"
+                className="h-11"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={loading}
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              className="h-11 w-full bg-brand text-brand-foreground shadow-soft hover:bg-brand/90 text-[15px] font-semibold"
+              disabled={loading || otp.length < 6 || newPassword.length < 8}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-[18px] w-[18px] animate-spin" />
+                  Resetting…
+                </>
+              ) : (
+                "Reset Password"
+              )}
+            </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setStep("phone")}
+                className="text-[13px] font-medium text-brand hover:underline inline-flex items-center"
+              >
+                <ArrowLeft className="mr-1 h-3 w-3" /> Change Mobile Number
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}

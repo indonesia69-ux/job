@@ -1,17 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Search, Sparkles, Lock, Crown, GraduationCap,
-  ShieldCheck, X, Loader2, AlertCircle,
+  Search,
+  Sparkles,
+  Lock,
+  Crown,
+  GraduationCap,
+  ShieldCheck,
+  X,
+  Loader2,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Select, SelectContent, SelectItem,
-  SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { type Candidate } from "@/lib/mock";
@@ -27,17 +41,17 @@ type PremiumDegree = (typeof PREMIUM_DEGREES)[number];
 
 const DEGREE_GROUPS = [
   { label: "Medicine", degrees: ["MBBS", "MD", "DM", "DNB"] as PremiumDegree[] },
-  { label: "Surgery",  degrees: ["MS", "MCh", "DrNB"] as PremiumDegree[] },
+  { label: "Surgery", degrees: ["MS", "MCh", "DrNB"] as PremiumDegree[] },
 ];
 
 export function SearchCandidatesPage() {
-  const [tab, setTab]     = useState<"basic" | "premium">("basic");
+  const [tab, setTab] = useState<"basic" | "premium">("basic");
   const [openId, setOpenId] = useState<string | null>(null);
-  const [cvId, setCvId]   = useState<string | null>(null);
+  const [cvId, setCvId] = useState<string | null>(null);
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
 
   const openCandidate = allCandidates.find((c) => c.id === openId) ?? null;
-  const cvCandidate   = allCandidates.find((c) => c.id === cvId) ?? null;
+  const cvCandidate = allCandidates.find((c) => c.id === cvId) ?? null;
 
   const mergeCandidate = (c: Candidate) =>
     setAllCandidates((prev) => {
@@ -58,17 +72,17 @@ export function SearchCandidatesPage() {
         <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-5 w-5 shrink-0" />
           <p>
-            <strong>Your account validity has expired.</strong> Your account is locked and you cannot search candidates. Please contact support.
+            <strong>Your account validity has expired.</strong> Your account is locked and you
+            cannot search candidates. Please contact support.
           </p>
         </div>
       )}
 
       <div className="flex flex-col gap-1">
-        <h1 className="font-display text-[28px] font-semibold tracking-tight">
-          Search Candidates
-        </h1>
+        <h1 className="font-display text-[28px] font-semibold tracking-tight">Search Candidates</h1>
         <p className="text-[14px] text-muted-foreground">
-          Find healthcare talent across India. Basic covers allied roles; Premium unlocks verified physicians and surgeons.
+          Find healthcare talent across India. Basic covers allied roles; Premium unlocks verified
+          physicians and surgeons.
         </p>
       </div>
 
@@ -103,51 +117,65 @@ export function SearchCandidatesPage() {
 /* ─────────────────────────── BASIC SEARCH ─────────────────────────────────── */
 
 function BasicSearch({
-  onOpen, onCv, onResult,
+  onOpen,
+  onCv,
+  onResult,
 }: {
   onOpen: (id: string) => void;
-  onCv:   (id: string) => void;
+  onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [role, setRole]   = useState("All");
+  const [role, setRole] = useState("All");
   const [results, setResults] = useState<Candidate[]>([]);
-  const [total, setTotal]    = useState(0);
+  const [lockedResults, setLockedResults] = useState<Candidate[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [error, setError]    = useState<string | null>(null);
-  const [roles, setRoles]    = useState<string[]>(["All"]);
+  const [error, setError] = useState<string | null>(null);
+  const [roles, setRoles] = useState<string[]>(["All"]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { isLocked } = usePlan();
 
-  const runSearch = useCallback(async (q: string, r: string) => {
-    if (isLocked) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await searchCandidates({ q: q || undefined, role: r, type: "basic", take: 50 });
-      setResults(data.candidates);
-      setTotal(data.total);
-      data.candidates.forEach(onResult);
+  const runSearch = useCallback(
+    async (q: string, r: string) => {
+      if (isLocked) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await searchCandidates({
+          q: q || undefined,
+          role: r,
+          type: "basic",
+          take: 50,
+        });
+        setResults(data.candidates);
+        setLockedResults(data.lockedCandidates || []);
+        setTotal(data.total);
+        data.candidates.forEach(onResult);
 
-      // Collect unique roles from current result set for the filter dropdown
-      const uniqueRoles = Array.from(new Set(data.candidates.map((c) => c.role).filter(Boolean)));
-      setRoles((prev) => {
-        const merged = Array.from(new Set(["All", ...prev.slice(1), ...uniqueRoles]));
-        return merged;
-      });
-    } catch (e: any) {
-      setError(e.message || "Search failed");
-    } finally {
-      setLoading(false);
-    }
-  }, [onResult]);
+        // Collect unique roles from current result set for the filter dropdown
+        const uniqueRoles = Array.from(new Set(data.candidates.map((c) => c.role).filter(Boolean)));
+        setRoles((prev) => {
+          const merged = Array.from(new Set(["All", ...prev.slice(1), ...uniqueRoles]));
+          return merged;
+        });
+      } catch (e: any) {
+        setError(e.message || "Search failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onResult],
+  );
 
   // Initial load + debounced re-search on query change
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => runSearch(query, role), query ? 350 : 0);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, role]);
 
@@ -158,8 +186,8 @@ function BasicSearch({
           <div className="flex items-start gap-2 rounded-md border border-amber-200/60 bg-amber-50/60 px-3 py-2 text-[12.5px] text-amber-900">
             <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
-              Basic search covers nurses, technicians, pharmacists and allied roles.
-              Doctor (MBBS / MD / MS / DM / MCh / DNB / DrNB) profiles are gated to{" "}
+              Basic search covers nurses, technicians, pharmacists and allied roles. Doctor (MBBS /
+              MD / MS / DM / MCh / DNB / DrNB) profiles are gated to{" "}
               <span className="font-medium">Premium Search</span>.
             </span>
           </div>
@@ -181,7 +209,9 @@ function BasicSearch({
               </SelectTrigger>
               <SelectContent>
                 {roles.map((r) => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -189,13 +219,23 @@ function BasicSearch({
 
           <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
             {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            {!loading && <span>{total} candidate{total !== 1 ? "s" : ""} found</span>}
+            {!loading && (
+              <span>
+                {total} candidate{total !== 1 ? "s" : ""} found
+              </span>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {error && <ErrorBanner message={error} />}
-      <ResultsGrid results={results} onOpen={onOpen} onCv={onCv} loading={loading} />
+      <ResultsGrid
+        results={results}
+        lockedResults={lockedResults}
+        onOpen={onOpen}
+        onCv={onCv}
+        loading={loading}
+      />
     </div>
   );
 }
@@ -203,25 +243,41 @@ function BasicSearch({
 /* ─────────────────────────── PREMIUM SEARCH ───────────────────────────────── */
 
 function PremiumSearch({
-  onOpen, onCv, onResult,
+  onOpen,
+  onCv,
+  onResult,
 }: {
   onOpen: (id: string) => void;
-  onCv:   (id: string) => void;
+  onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
 }) {
   const { plan, used, quota, remaining, consume, isLocked } = usePlan();
-  const [query, setQuery]             = useState("");
+  const [query, setQuery] = useState("");
   const [selectedDegrees, setSelectedDegrees] = useState<PremiumDegree[]>([]);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Advanced filters
+  const [specialty, setSpecialty] = useState("");
+  const [experienceMin, setExperienceMin] = useState("");
+  const [experienceMax, setExperienceMax] = useState("");
+  const [location, setLocation] = useState("");
+  const [currentOrg, setCurrentOrg] = useState("");
+  const [expectedSalaryMin, setExpectedSalaryMin] = useState("");
+  const [expectedSalaryMax, setExpectedSalaryMax] = useState("");
+  const [noticePeriod, setNoticePeriod] = useState<string>("All");
+  const [currentSalaryMin, setCurrentSalaryMin] = useState("");
+  const [currentSalaryMax, setCurrentSalaryMax] = useState("");
+  const [preferredLocation, setPreferredLocation] = useState("");
+  const [availabilityStatus, setAvailabilityStatus] = useState<string>("All");
+
   const [hasSearched, setHasSearched] = useState(false);
-  const [results, setResults]         = useState<Candidate[]>([]);
-  const [total, setTotal]             = useState(0);
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState<string | null>(null);
+  const [results, setResults] = useState<Candidate[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleDegree = (d: PremiumDegree) =>
-    setSelectedDegrees((arr) =>
-      arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d],
-    );
+    setSelectedDegrees((arr) => (arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d]));
 
   const runSearch = async () => {
     if (isLocked) return;
@@ -238,6 +294,19 @@ function PremiumSearch({
         q: query || undefined,
         type: "premium",
         degrees,
+        specialty: specialty || undefined,
+        experienceMin: experienceMin ? parseInt(experienceMin) : undefined,
+        experienceMax: experienceMax ? parseInt(experienceMax) : undefined,
+        location: location || undefined,
+        currentOrg: currentOrg || undefined,
+        expectedSalaryMin: expectedSalaryMin ? parseInt(expectedSalaryMin) : undefined,
+        expectedSalaryMax: expectedSalaryMax ? parseInt(expectedSalaryMax) : undefined,
+        noticePeriod: noticePeriod && noticePeriod !== "All" ? [noticePeriod] : undefined,
+        currentSalaryMin: currentSalaryMin ? parseInt(currentSalaryMin) : undefined,
+        currentSalaryMax: currentSalaryMax ? parseInt(currentSalaryMax) : undefined,
+        preferredLocation: preferredLocation || undefined,
+        availabilityStatus:
+          availabilityStatus && availabilityStatus !== "All" ? [availabilityStatus] : undefined,
         take: 50,
       });
       setResults(data.candidates);
@@ -284,7 +353,8 @@ function PremiumSearch({
                 <span>{remaining} left</span>
               </div>
               <div className="mt-2 font-display text-[20px] text-white">
-                {used}<span className="text-white/40"> / {quota}</span>
+                {used}
+                <span className="text-white/40"> / {quota}</span>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div
@@ -309,16 +379,184 @@ function PremiumSearch({
               />
             </div>
             <Button
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              variant="outline"
+              className="h-11 gap-2 border-white/15 bg-white/[0.04] text-white hover:bg-white/[0.08]"
+            >
+              <SlidersHorizontal className="h-4 w-4" /> Filters{" "}
+              {showAdvanced ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
               onClick={runSearch}
               disabled={loading || isLocked}
               className="h-11 gap-2 bg-gradient-to-r from-[oklch(0.78_0.14_85)] to-[oklch(0.86_0.13_85)] text-[oklch(0.18_0.04_265)] hover:opacity-95"
             >
-              {loading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Searching…</>
-                : <><Sparkles className="h-4 w-4" /> Premium search</>
-              }
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Searching…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> Premium search
+                </>
+              )}
             </Button>
           </div>
+
+          {showAdvanced && (
+            <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4 text-[13px]">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Specialty
+                  </label>
+                  <Input
+                    placeholder="e.g. Cardiology"
+                    value={specialty}
+                    onChange={(e) => setSpecialty(e.target.value)}
+                    className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Experience (Yrs)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={experienceMin}
+                      onChange={(e) => setExperienceMin(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                    <span className="text-white/40">-</span>
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={experienceMax}
+                      onChange={(e) => setExperienceMax(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Current Location
+                  </label>
+                  <Input
+                    placeholder="e.g. Mumbai"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Preferred Location
+                  </label>
+                  <Input
+                    placeholder="e.g. Pune"
+                    value={preferredLocation}
+                    onChange={(e) => setPreferredLocation(e.target.value)}
+                    className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Current Organization
+                  </label>
+                  <Input
+                    placeholder="e.g. Apollo"
+                    value={currentOrg}
+                    onChange={(e) => setCurrentOrg(e.target.value)}
+                    className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Expected Salary (LPA)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={expectedSalaryMin}
+                      onChange={(e) => setExpectedSalaryMin(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                    <span className="text-white/40">-</span>
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={expectedSalaryMax}
+                      onChange={(e) => setExpectedSalaryMax(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Current Salary (LPA)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Min"
+                      value={currentSalaryMin}
+                      onChange={(e) => setCurrentSalaryMin(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                    <span className="text-white/40">-</span>
+                    <Input
+                      type="number"
+                      placeholder="Max"
+                      value={currentSalaryMax}
+                      onChange={(e) => setCurrentSalaryMax(e.target.value)}
+                      className="h-8 border-white/15 bg-white/10 text-white placeholder:text-white/40"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Notice Period
+                  </label>
+                  <Select value={noticePeriod} onValueChange={setNoticePeriod}>
+                    <SelectTrigger className="h-8 border-white/15 bg-white/10 text-white">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">Any</SelectItem>
+                      <SelectItem value="Immediately">Immediately</SelectItem>
+                      <SelectItem value="15 days notice">15 days notice</SelectItem>
+                      <SelectItem value="30 days notice">30 days notice</SelectItem>
+                      <SelectItem value="60 days notice">60 days notice</SelectItem>
+                      <SelectItem value="90 days notice">90 days notice</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-medium uppercase tracking-wider text-white/60">
+                    Availability
+                  </label>
+                  <Select value={availabilityStatus} onValueChange={setAvailabilityStatus}>
+                    <SelectTrigger className="h-8 border-white/15 bg-white/10 text-white">
+                      <SelectValue placeholder="Any" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">Any</SelectItem>
+                      <SelectItem value="Immediate Joiner">Immediate Joiner</SelectItem>
+                      <SelectItem value="Serving Notice Period">Serving Notice Period</SelectItem>
+                      <SelectItem value="Open to Opportunities">Open to Opportunities</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Degree chips */}
           <div className="mt-5 space-y-3">
@@ -370,7 +608,8 @@ function PremiumSearch({
             <div className="text-[13px]">
               <span className="font-medium text-foreground">{plan} plan</span>
               <span className="text-muted-foreground">
-                {" "}· {used} of {quota} premium searches used this cycle
+                {" "}
+                · {used} of {quota} premium searches used this cycle
               </span>
             </div>
           </div>
@@ -384,10 +623,18 @@ function PremiumSearch({
 
       {/* Results */}
       {hasSearched ? (
-        <ResultsGrid results={results} onOpen={onOpen} onCv={onCv} premium loading={loading} total={total} />
+        <ResultsGrid
+          results={results}
+          onOpen={onOpen}
+          onCv={onCv}
+          premium
+          loading={loading}
+          total={total}
+        />
       ) : (
         <Card className="border-dashed border-border bg-card">
-          <CardContent className="p-10 text-center text-[13px] text-muted-foreground">
+          <CardContent className="p-10 text-center text-[13px] text-muted-foreground flex flex-col items-center">
+            <LottiePlayer src="/premium_search.json" loop className="h-32 w-32 mb-4" />
             Select qualifications and run a premium search to see verified physician profiles.
           </CardContent>
         </Card>
@@ -399,11 +646,18 @@ function PremiumSearch({
 /* ─────────────────────────── RESULTS GRID ──────────────────────────────────── */
 
 function ResultsGrid({
-  results, onOpen, onCv, premium = false, loading = false, total,
+  results,
+  lockedResults = [],
+  onOpen,
+  onCv,
+  premium = false,
+  loading = false,
+  total,
 }: {
   results: Candidate[];
+  lockedResults?: Candidate[];
   onOpen: (id: string) => void;
-  onCv:   (id: string) => void;
+  onCv: (id: string) => void;
   premium?: boolean;
   loading?: boolean;
   total?: number;
@@ -411,14 +665,19 @@ function ResultsGrid({
   if (loading && results.length === 0) {
     return (
       <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Searching database…
+        <LottiePlayer src="/loading_state.json" loop className="mr-3 h-8 w-8" /> Searching database…
       </div>
     );
   }
   if (!loading && results.length === 0) {
     return (
       <Card className="border-dashed border-border bg-card">
-        <CardContent className="p-10 text-center text-[13px] text-muted-foreground">
+        <CardContent className="p-10 text-center text-[13px] text-muted-foreground flex flex-col items-center">
+          <LottiePlayer
+            src="/nothing_for_the_particular_query.json"
+            loop
+            className="h-32 w-32 mb-4"
+          />
           {premium
             ? "No verified doctors matched your filters. Try widening qualifications."
             : "No candidates match your filters. Try a different search term."}
@@ -465,7 +724,7 @@ function ResultsGrid({
               </div>
               <p className="line-clamp-2 text-[12.5px] text-muted-foreground">{c.summary}</p>
               <div className="flex flex-wrap gap-1.5">
-                {c.education.slice(0, 2).map((e, i) => (
+                {c.education?.slice(0, 2).map((e, i) => (
                   <span
                     key={i}
                     className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground"
@@ -473,7 +732,7 @@ function ResultsGrid({
                     {e.degree}
                   </span>
                 ))}
-                {c.skills.slice(0, 2).map((s, i) => (
+                {c.skills?.slice(0, 2).map((s, i) => (
                   <span
                     key={`sk-${i}`}
                     className="inline-flex items-center rounded-md bg-accent/10 px-2 py-0.5 text-[11px] text-accent"
@@ -483,15 +742,50 @@ function ResultsGrid({
                 ))}
               </div>
               <div className="flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
-                <span>{c.experienceYears} yrs · {c.location}</span>
+                <span>
+                  {c.experienceYears} yrs · {c.location}
+                </span>
                 <Button
                   size="sm"
                   variant="ghost"
                   className="h-7 text-[11px]"
-                  onClick={(e) => { e.stopPropagation(); onCv(c.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onCv(c.id);
+                  }}
                 >
                   View CV
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+        {lockedResults.map((c) => (
+          <Card
+            key={c.id}
+            className="group relative overflow-hidden border-border bg-card shadow-soft opacity-80 grayscale-[30%] transition-opacity hover:opacity-100"
+          >
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px]">
+              <Lock className="mb-2 h-6 w-6 text-muted-foreground" />
+              <div className="text-[13px] font-medium text-foreground">Premium Profile</div>
+              <div className="text-[11px] text-muted-foreground">
+                Switch to Premium Search to unlock
+              </div>
+            </div>
+            <CardContent className="space-y-3 p-5 opacity-50">
+              <div className="flex items-start gap-3">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground font-display text-[13px] font-semibold">
+                  ?
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="h-4 w-32 rounded bg-muted"></div>
+                  <div className="mt-2 text-[12px] text-muted-foreground">{c.specialty}</div>
+                </div>
+              </div>
+              <div className="h-3 w-3/4 rounded bg-muted mt-2"></div>
+              <div className="h-3 w-1/2 rounded bg-muted mt-1"></div>
+              <div className="flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground mt-2">
+                <span>{c.experienceYears} yrs experience</span>
               </div>
             </CardContent>
           </Card>

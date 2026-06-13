@@ -59,7 +59,11 @@ export function setProfile(p: Profile | null) {
  *  Must be called on logout to prevent a new user from seeing stale data. */
 export function clearProfile() {
   if (typeof window !== "undefined") {
-    try { window.localStorage.removeItem(KEY); } catch { /* noop */ }
+    try {
+      window.localStorage.removeItem(KEY);
+    } catch {
+      /* noop */
+    }
   }
   cachedRaw = null;
   cachedProfile = null;

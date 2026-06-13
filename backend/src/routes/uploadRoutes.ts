@@ -12,6 +12,21 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
+const ALLOWED_MIMES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/webp'
+]);
+
+function validateMime(mimetype: string) {
+  if (!ALLOWED_MIMES.has(mimetype)) {
+    throw new Error('Unsupported file format. Please upload a PDF, DOCX, JPG, or PNG.');
+  }
+}
+
 // POST /api/upload/cv
 // Candidate uploads their CV
 router.post('/cv', requireAuth, requireRole('CANDIDATE'), upload.single('cv'), async (req: AuthRequest, res: Response) => {
@@ -21,6 +36,8 @@ router.post('/cv', requireAuth, requireRole('CANDIDATE'), upload.single('cv'), a
       res.status(400).json({ error: 'No CV file provided' });
       return;
     }
+    
+    validateMime(file.mimetype);
     
     const candidateId = req.user!.candidateId;
     if (!candidateId) {
@@ -45,8 +62,6 @@ router.post('/cv', requireAuth, requireRole('CANDIDATE'), upload.single('cv'), a
           cvCloudinaryId: result.public_id,
           uploadedCvName: file.originalname,
           uploadedCvMime: file.mimetype,
-          // Clear old base64 data since we now have a Cloudinary URL
-          uploadedCvData: null,
         },
       });
     } catch (dbErr: any) {
@@ -62,7 +77,7 @@ router.post('/cv', requireAuth, requireRole('CANDIDATE'), upload.single('cv'), a
     });
   } catch (error: any) {
     logger.error('CV Upload error:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload CV' });
+    res.status(error.message?.startsWith('Unsupported file format') ? 400 : 500).json({ error: error.message || 'Failed to upload CV' });
   }
 });
 
@@ -102,6 +117,10 @@ router.post('/documents', requireAuth, requireRole('CANDIDATE'), upload.array('d
       return;
     }
     
+    for (const file of files) {
+      validateMime(file.mimetype);
+    }
+    
     const candidateId = req.user!.candidateId;
     if (!candidateId) {
       res.status(400).json({ error: 'No candidate profile linked' });
@@ -128,23 +147,29 @@ router.post('/documents', requireAuth, requireRole('CANDIDATE'), upload.array('d
     res.json(results);
   } catch (error: any) {
     logger.error('Documents Upload error:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload documents' });
+    res.status(error.message?.startsWith('Unsupported file format') ? 400 : 500).json({ error: error.message || 'Failed to upload documents' });
   }
 });
 
 // POST /api/upload/document
-// Public (or Recruiter) uploads verification document during onboarding
-router.post('/document', upload.single('document'), async (req: Request, res: Response) => {
+// Recruiter uploads a hospital verification document for their own hospital
+router.post('/document', requireAuth, requireRole('RECRUITER'), upload.single('document'), async (req: AuthRequest, res: Response) => {
   try {
     const file = req.file;
     if (!file) {
-      res.status(400).json({ error: 'No document provided' });
+      res.status(400).json({ error: 'No document file provided' });
       return;
     }
+    
+    validateMime(file.mimetype);
 
     const { hospitalId, type } = req.body;
     if (!hospitalId) {
       res.status(400).json({ error: 'hospitalId is required' });
+      return;
+    }
+    if (!req.user!.hospitalId || String(hospitalId) !== req.user!.hospitalId) {
+      res.status(403).json({ error: 'Forbidden. You can only upload documents for your own hospital.' });
       return;
     }
 
@@ -162,7 +187,7 @@ router.post('/document', upload.single('document'), async (req: Request, res: Re
     });
   } catch (error: any) {
     logger.error('Document Upload error:', error);
-    res.status(500).json({ error: error.message || 'Failed to upload document' });
+    res.status(error.message?.startsWith('Unsupported file format') ? 400 : 500).json({ error: error.message || 'Failed to upload document' });
   }
 });
 

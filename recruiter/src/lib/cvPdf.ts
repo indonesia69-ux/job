@@ -36,7 +36,7 @@ export function downloadCvAsPdf(elementId: string, fileName: string): void {
     </html>
   `);
   printWindow.document.close();
-  
+
   // Wait for styles to apply before printing
   setTimeout(() => {
     printWindow.focus();

@@ -37,7 +37,14 @@ export async function searchRecruiter(query: string): Promise<RecruiterSearchRes
 }
 
 export function jobMatchesLocalSearch(
-  job: { role: string; specialty: string; location: string; city?: string; status: string; tags?: string[] },
+  job: {
+    role: string;
+    specialty: string;
+    location: string;
+    city?: string;
+    status: string;
+    tags?: string[];
+  },
   q: string,
 ): boolean {
   const needle = q.trim().toLowerCase();

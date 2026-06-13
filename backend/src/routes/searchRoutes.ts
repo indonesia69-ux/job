@@ -34,7 +34,7 @@ router.get('/recruiter', requireAuth, requireRole('RECRUITER'), async (req: Requ
           { role: { contains: q } },
           { specialty: { contains: q } },
           { location: { contains: q } },
-          { skills: { contains: q } } // NOTE: skills is a JSON string, so this does a text search inside JSON in SQLite
+          { skills: { string_contains: q } } // NOTE: skills is a JSON string, so this does a text search inside JSON in Postgres
         ]
       },
       take: 20

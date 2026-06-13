@@ -5,12 +5,10 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { VerifiedBadge } from "@/components/common/VerifiedBadge";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { ApplicationError, quickApplyToJob } from "@/lib/applications";
 import { JobCustomFieldsForm } from "@/components/apply/JobCustomFieldsForm";
-import {
-  validateCustomResponses,
-  type CustomFieldResponses,
-} from "@/lib/jobCustomFields";
+import { validateCustomResponses, type CustomFieldResponses } from "@/lib/jobCustomFields";
 import { useProfile } from "@/store/profileStore";
 import { Route as ApplyParentRoute } from "./apply.$jobId";
 
@@ -31,7 +29,11 @@ function ApplyChooser() {
   if (alreadyApplied) {
     return (
       <div className="mx-auto max-w-lg px-6 py-16 text-center animate-fade-in-up">
-        <CheckCircle2 className="mx-auto h-12 w-12 text-brand" />
+        <LottiePlayer
+          src="/successful_signup_signin.json"
+          loop={false}
+          className="mx-auto h-20 w-20"
+        />
         <h1 className="mt-4 text-xl font-semibold">Already applied</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           You have already submitted an application for {job.role} at {job.hospital}.
@@ -87,7 +89,8 @@ function ApplyChooser() {
         Choose one way to apply
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Use the structured form <strong>or</strong> upload a CV file — not both for the same application.
+        Use the structured form <strong>or</strong> upload a CV file — not both for the same
+        application.
       </p>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">

@@ -6,6 +6,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { LottiePlayer } from "./LottiePlayer";
 
 type Item = {
   id: string;
@@ -58,10 +59,8 @@ export function NotificationsMenu({
         <DropdownMenuSeparator className="my-0" />
         {items.length === 0 ? (
           <div className="px-4 py-10 text-center">
-            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-sm font-medium text-foreground">No notifications yet</p>
+            <LottiePlayer src="/normal_seach.json" loop className="mx-auto h-14 w-14" />
+            <p className="text-sm font-medium text-foreground mt-3">No notifications yet</p>
             <p className="mt-1 text-xs text-muted-foreground">{emptyHint}</p>
           </div>
         ) : (

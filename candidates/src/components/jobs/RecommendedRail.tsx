@@ -6,7 +6,13 @@ import { formatLPA } from "@/lib/format";
 import { computeJobMatches } from "@/lib/matchJobs";
 import type { Profile } from "@/data/profile";
 
-export function RecommendedRail({ jobs = [], profile }: { jobs?: any[]; profile?: Profile | null }) {
+export function RecommendedRail({
+  jobs = [],
+  profile,
+}: {
+  jobs?: any[];
+  profile?: Profile | null;
+}) {
   const recs = computeJobMatches(jobs, profile).slice(0, 5);
 
   if (recs.length === 0) return null;

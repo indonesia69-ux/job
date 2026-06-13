@@ -38,19 +38,21 @@ function toErrorMsg(raw: unknown, fallback: string): string {
 export async function syncCandidateProfile(
   profile: Profile,
   cvUploadData?: { cvUrl: string; cvCloudinaryId: string; name?: string; mime?: string },
-  supportingDocuments?: any[]
+  supportingDocuments?: any[],
 ): Promise<void> {
   let serialized: string;
   try {
     serialized = JSON.stringify({
       profile,
-      ...(cvUploadData ? {
-        cvUrl: cvUploadData.cvUrl,
-        cvCloudinaryId: cvUploadData.cvCloudinaryId,
-        cvName: cvUploadData.name,
-        cvMime: cvUploadData.mime,
-        supportingDocuments,
-      } : { supportingDocuments }),
+      ...(cvUploadData
+        ? {
+            cvUrl: cvUploadData.cvUrl,
+            cvCloudinaryId: cvUploadData.cvCloudinaryId,
+            cvName: cvUploadData.name,
+            cvMime: cvUploadData.mime,
+            supportingDocuments,
+          }
+        : { supportingDocuments }),
     });
   } catch {
     throw new ApplicationError("Could not serialize profile data. Please try again.");
@@ -106,19 +108,21 @@ export async function submitApplication(
   profile: Profile,
   customFieldResponses?: CustomFieldResponses,
   cvUploadData?: { cvUrl: string; cvCloudinaryId?: string; name?: string; mime?: string },
-  supportingDocuments?: any[]
+  supportingDocuments?: any[],
 ): Promise<void> {
   await postApplication({
     jobId,
     cvSource: "form",
     profile,
-    ...(cvUploadData ? {
-      cvUrl: cvUploadData.cvUrl,
-      cvCloudinaryId: cvUploadData.cvCloudinaryId,
-      cvName: cvUploadData.name,
-      cvMime: cvUploadData.mime,
-      supportingDocuments,
-    } : { supportingDocuments }),
+    ...(cvUploadData
+      ? {
+          cvUrl: cvUploadData.cvUrl,
+          cvCloudinaryId: cvUploadData.cvCloudinaryId,
+          cvName: cvUploadData.name,
+          cvMime: cvUploadData.mime,
+          supportingDocuments,
+        }
+      : { supportingDocuments }),
     ...(customFieldResponses && Object.keys(customFieldResponses).length > 0
       ? { customFieldResponses }
       : {}),

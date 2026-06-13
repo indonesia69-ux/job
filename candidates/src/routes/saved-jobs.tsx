@@ -76,6 +76,7 @@ function SavedJobsPage() {
         <div className="mt-10">
           <EmptyState
             icon={Bookmark}
+            lottieFile="nothing_for_the_particular_query.json"
             title="No saved jobs yet"
             description="Tap the bookmark icon on any job to save it here."
             ctaLabel="Find opportunities"

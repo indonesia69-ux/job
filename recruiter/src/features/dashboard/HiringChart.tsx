@@ -38,7 +38,11 @@ export default function HiringChart({
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-6">
-          <LegendSwatch color={chartConfig.applications.color!} label="Applications" value={totalApps} />
+          <LegendSwatch
+            color={chartConfig.applications.color!}
+            label="Applications"
+            value={totalApps}
+          />
           <LegendSwatch color={chartConfig.jobs.color!} label="Jobs posted" value={totalJobs} />
         </div>
         <p className="text-[11px] text-muted-foreground">Last 8 weeks</p>
@@ -107,15 +111,7 @@ export default function HiringChart({
   );
 }
 
-function LegendSwatch({
-  color,
-  label,
-  value,
-}: {
-  color: string;
-  label: string;
-  value: number;
-}) {
+function LegendSwatch({ color, label, value }: { color: string; label: string; value: number }) {
   return (
     <div className="flex items-center gap-2.5">
       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
@@ -126,4 +122,3 @@ function LegendSwatch({
     </div>
   );
 }
-

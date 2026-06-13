@@ -33,8 +33,7 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString("default", { month: "long" }),
+        formatMonthDropdown: (date) => date.toLocaleString("default", { month: "long" }),
         ...formatters,
       }}
       classNames={{
@@ -122,7 +121,10 @@ function Calendar({
           "text-muted-foreground/40 aria-selected:text-muted-foreground",
           defaultClassNames.outside,
         ),
-        disabled: cn("text-muted-foreground opacity-30 cursor-not-allowed", defaultClassNames.disabled),
+        disabled: cn(
+          "text-muted-foreground opacity-30 cursor-not-allowed",
+          defaultClassNames.disabled,
+        ),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
       }}

@@ -77,9 +77,7 @@ export function RecruiterSearchBar({ className }: { className?: string }) {
       />
       {open && (
         <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-[min(400px,70vh)] overflow-auto rounded-lg border border-border bg-card py-2 shadow-pop">
-          {loading && (
-            <p className="px-4 py-2 text-[12px] text-muted-foreground">Searching…</p>
-          )}
+          {loading && <p className="px-4 py-2 text-[12px] text-muted-foreground">Searching…</p>}
           {!loading && jobs.length === 0 && candidates.length === 0 && (
             <p className="px-4 py-2 text-[12px] text-muted-foreground">No matches</p>
           )}
