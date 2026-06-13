@@ -1,6 +1,11 @@
-import { Link } from "@tanstack/react-router";
-
 export function Footer() {
+  const pdfLinks = [
+    { label: "About", href: "/APRONHANGER_About.pdf" },
+    { label: "Code of Conduct", href: "/APRONHANGER_Code_of_Conduct.pdf" },
+    { label: "Privacy Policy", href: "/APRONHANGER_Work_Privacy_Policy.pdf" },
+    { label: "Terms & Conditions", href: "/APRONHANGER_Work_Terms_and_Conditions.pdf" },
+  ];
+
   return (
     <footer className="mt-16 border-t bg-surface">
       <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 py-10 md:flex-row md:items-start md:justify-between">
@@ -16,31 +21,51 @@ export function Footer() {
             not responsible for employment decisions.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-8 text-xs sm:grid-cols-4">
-          {[
-            { h: "Platform", links: ["Opportunities", "Hospitals", "Specialties"] },
-            { h: "Resources", links: ["CV Builder", "Career Guide", "Salary Insights"] },
-            { h: "Company", links: ["About", "Press", "Contact"] },
-            { h: "Legal", links: ["Privacy", "Terms", "Code of Conduct"] },
-          ].map((c) => (
-            <div key={c.h}>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {c.h}
-              </p>
-              <ul className="mt-3 space-y-2">
-                {c.links.map((l) => (
-                  <li key={l}>
-                    <Link
-                      to="/"
-                      className="text-foreground/70 transition-colors hover:text-foreground"
-                    >
-                      {l}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+        <div className="flex flex-col gap-4 text-xs sm:flex-row sm:items-start sm:gap-8">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Legal & Policies
+            </p>
+            <ul className="mt-3 space-y-2">
+              {pdfLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground/70 transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex items-end">
+            <a
+              href="/who_are_we.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md"
+            >
+              Who We Are
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                <polyline points="15 3 21 3 21 9" />
+                <line x1="10" y1="14" x2="21" y2="3" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
       <div className="border-t">

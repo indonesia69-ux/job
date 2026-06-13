@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Who We Are | ApronHanger</title>
+  <meta name="description" content="Discover ApronHanger's vision for a connected healthcare ecosystem serving professionals, students, employers, and suppliers.">
+  
+  <!-- Fonts: Manrope (Sans) & Plus Jakarta Sans (Display) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            background: '#fcfdfd',
+            foreground: '#1d2630',
+            primary: {
+              DEFAULT: '#1e8f8f',
+              foreground: '#fcfdfd',
+            },
+            secondary: {
+              DEFAULT: '#e0f7f7',
+              foreground: '#234a50',
+            },
+            muted: {
+              DEFAULT: '#eff2f5',
+              foreground: '#5c6d7e',
+            },
+            accent: {
+              DEFAULT: '#d4f2ea',
+              foreground: '#1e4b47',
+            },
+            border: '#e1e7ec',
+            brand: {
+              soft: '#e0f7f7',
+              deep: '#182a3a',
+            },
+            surface: {
+              warm: '#faf7eb',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body {
+      background-color: #fcfdfd;
+      color: #1d2630;
+      font-family: 'Manrope', sans-serif;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-background text-foreground antialiased selection:bg-accent selection:text-accent-foreground">
+
+  <main class="min-h-screen overflow-hidden">
+    
+    <!-- Hero / Who We Are Section -->
+    <section class="mx-auto grid max-w-6xl gap-14 px-6 pb-20 pt-20 lg:grid-cols-[1.35fr_0.75fr] lg:px-10 lg:pb-28 lg:pt-28">
+      <div>
+        <p class="mb-5 text-sm font-bold uppercase tracking-[0.22em] text-primary">The ApronHanger story</p>
+        <h1 class="max-w-3xl text-5xl font-extrabold tracking-[-0.045em] text-brand-deep sm:text-6xl lg:text-7xl">Who We Are</h1>
+        <div class="mt-10 max-w-3xl space-y-6 text-lg leading-8 text-muted-foreground">
+          <p><strong class="font-semibold text-foreground">ApronHanger is a healthcare-focused digital ecosystem</strong> founded with a simple vision: to connect, empower, and support every stakeholder in the healthcare community.</p>
+          <p>Founded by Dr. Abhijeet Barua, a physician and healthcare entrepreneur, ApronHanger was created to bridge the gaps between healthcare professionals, organizations, students, job seekers, and medical suppliers.</p>
+          <p>What began as a healthcare networking initiative has evolved into a comprehensive ecosystem serving multiple needs of the healthcare industry through specialized platforms.</p>
+        </div>
+      </div>
+      <aside class="self-center border-l-2 border-primary pl-8 lg:pl-10">
+        <!-- Quote Icon -->
+        <svg class="mb-7 size-11 fill-primary/15 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-6v-7a3 3 0 0 1 3-3h-3Z"/><path d="M3 8a6 6 0 0 1 6 6v7H3v-7a3 3 0 0 1 3-3H3Z"/></svg>
+        <blockquote class="text-2xl font-semibold leading-9 tracking-tight text-brand-deep lg:text-3xl lg:leading-10">“Healthcare becomes stronger when its people, opportunities, and knowledge come together.”</blockquote>
+        <p class="mt-6 text-sm font-bold uppercase tracking-[0.18em] text-primary">ApronHanger</p>
+      </aside>
+    </section>
+
+    <!-- Carousel Section -->
+    <section aria-label="ApronHanger healthcare community gallery" class="relative mx-auto max-w-[1500px] px-4 sm:px-6">
+      <div class="relative group">
+        <div id="carousel-track" class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory no-scrollbar -ml-3">
+          
+                    <!-- Slide 1 -->
+          <div class="flex-none w-[88%] md:w-[68%] lg:w-[58%] pl-3 snap-start">
+            <figure class="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+              <img src="q1.png" alt="ApronHanger healthcare professionals" width="1280" height="832" loading="lazy" class="aspect-[16/10] w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]">
+              <figcaption class="absolute bottom-5 left-5 rounded-full bg-white/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-deep backdrop-blur">Collaborate</figcaption>
+            </figure>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="flex-none w-[88%] md:w-[68%] lg:w-[58%] pl-3 snap-start">
+            <figure class="relative overflow-hidden rounded-2xl bg-slate-100 shadow-sm">
+              <img src="q2.png" alt="ApronHanger healthcare community" width="1280" height="832" loading="lazy" class="aspect-[16/10] w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]">
+              <figcaption class="absolute bottom-5 left-5 rounded-full bg-white/90 px-4 py-2 text-xs font-bold uppercase tracking-[0.16em] text-brand-deep backdrop-blur">Grow</figcaption>
+            </figure>
+          </div>
+
+          <!-- Controls -->
+        <button id="prev-btn" class="absolute left-8 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-brand-deep shadow-md hover:bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-primary z-10 sm:left-10" aria-label="Previous slide">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button id="next-btn" class="absolute right-8 top-1/2 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-brand-deep shadow-md hover:bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-primary z-10 sm:right-10" aria-label="Next slide">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- Vision & Mission Section -->
+    <section class="mx-auto grid max-w-6xl gap-8 px-6 py-24 lg:grid-cols-2 lg:px-10 lg:py-32">
+      <article class="bg-brand-deep p-8 text-white sm:p-12 lg:p-14 rounded-2xl shadow-sm">
+        <span class="text-sm font-bold uppercase tracking-[0.2em] text-accent">Our Vision</span>
+        <h2 class="mt-7 text-3xl font-bold leading-tight tracking-tight sm:text-4xl">One unified healthcare ecosystem.</h2>
+        <p class="mt-6 text-lg leading-8 text-slate-300">A place where professionals can learn, grow, connect, recruit, and access trusted healthcare resources through a single integrated network.</p>
+      </article>
+      <article class="border border-border bg-white p-8 sm:p-12 lg:p-14 rounded-2xl shadow-sm">
+        <span class="text-sm font-bold uppercase tracking-[0.2em] text-primary">Our Mission</span>
+        <ul class="mt-7 space-y-4">
+          <li class="flex gap-3 text-sm leading-6 text-muted-foreground">
+            <!-- Check Icon -->
+            <svg class="mt-1 size-4 shrink-0 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Empower healthcare professionals through networking and collaboration.</span>
+          </li>
+          <li class="flex gap-3 text-sm leading-6 text-muted-foreground">
+            <svg class="mt-1 size-4 shrink-0 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Simplify healthcare recruitment and talent acquisition.</span>
+          </li>
+          <li class="flex gap-3 text-sm leading-6 text-muted-foreground">
+            <svg class="mt-1 size-4 shrink-0 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Provide access to quality medical books and healthcare equipment.</span>
+          </li>
+          <li class="flex gap-3 text-sm leading-6 text-muted-foreground">
+            <svg class="mt-1 size-4 shrink-0 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Support hospitals, clinics, and healthcare organizations in building stronger teams.</span>
+          </li>
+          <li class="flex gap-3 text-sm leading-6 text-muted-foreground">
+            <svg class="mt-1 size-4 shrink-0 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            <span>Foster innovation, knowledge sharing, and professional development across the healthcare sector.</span>
+          </li>
+        </ul>
+      </article>
+    </section>
+
+    <!-- Ecosystem Section -->
+    <section class="bg-surface-warm py-24 lg:py-32">
+      <div class="mx-auto max-w-6xl px-6 lg:px-10">
+        <div class="max-w-3xl">
+          <p class="text-sm font-bold uppercase tracking-[0.2em] text-primary">Four platforms. One purpose.</p>
+          <h2 class="mt-5 text-4xl font-extrabold tracking-[-0.035em] text-brand-deep sm:text-5xl">The ApronHanger Ecosystem</h2>
+        </div>
+        
+        <div class="mt-14 grid border-y border-border md:grid-cols-2">
+          
+          <!-- ApronHanger.com -->
+          <a href="https://apronhanger.com" target="_blank" rel="noopener noreferrer" class="block group py-9 md:p-10 md:border-r border-border border-b hover:bg-slate-50/50 transition-colors">
+            <div class="flex items-start justify-between gap-5">
+              <div class="flex size-12 items-center justify-center rounded-full bg-brand-soft text-primary">
+                <!-- Network Icon -->
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Connect</span>
+            </div>
+            <h3 class="mt-8 text-2xl font-bold tracking-tight text-brand-deep">ApronHanger.com</h3>
+            <p class="mt-4 max-w-xl leading-7 text-muted-foreground">A professional networking and community platform designed exclusively for healthcare professionals, enabling collaboration, knowledge sharing, and professional growth.</p>
+            <!-- Arrow Right Icon -->
+            <svg class="mt-7 size-5 text-primary transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- ApronHanger.store -->
+          <a href="https://apronhanger.store" target="_blank" rel="noopener noreferrer" class="block group py-9 md:p-10 border-b border-border hover:bg-slate-50/50 transition-colors">
+            <div class="flex items-start justify-between gap-5">
+              <div class="flex size-12 items-center justify-center rounded-full bg-brand-soft text-primary">
+                <!-- ShoppingBag Icon -->
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Access</span>
+            </div>
+            <h3 class="mt-8 text-2xl font-bold tracking-tight text-brand-deep">ApronHanger.store</h3>
+            <p class="mt-4 max-w-xl leading-7 text-muted-foreground">A dedicated marketplace for professionals, students, institutions, and medical organizations to access medical books, educational resources, and healthcare equipment.</p>
+            <svg class="mt-7 size-5 text-primary transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- ApronHanger.work -->
+          <a href="https://apronhanger.work" target="_blank" rel="noopener noreferrer" class="block group py-9 md:p-10 md:border-r border-border border-b md:border-b-0 hover:bg-slate-50/50 transition-colors">
+            <div class="flex items-start justify-between gap-5">
+              <div class="flex size-12 items-center justify-center rounded-full bg-brand-soft text-primary">
+                <!-- Briefcase Icon -->
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M22 13a18.15 18.15 0 0 1-20 0"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Discover</span>
+            </div>
+            <h3 class="mt-8 text-2xl font-bold tracking-tight text-brand-deep">ApronHanger.work</h3>
+            <p class="mt-4 max-w-xl leading-7 text-muted-foreground">A healthcare-focused job portal connecting talented candidates with opportunities across hospitals, clinics, startups, diagnostic centers, pharmaceutical companies, and allied organizations.</p>
+            <svg class="mt-7 size-5 text-primary transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+          <!-- ApronHanger.org -->
+          <a href="https://apronhanger.org" target="_blank" rel="noopener noreferrer" class="block group py-9 md:p-10 hover:bg-slate-50/50 transition-colors">
+            <div class="flex items-start justify-between gap-5">
+              <div class="flex size-12 items-center justify-center rounded-full bg-brand-soft text-primary">
+                <!-- Building Icon -->
+                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Recruit</span>
+            </div>
+            <h3 class="mt-8 text-2xl font-bold tracking-tight text-brand-deep">ApronHanger.org</h3>
+            <p class="mt-4 max-w-xl leading-7 text-muted-foreground">A recruitment and workforce management platform for hospitals, institutions, and recruiters to discover, evaluate, and hire qualified healthcare talent efficiently.</p>
+            <svg class="mt-7 size-5 text-primary transition-transform group-hover:translate-x-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Why ApronHanger Section -->
+    <section class="mx-auto max-w-6xl px-6 py-24 lg:px-10 lg:py-32">
+      <div class="grid gap-12 lg:grid-cols-[0.7fr_1.3fr]">
+        <div>
+          <p class="text-sm font-bold uppercase tracking-[0.2em] text-primary">Built around healthcare</p>
+          <h2 class="mt-5 text-4xl font-extrabold tracking-[-0.035em] text-brand-deep sm:text-5xl">Why ApronHanger?</h2>
+        </div>
+        
+        <div class="grid gap-x-10 sm:grid-cols-2">
+          
+          <!-- Healthcare First -->
+          <article class="border-t border-border py-7">
+            <!-- Stethoscope Icon -->
+            <svg class="size-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.8 2.3A.3.3 0 1 0 5 2H4a2 2 0 0 0-2 2v5a6 6 0 0 0 6 6v0a6 6 0 0 0 6-6V4a2 2 0 0 0-2-2h-1a.2.2 0 1 0 .3.3"/><path d="M8 15v1a6 6 0 0 0 6 6h2a6 6 0 0 0 6-6v-4"/><circle cx="20" cy="10" r="2"/></svg>
+            <h3 class="mt-5 text-xl font-bold text-brand-deep">Healthcare First</h3>
+            <p class="mt-3 leading-7 text-muted-foreground">Every solution we build is designed specifically for the healthcare industry.</p>
+          </article>
+
+          <!-- Trusted Community -->
+          <article class="border-t border-border py-7">
+            <!-- Users Icon -->
+            <svg class="size-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 21a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><path d="M12 2a5 5 0 0 0-3 1.372"/><path d="M15 3.372A5 5 0 0 0 12 2"/><path d="M2 21a8 8 0 0 0 4-6"/><path d="M22 21a8 8 0 0 0-4-6"/><path d="M6 12a4 4 0 0 1 0-8"/><path d="M18 12a4 4 0 0 1 0-8"/></svg>
+            <h3 class="mt-5 text-xl font-bold text-brand-deep">Trusted Community</h3>
+            <p class="mt-3 leading-7 text-muted-foreground">A growing network of doctors, nurses, allied professionals, recruiters, students, and healthcare leaders.</p>
+          </article>
+
+          <!-- Career Growth -->
+          <article class="border-t border-border py-7">
+            <!-- Sparkles Icon -->
+            <svg class="size-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>
+            <h3 class="mt-5 text-xl font-bold text-brand-deep">Career Growth</h3>
+            <p class="mt-3 leading-7 text-muted-foreground">From students entering the profession to experienced leaders, we support development at every stage.</p>
+          </article>
+
+          <!-- Recruitment Excellence -->
+          <article class="border-t border-border py-7">
+            <!-- Heart Handshake Icon -->
+            <svg class="size-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79-.07l.45.39a2 2 0 0 1 .02 2.87l-2.22 2.2a2.12 2.12 0 0 1-3 0l-3.3-3.3"/></svg>
+            <h3 class="mt-5 text-xl font-bold text-brand-deep">Recruitment Excellence</h3>
+            <p class="mt-3 leading-7 text-muted-foreground">Helping organizations find the right talent while candidates discover meaningful opportunities.</p>
+          </article>
+
+          <!-- Knowledge & Resources -->
+          <article class="border-t border-border py-7 sm:col-span-2">
+            <!-- BookOpen Icon -->
+            <svg class="size-6 text-primary" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <h3 class="mt-5 text-xl font-bold text-brand-deep">Knowledge & Resources</h3>
+            <p class="mt-3 leading-7 text-muted-foreground">Access to educational content, professional insights, medical books, and healthcare equipment.</p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Founder Section -->
+    <section class="bg-brand-deep py-24 text-white lg:py-32">
+      <div class="mx-auto grid max-w-6xl gap-14 px-6 lg:grid-cols-[0.8fr_1.2fr] lg:px-10">
+        <div>
+          <p class="text-sm font-bold uppercase tracking-[0.2em] text-accent">Our Founder</p>
+          <h2 class="mt-5 text-4xl font-extrabold tracking-[-0.035em] sm:text-5xl">Dr. Abhijeet Barua</h2>
+          <div class="mt-8 space-y-5 leading-7 text-slate-300">
+            <p>Dr. Abhijeet Barua is a medical professional and entrepreneur dedicated to strengthening healthcare through technology, collaboration, and innovation.</p>
+            <p>Recognizing the challenges faced by healthcare professionals, institutions, and aspiring candidates, he envisioned ApronHanger as a platform that brings together networking, recruitment, education, and healthcare commerce under one trusted brand.</p>
+            <p>His mission is to build a healthcare ecosystem that empowers professionals, supports organizations, and ultimately contributes to better healthcare delivery.</p>
+          </div>
+        </div>
+        
+        <div class="self-center">
+          <div class="relative aspect-video overflow-hidden rounded-2xl border border-white/10 bg-black shadow-lg">
+            <video
+              class="absolute inset-0 w-full h-full object-cover"
+              autoplay
+              loop
+              muted
+              playsinline>
+              <source src="public/doc_vid.mp4" type="video/mp4">
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <p class="mt-4 text-sm text-slate-400">Dr. Barua’s founder message.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer CTA Section -->
+    <section class="mx-auto max-w-5xl px-6 py-24 text-center lg:py-36">
+      <p class="text-sm font-bold uppercase tracking-[0.2em] text-primary">Our shared future</p>
+      <h2 class="mx-auto mt-6 max-w-4xl text-4xl font-extrabold leading-tight tracking-[-0.04em] text-brand-deep sm:text-6xl">Building the Future of Healthcare Together</h2>
+      <p class="mx-auto mt-8 max-w-3xl text-lg leading-8 text-muted-foreground">At ApronHanger, we believe healthcare is stronger when professionals are connected, opportunities are accessible, knowledge is shared, and organizations are empowered with the right talent and resources.</p>
+      <p class="mt-10 text-xl font-bold text-primary sm:text-2xl">One Ecosystem. One Community. Endless Possibilities.</p>
+    </section>
+
+  </main>
+
+  <script>
+    // Carousel script
+    const track = document.getElementById('carousel-track');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    if (track && prevBtn && nextBtn) {
+      const getScrollAmount = () => {
+        const firstItem = track.querySelector('.pl-3');
+        return firstItem ? firstItem.offsetWidth : track.offsetWidth * 0.6;
+      };
+
+      prevBtn.addEventListener('click', () => {
+        track.scrollBy({ left: -getScrollAmount(), behavior: 'smooth' });
+      });
+
+      nextBtn.addEventListener('click', () => {
+        const maxScroll = track.scrollWidth - track.clientWidth;
+        if (track.scrollLeft >= maxScroll - 10) {
+          track.scrollTo({ left: 0, behavior: 'smooth' });
+        } else {
+          track.scrollBy({ left: getScrollAmount(), behavior: 'smooth' });
+        }
+      });
+      
+      // Auto responsive adjust scroll snaps
+      let isDown = false;
+      let startX;
+      let scrollLeft;
+
+      track.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - track.offsetLeft;
+        scrollLeft = track.scrollLeft;
+      });
+      track.addEventListener('mouseleave', () => {
+        isDown = false;
+      });
+      track.addEventListener('mouseup', () => {
+        isDown = false;
+      });
+      track.addEventListener('mousemove', (e) => {
+        if(!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - track.offsetLeft;
+        const walk = (x - startX) * 1.5;
+        track.scrollLeft = scrollLeft - walk;
+      });
+    }
+  </script>
+</body>
+</html>
