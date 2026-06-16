@@ -22,3 +22,18 @@ export function authHeader(): Record<string, string> {
     return {};
   }
 }
+
+export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init);
+  if (res.status === 401) {
+    if (typeof input === 'string' && !input.includes('/auth/login')) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("apronhanger.admin.session");
+        if (window.location.pathname !== '/auth') {
+          window.location.href = "/auth";
+        }
+      }
+    }
+  }
+  return res;
+}

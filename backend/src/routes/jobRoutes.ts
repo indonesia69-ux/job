@@ -62,9 +62,69 @@ async function canViewHospitalJobs(req: Request, hospitalId: string): Promise<bo
   }
 }
 
-// GET /api/jobs (supports ?q= search and ?hospitalId=)
+function parseNullableNumber(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function parseRequiredNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function validateEditableJobPayload(body: Record<string, any>, status: string): string | null {
+  if (status === 'Draft') return null;
+  const required = ['role', 'specialty', 'location', 'type', 'description'];
+  for (const field of required) {
+    if (!String(body[field] ?? '').trim()) return `${field} is required`;
+  }
+  const salaryMin = parseRequiredNumber(body.salaryMin);
+  const salaryMax = parseRequiredNumber(body.salaryMax);
+  if (!Number.isFinite(salaryMin) || salaryMin <= 0) return 'salaryMin must be a positive number';
+  if (!Number.isFinite(salaryMax) || salaryMax <= 0) return 'salaryMax must be a positive number';
+  if (salaryMin > salaryMax) return 'salaryMin cannot be greater than salaryMax';
+  const expMin = parseNullableNumber(body.experienceMin);
+  const expMax = parseNullableNumber(body.experienceMax);
+  if (Number.isNaN(expMin) || Number.isNaN(expMax)) return 'Experience values must be valid numbers';
+  if (expMin !== null && expMax !== null && expMin > expMax) return 'experienceMin cannot exceed experienceMax';
+  return null;
+}
+
+function buildEditableJobData(body: Record<string, any>, status: string) {
+  const customFields = normalizeJobCustomFields(body.customApplicationFields);
+  if (!customFields.ok) throw new Error(customFields.error);
+  const validationError = validateEditableJobPayload(body, status);
+  if (validationError) throw new Error(validationError);
+  return {
+    role: String(body.role || ''),
+    specialty: String(body.specialty || ''),
+    category: body.category ? String(body.category) : null,
+    subSpecialty: body.subSpecialty ? String(body.subSpecialty) : null,
+    location: String(body.location || ''),
+    city: body.city ? String(body.city) : null,
+    type: String(body.type || 'Full-time'),
+    shift: body.shift ? String(body.shift) : null,
+    status,
+    description: String(body.description || ''),
+    salaryMin: parseRequiredNumber(body.salaryMin || 0),
+    salaryMax: parseRequiredNumber(body.salaryMax || 0),
+    experienceMin: parseNullableNumber(body.experienceMin),
+    experienceMax: parseNullableNumber(body.experienceMax),
+    experience: body.experience ? String(body.experience) : null,
+    tags: body.tags || undefined,
+    responsibilities: body.responsibilities ? JSON.stringify(body.responsibilities) : undefined,
+    requirements: body.requirements
+      ? JSON.stringify(Array.isArray(body.requirements) ? body.requirements : [String(body.requirements)])
+      : undefined,
+    perks: body.perks ? JSON.stringify(body.perks) : undefined,
+    customApplicationFields: customFields.fields.length > 0 ? customFields.fields : undefined,
+  };
+}
+
+// GET /api/jobs (supports ?q= search, ?hospitalId=, ?category=, ?excludeId=, ?limit=)
 router.get('/', async (req: Request, res: Response) => {
-  const { hospitalId, q } = req.query;
+  const { hospitalId, q, category, excludeId, limit: limitParam } = req.query;
   try {
     const profile = await getCandidateProfileForMatch(req);
     const requestedHospitalId = typeof hospitalId === 'string' ? hospitalId : '';
@@ -91,6 +151,14 @@ router.get('/', async (req: Request, res: Response) => {
       deletedAt: null
     };
 
+    // Similar-jobs filter: category + exclude self
+    if (category && typeof category === 'string' && category.trim()) {
+      where.category = category.trim();
+    }
+    if (excludeId && typeof excludeId === 'string' && excludeId.trim()) {
+      where.id = { not: excludeId.trim() };
+    }
+
     // Basic search filtering (title or specialty matching)
     if (q && typeof q === 'string' && q.trim()) {
       const searchTerms = q.trim().split(' ').filter(Boolean);
@@ -109,10 +177,18 @@ router.get('/', async (req: Request, res: Response) => {
       }
     }
 
+    // Optional result limit (used by similar-jobs calls, capped at 20, default 50)
+    const take = limitParam ? Math.min(20, Math.max(1, parseInt(String(limitParam)) || 20)) : 50;
+
     const jobs = await prisma.job.findMany({
       where,
-      include: { hospital: true, _count: { select: { applications: true } } },
-      orderBy: { postedDays: 'asc' } // In SQLite/Postgres might need actual date sorting eventually
+      include: { 
+        hospital: true, 
+        postedBy: { select: { id: true, name: true, email: true } },
+        _count: { select: { applications: true } } 
+      },
+      orderBy: { postedOn: 'desc' },
+      take,
     });
     res.json(jobs.map((j) => formatJob(j, profile)));
   } catch (error) {
@@ -120,6 +196,7 @@ router.get('/', async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 // GET /api/jobs/:id
 router.get('/:id', async (req: Request, res: Response) => {
@@ -132,7 +209,11 @@ router.get('/:id', async (req: Request, res: Response) => {
           deletedAt: null
         }
       },
-      include: { hospital: true, _count: { select: { applications: true } } }
+      include: { 
+        hospital: true, 
+        postedBy: { select: { id: true, name: true, email: true } },
+        _count: { select: { applications: true } } 
+      }
     });
     if (!job) { res.status(404).json({ error: 'Job not found' }); return; }
     res.json(formatJob(job));
@@ -203,6 +284,12 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
       return;
     }
 
+    const validationError = validateEditableJobPayload(b, intendedStatus);
+    if (validationError) {
+      res.status(400).json({ error: validationError });
+      return;
+    }
+
     const [, job] = await prisma.$transaction([
       prisma.user.update({
         where: { id: updatedUser.id },
@@ -211,6 +298,7 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
       prisma.job.create({
       data: {
         hospitalId,
+        postedById: req.user!.id,
         visibilityEndsAt: intendedStatus === 'Active' ? computeVisibilityEndsAt(hospital.onboardingPlan || 'Basic') : null,
         postedOn: intendedStatus === 'Active' ? new Date() : null,
         role:            String(b.role       || ''),
@@ -223,10 +311,10 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
         shift:           b.shift      ? String(b.shift)      : null,
         status:          intendedStatus,
         description:     String(b.description || ''),
-        salaryMin:       Number(b.salaryMin  || 0),
-        salaryMax:       Number(b.salaryMax  || 0),
-        experienceMin:   b.experienceMin != null ? Number(b.experienceMin) : null,
-        experienceMax:   b.experienceMax != null ? Number(b.experienceMax) : null,
+        salaryMin:       parseRequiredNumber(b.salaryMin  || 0),
+        salaryMax:       parseRequiredNumber(b.salaryMax  || 0),
+        experienceMin:   parseNullableNumber(b.experienceMin),
+        experienceMax:   parseNullableNumber(b.experienceMax),
         experience:      b.experience  ? String(b.experience) : null,
         postedDays:      0,
         tags:            b.tags || undefined,
@@ -258,10 +346,6 @@ router.post('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest,
 // PATCH /api/jobs/:id
 router.patch('/:id', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
   const { status } = req.body;
-  if (!status) {
-    res.status(400).json({ error: 'status is required' });
-    return;
-  }
   try {
     const job = await prisma.job.findUnique({
       where: { id: String(req.params.id) },
@@ -275,7 +359,7 @@ router.patch('/:id', requireAuth, requireRole('RECRUITER'), async (req: AuthRequ
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    const nextStatus = String(status);
+    const nextStatus = String(status || job.status);
     const allowedPatchStatuses = ['Active', 'Closed', 'Draft'];
     if (!allowedPatchStatuses.includes(nextStatus)) {
       res.status(400).json({ error: `Invalid status. Must be one of: ${allowedPatchStatuses.join(', ')}` });
@@ -312,11 +396,16 @@ router.patch('/:id', requireAuth, requireRole('RECRUITER'), async (req: AuthRequ
         res.json(formatJob(job));
         return;
       }
+      // Terminate ALL in-pipeline (non-terminal) applications when job is closed
+      const TERMINAL_APP_STATUSES = [
+        'Onboarded', 'Dropped', 'OfferRejected', 'DocumentsRejected',
+        'Rejected', 'InterviewDeclined', 'JobClosed',
+      ];
       const [, updatedJob] = await prisma.$transaction([
         prisma.application.updateMany({
           where: {
             jobId: job.id,
-            status: { in: ['New', 'Reviewed'] },
+            status: { notIn: TERMINAL_APP_STATUSES },
           },
           data: { status: 'JobClosed' },
         }),
@@ -327,6 +416,23 @@ router.patch('/:id', requireAuth, requireRole('RECRUITER'), async (req: AuthRequ
         }),
       ]);
       res.json(formatJob(updatedJob));
+      return;
+    }
+    const editableKeys = [
+      'role', 'specialty', 'category', 'subSpecialty', 'location', 'city', 'type', 'shift',
+      'description', 'salaryMin', 'salaryMax', 'experienceMin', 'experienceMax', 'experience',
+      'tags', 'responsibilities', 'requirements', 'perks', 'customApplicationFields'
+    ];
+    const isEditingFields = editableKeys.some((key) => Object.prototype.hasOwnProperty.call(req.body, key));
+    if (isEditingFields) {
+      const merged = { ...job, ...req.body, status: nextStatus };
+      const data = buildEditableJobData(merged, nextStatus);
+      const updated = await prisma.job.update({
+        where: { id: job.id },
+        data,
+        include: { hospital: true, applications: true },
+      });
+      res.json(formatJob(updated));
       return;
     }
     const updated = await prisma.job.update({

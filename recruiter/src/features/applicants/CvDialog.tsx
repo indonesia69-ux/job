@@ -5,8 +5,54 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Candidate } from "@/lib/mock";
+import type { FormProfile } from "@/lib/formProfile";
 import { downloadCvAsPdf } from "@/lib/cvPdf";
 import { CvDocument } from "@/components/cv/CvDocument";
+
+function toSanitizedProfile(candidate: Candidate): FormProfile {
+  if (candidate.formProfile) {
+    return { ...candidate.formProfile, email: "", phone: "" };
+  }
+  return {
+    name: candidate.name,
+    headline: candidate.summary || `${candidate.role} - ${candidate.specialty}`,
+    email: "",
+    phone: "",
+    city: candidate.location,
+    state: candidate.location,
+    avatar: candidate.initials,
+    verified: candidate.verified,
+    completeness: candidate.matchPercent || 70,
+    role: candidate.role,
+    registrationNumber: candidate.registration,
+    registrationCouncil: "",
+    specialty: candidate.specialty,
+    yearsExperience: candidate.experienceYears,
+    summary: candidate.summary,
+    qualifications: candidate.education.map((e) => ({
+      degree: e.degree,
+      institution: e.institute,
+      year: e.year,
+    })),
+    experience: candidate.experience.map((e) => ({
+      role: e.role,
+      hospital: e.employer,
+      city: e.location,
+      start: e.period,
+      end: "",
+      summary: e.highlights.join("; "),
+    })),
+    clinicalSkills: candidate.skills,
+    technicalSkills: [],
+    procedures: candidate.procedures.map((p) => ({ name: p, count: 0 })),
+    certifications: candidate.certifications.map((name) => ({ name, issuer: "", year: "" })),
+    publications: [],
+    languages: candidate.languages,
+    availability: candidate.availabilityStatus || candidate.noticePeriod || "",
+    expectedSalaryMin: Number(candidate.expectedSalaryMin || 0),
+    expectedSalaryMax: Number(candidate.expectedSalaryMax || 0),
+  };
+}
 
 export function CvDialog({
   candidate,
@@ -15,139 +61,55 @@ export function CvDialog({
   candidate: Candidate | null;
   onClose: () => void;
 }) {
-  // A candidate has an uploadable file if they either:
-  // 1. Used the "upload CV" flow (cvSource === "upload"), OR
-  // 2. Used the form flow but also attached a Cloudinary file (cvUrl is set)
-  const isUpload = !!(candidate?.cvUrl || candidate?.uploadedCvData);
-  const cvLink = candidate?.cvUrl || candidate?.uploadedCvData;
-  const formProfile = candidate?.formProfile;
+  const sanitizedProfile = candidate ? toSanitizedProfile(candidate) : null;
+
+  const printSanitizedCv = () => {
+    if (!candidate) return;
+    downloadCvAsPdf("recruiter-cv-view", `${candidate.name}-CV.pdf`);
+    toast.success("Sanitized CV ready to print or save as PDF");
+  };
 
   return (
-    <Dialog open={!!candidate} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={!!candidate} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[92vh] max-w-3xl overflow-hidden p-0">
-        {candidate && (
+        {candidate && sanitizedProfile && (
           <div className="flex h-[85vh] flex-col">
             <DialogHeader className="flex-row items-center justify-between space-y-0 border-b border-border p-4">
               <div>
                 <DialogTitle className="font-display text-[16px]">
-                  CV — {candidate.name}
+                  CV - {candidate.name}
                 </DialogTitle>
                 <p className="text-[12px] text-muted-foreground">
-                  {candidate.role} · {candidate.specialty}
-                  {isUpload && formProfile
-                    ? " · Form CV + Attached File"
-                    : isUpload
-                      ? " · Uploaded file"
-                      : " · Form CV"}
+                  {candidate.role} - {candidate.specialty} - Sanitized recruiter CV
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {formProfile && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    onClick={() => downloadCvAsPdf("recruiter-cv-view", `${candidate.name}-CV.pdf`)}
-                  >
-                    <Printer className="mr-1.5 h-3.5 w-3.5" /> Print
-                  </Button>
-                )}
-                <Button
-                  size="sm"
-                  className="h-8"
-                  onClick={() => {
-                    if (cvLink) {
-                      if (candidate.cvUrl) {
-                        window.open(candidate.cvUrl, "_blank");
-                        toast.success("Download opened in new tab");
-                      } else {
-                        const a = document.createElement("a");
-                        a.href = cvLink;
-                        a.download = candidate.uploadedCvName || `${candidate.name}-CV.pdf`;
-                        a.click();
-                        toast.success("Download started");
-                      }
-                    } else if (formProfile) {
-                      downloadCvAsPdf("recruiter-cv-view", `${candidate.name}-CV.pdf`);
-                    } else {
-                      toast.error("No CV content available");
-                    }
-                  }}
-                >
+                <Button variant="outline" size="sm" className="h-8" onClick={printSanitizedCv}>
+                  <Printer className="mr-1.5 h-3.5 w-3.5" /> Print
+                </Button>
+                <Button size="sm" className="h-8" onClick={printSanitizedCv}>
                   <Download className="mr-1.5 h-3.5 w-3.5" /> Download
                 </Button>
               </div>
             </DialogHeader>
 
-            <Tabs
-              defaultValue={formProfile ? "structured" : "uploaded"}
-              className="flex flex-1 flex-col overflow-hidden"
-            >
+            <Tabs defaultValue="structured" className="flex flex-1 flex-col overflow-hidden">
               <div className="border-b border-border bg-muted/20 px-4 py-2">
                 <TabsList>
-                  {formProfile && <TabsTrigger value="structured">Structured CV</TabsTrigger>}
-                  {isUpload && (
-                    <TabsTrigger value="uploaded">
-                      {formProfile ? "Attached File" : "Uploaded CV"}
-                    </TabsTrigger>
-                  )}
-                  {formProfile && <TabsTrigger value="print">Print preview</TabsTrigger>}
+                  <TabsTrigger value="structured">Sanitized CV</TabsTrigger>
+                  <TabsTrigger value="print">Print preview</TabsTrigger>
                 </TabsList>
               </div>
 
-              {/* Structured / form CV tab */}
-              {formProfile && (
-                <TabsContent value="structured" className="flex-1 overflow-y-auto p-6">
-                  <CvDocument profile={formProfile} id="recruiter-cv-view" />
-                </TabsContent>
-              )}
+              <TabsContent value="structured" className="flex-1 overflow-y-auto p-6">
+                <CvDocument profile={sanitizedProfile} id="recruiter-cv-view" />
+              </TabsContent>
 
-              {/* Uploaded / attached file tab */}
-              {isUpload && (
-                <TabsContent value="uploaded" className="flex-1 overflow-y-auto bg-muted/40 p-4">
-                  {cvLink ? (
-                    // Show inline PDF preview; for DOCX we show a download-only card
-                    candidate?.uploadedCvMime?.includes("pdf") ||
-                    candidate?.uploadedCvName?.endsWith(".pdf") ||
-                    candidate?.cvUrl ? (
-                      <iframe
-                        title="Uploaded CV"
-                        src={cvLink}
-                        className="mx-auto h-[70vh] w-full max-w-[640px] rounded-md border bg-white shadow-pop"
-                      />
-                    ) : (
-                      <div className="mx-auto max-w-md rounded-md bg-card p-8 text-center shadow-pop">
-                        <p className="text-sm font-medium">
-                          {candidate?.uploadedCvName ?? "Document"}
-                        </p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          DOCX preview not available — use the Download button above.
-                        </p>
-                      </div>
-                    )
-                  ) : (
-                    <p className="text-center text-sm text-muted-foreground">File not available.</p>
-                  )}
-                </TabsContent>
-              )}
-
-              {/* Print preview tab (form CV only) */}
-              {formProfile && (
-                <TabsContent value="print" className="flex-1 overflow-y-auto bg-muted/40 p-4">
-                  <div className="mx-auto max-w-[720px]">
-                    <CvDocument profile={formProfile} />
-                  </div>
-                </TabsContent>
-              )}
-
-              {/* Fallback when neither is available */}
-              {!formProfile && !isUpload && (
-                <div className="flex flex-1 items-center justify-center p-6">
-                  <p className="text-center text-sm text-muted-foreground">
-                    This candidate has not completed their profile or uploaded a CV yet.
-                  </p>
+              <TabsContent value="print" className="flex-1 overflow-y-auto bg-muted/40 p-4">
+                <div className="mx-auto max-w-[720px]">
+                  <CvDocument profile={sanitizedProfile} />
                 </div>
-              )}
+              </TabsContent>
             </Tabs>
           </div>
         )}

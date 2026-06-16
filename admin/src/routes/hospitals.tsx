@@ -14,6 +14,7 @@ import {
   Trash2,
   ArrowLeft,
   Eye,
+  LogIn,
 } from "lucide-react";
 import { AdminEmptyState as EmptyState } from "@/components/common/EmptyState";
 
@@ -157,6 +158,17 @@ function Breadcrumbs({
 // ============= Hospitals list =============
 function HospitalsList({ onOpen }: { onOpen: (id: string) => void }) {
   const store = useAdminStore();
+
+  if (store.hospitals.length === 0 && !store.isLoading) {
+    return (
+      <EmptyState
+        icon={Building2}
+        lottieFile="nothing_for_the_particular_query.json"
+        title="No approved hospitals"
+        description="Hospitals will appear here once their onboarding application is approved."
+      />
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -381,6 +393,31 @@ function RecruitersList({
                         </button>
                         <button
                           onClick={async () => {
+                            if (!confirm(`Login as ${r.name}? This opens a 1-hour session.`)) return;
+                            try {
+                              const result = await store.impersonateUser(r.id);
+                              const recruiterUrl =
+                                import.meta.env.VITE_RECRUITER_URL || "http://localhost:8081";
+                              const url = `${recruiterUrl}/impersonate?token=${encodeURIComponent(result.token)}`;
+                              const popup = window.open(url, "_blank");
+                              if (!popup) {
+                                navigator.clipboard.writeText(url).then(() =>
+                                  toast.info("Popup blocked — impersonation link copied to clipboard"),
+                                );
+                              } else {
+                                toast.success(`Impersonating ${result.user.name}`);
+                              }
+                            } catch (err: any) {
+                              toast.error(err?.message || "Failed to impersonate");
+                            }
+                          }}
+                          className="rounded p-1.5 hover:bg-accent text-primary"
+                          title="Login as recruiter"
+                        >
+                          <LogIn className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={async () => {
                             try {
                               await store.toggleRecruiterBlock(r.id);
                               toast.success(
@@ -436,9 +473,7 @@ function JobsList({
 }) {
   const store = useAdminStore();
   const recruiter = store.recruiters.find((r) => r.id === recruiterId)!;
-  const list = store.jobs.filter(
-    (j) => j.recruiterId === recruiterId && j.hospitalId === hospitalId,
-  );
+  const list = store.jobs.filter((j) => j.hospitalId === hospitalId);
 
   return (
     <div className="space-y-4">
@@ -448,7 +483,7 @@ function JobsList({
         <div>
           <p className="text-sm font-semibold">{recruiter.name}</p>
           <p className="text-xs text-muted-foreground">
-            {recruiter.email} · {recruiter.role}
+            {recruiter.email} · {recruiter.role} · Jobs posted at this hospital
           </p>
         </div>
         <VerifiedBadge verified={store.isRecruiterVerified(recruiter.id)} />

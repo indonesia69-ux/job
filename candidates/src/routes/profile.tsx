@@ -290,7 +290,7 @@ const STYLES = `
   /* ── Stats strip ── */
   .ph-stats {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     border-top: 1px solid var(--ph-border);
     margin-top: 2rem;
     max-width: 1200px;
@@ -759,13 +759,13 @@ function EmptyState() {
           ApronHanger builds your professional CV from a single structured form. Once it's done, you
           can Quick Apply to any verified role with one tap.
         </p>
-        <button
+        <Link
+          to="/build-cv"
           className="ph-btn-primary"
-          style={{ margin: "0 auto", opacity: 0.5, cursor: "not-allowed" }}
-          disabled
+          style={{ margin: "0 auto" }}
         >
-          <FileText size={14} /> CV Builder Coming Soon
-        </button>
+          <FileText size={14} /> Build my CV
+        </Link>
       </div>
     </div>
   );

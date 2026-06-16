@@ -39,6 +39,14 @@ model User {
   deletedAt    DateTime? // Soft-delete timestamp
   tokenVersion Int       @default(0) // Incremented on password reset to force logout
 
+  // ── Notification Preferences ──────────────────────────────────────────────
+  notifOnApply  Boolean @default(true)  // Email when candidate applies
+  notifWeekly   Boolean @default(false) // Weekly hiring summary
+  notifHighMatch Boolean @default(true) // Notify on >90% match
+
+  // ── Jobs Posted ───────────────────────────────────────────────────────────
+  jobsPosted Job[] @relation("JobPostedBy")
+
   // Username is unique within a hospital (not globally)
   @@unique([hospitalId, username])
 }
@@ -170,10 +178,16 @@ model Job {
   hospitalId String
   hospital   Hospital @relation(fields: [hospitalId], references: [id])
 
+  postedById String?
+  postedBy   User?    @relation("JobPostedBy", fields: [postedById], references: [id])
+
   applications Application[]
   savedBy      SavedJob[]
 
   @@index([status, visibilityEndsAt])
+  @@index([role])
+  @@index([location])
+  @@index([specialty])
 }
 
 model Candidate {
@@ -210,10 +224,10 @@ model Candidate {
   supportingDocuments Json? // JSON array of { name, url, publicId, mime }
 
   // ── Premium Search Filter Fields (NEW) ─────────────────────────────────────
-  expectedSalaryMin  Int? // LPA
-  expectedSalaryMax  Int? // LPA
-  currentSalaryMin   Int? // LPA
-  currentSalaryMax   Int? // LPA
+  expectedSalaryMin  Float? // LPA (decimal supported e.g. 3.5)
+  expectedSalaryMax  Float? // LPA
+  currentSalaryMin   Float? // LPA
+  currentSalaryMax   Float? // LPA
   noticePeriod       String? // "Immediately" | "15 days notice" | "30 days notice" | "60 days notice" | "90 days notice"
   preferredLocations Json? // JSON string[] — preferred job cities/states
   availabilityStatus String? // "Immediate Joiner" | "Serving Notice Period" | "Open to Opportunities"
@@ -221,6 +235,9 @@ model Candidate {
   // ── Admin Controls ────────────────────────────────────────────────────────
   isSuspended Boolean   @default(false) // Admin can suspend candidate
   deletedAt   DateTime? // Soft-delete timestamp
+
+  // ── Search Index ──────────────────────────────────────────────────────────
+  searchBlob  String?   @db.Text
 
   // Link to auth user
   userId String? @unique
@@ -377,6 +394,16 @@ model InAppNotification {
   createdAt DateTime @default(now())
 }
 
+// ── In-app notifications for Admins ──────────────────────────────────────────
+model AdminNotification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  link      String? // Optional deep-link for the notification
+  createdAt DateTime @default(now())
+}
+
 model PaymentOrder {
   id              String   @id @default(uuid())
   hospitalId      String
@@ -422,4 +449,17 @@ model ResetToken {
   createdAt DateTime @default(now())
 
   @@index([token])
+}
+
+model OtpVerificationToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  mobile    String
+  role      String // "RECRUITER" | "CANDIDATE"
+  purpose   String // "signup"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([mobile, role, purpose])
 }

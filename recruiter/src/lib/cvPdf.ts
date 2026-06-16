@@ -27,9 +27,23 @@ export function downloadCvAsPdf(elementId: string, fileName: string): void {
         <title>${fileName}</title>
         ${styles}
         <style>
-          @page { margin: 12mm; }
-          body { margin: 0; padding: 16px; background: white; }
-          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+          @page { margin: 0; }
+          body { margin: 0; padding: 12mm; background: white; }
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            /* Force ApronHanger watermark visible in printed PDF */
+            [data-watermark] {
+              display: flex !important;
+              visibility: visible !important;
+              opacity: 0.08 !important;
+              position: fixed !important;
+              inset: 0 !important;
+              align-items: center !important;
+              justify-content: center !important;
+              pointer-events: none !important;
+              z-index: 9999 !important;
+            }
+          }
         </style>
       </head>
       <body>${el.outerHTML}</body>

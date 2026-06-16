@@ -421,7 +421,9 @@ function HospitalDetailModal({ app, onClose }: { app: RecruiterApplication; onCl
             <Row label="Organization Name" value={app.hospitalName} />
             <Row label="Brand Name" value={app.brandName} />
             <Row label="Organization Type" value={app.hospitalType} />
+            <Row label="Year of Establishment" value={app.founded ? String(app.founded) : undefined} />
             <Row label="Website" value={app.website} />
+            <Row label="Description" value={app.about} span />
             <Row label="Plan" value={app.plan} highlight />
             <Row label="Submitted" value={app.submitted} />
           </Section>

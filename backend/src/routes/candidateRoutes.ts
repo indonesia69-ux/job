@@ -111,9 +111,6 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
     if (!isNaN(currentSalaryMax)) {
       scalarWhere.currentSalaryMin = { lte: currentSalaryMax };
     }
-    if (preferredLocation) {
-      scalarWhere.preferredLocations = { string_contains: preferredLocation };
-    }
     if (availabilityStatus && availabilityStatus.length > 0) {
       scalarWhere.availabilityStatus = { in: availabilityStatus };
     }
@@ -121,53 +118,77 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
     const andConditions: any[] = [];
 
     if (q) {
-      andConditions.push({
-        OR: [
-          { name:      { contains: q, mode: 'insensitive' } },
-          { role:      { contains: q, mode: 'insensitive' } },
-          { specialty: { contains: q, mode: 'insensitive' } },
-          { location:  { contains: q, mode: 'insensitive' } },
-          { summary:   { contains: q, mode: 'insensitive' } },
-          { skills:    { string_contains: q } },
-          { education: { string_contains: q } },
-          { procedures:{ contains: q, mode: 'insensitive' } },
-        ]
-      });
+      const searchTerms = q.split(' ').filter(Boolean);
+      for (const term of searchTerms) {
+        andConditions.push({
+          searchBlob: { contains: term, mode: 'insensitive' }
+        });
+      }
     }
 
-    const doctorConditions = degrees.flatMap(deg => [
-      { education: { string_contains: deg } },
-      { profileJson: { string_contains: deg } }
-    ]);
-
-    if (type === 'premium') {
-      andConditions.push({ OR: doctorConditions });
-    } else if (type === 'basic') {
-      andConditions.push({ NOT: { OR: doctorConditions } });
+    if (preferredLocation) {
+      andConditions.push({
+        searchBlob: { contains: preferredLocation, mode: 'insensitive' }
+      });
     }
 
     if (andConditions.length > 0) {
       scalarWhere.AND = andConditions;
     }
 
-    let candidates = await prisma.candidate.findMany({
-      where: scalarWhere,
-      orderBy: [
-        { matchPercent: 'desc' },
-        { name: 'asc' },
-      ],
-      take,
-      skip
-    });
+    // Determine premium constraint (must contain at least one doctor degree)
+    const doctorDegreeConditions = degrees.map(degree => ({
+      searchBlob: { contains: degree, mode: 'insensitive' }
+    }));
 
-    const total = await prisma.candidate.count({ where: scalarWhere });
+    if (type === 'basic') {
+      scalarWhere.NOT = { OR: doctorDegreeConditions };
+    } else {
+      scalarWhere.OR = doctorDegreeConditions;
+    }
 
-    res.json({
-      candidates: candidates.map(formatCandidate),
-      total,
-      take,
-      skip,
-    });
+    // Execute paginated search securely within the database
+    const [candidates, total] = await prisma.$transaction([
+      prisma.candidate.findMany({
+        where: scalarWhere,
+        orderBy: [
+          { matchPercent: 'desc' },
+          { name: 'asc' },
+        ],
+        take,
+        skip,
+      }),
+      prisma.candidate.count({ where: scalarWhere })
+    ]);
+
+    if (type === 'basic') {
+      // Fetch top 5 premium candidates for the locked teaser
+      const premiumWhere = { ...scalarWhere };
+      delete premiumWhere.NOT;
+      premiumWhere.OR = doctorDegreeConditions;
+      
+      const lockedCandidatesRaw = await prisma.candidate.findMany({
+        where: premiumWhere,
+        orderBy: [{ matchPercent: 'desc' }, { name: 'asc' }],
+        take: 5
+      });
+      const lockedCandidates = lockedCandidatesRaw.map(formatLockedCandidate);
+      
+      res.json({
+        candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+        lockedCandidates,
+        total,
+        take,
+        skip,
+      });
+    } else {
+      res.json({
+        candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+        total,
+        take,
+        skip,
+      });
+    }
   } catch (error) {
     logger.error('[candidate search]', error);
     res.status(500).json({ error: 'Search failed' });
@@ -208,7 +229,7 @@ router.get('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, 
     ]);
 
     res.json({
-      candidates: candidates.map(formatCandidate),
+      candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -285,6 +306,11 @@ router.put('/me', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest
     Object.keys(data).forEach(k => {
       if (data[k] === undefined) delete data[k];
     });
+
+    const existingCandidate = await prisma.candidate.findUnique({ where: { id: candidateId } });
+    const mergedForBlob = { ...existingCandidate, ...data };
+    const { buildSearchBlob } = require('../lib/helpers');
+    data.searchBlob = buildSearchBlob(mergedForBlob);
 
     const updated = await prisma.candidate.update({
       where: { id: candidateId },

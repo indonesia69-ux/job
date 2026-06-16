@@ -1,11 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { User, Globe, Shield } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
 });
 
 function SettingsPage() {
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [autoVerification, setAutoVerification] = useState(false);
+
+  const handleSaveProfile = () => {
+    toast.info("Profile settings — coming soon. Contact engineering to update admin credentials.");
+  };
+
+  const handleToggle = (label: string, newValue: boolean) => {
+    toast.info(`${label} ${newValue ? "enabled" : "disabled"} — this setting will be wired in a future update.`);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -15,9 +29,19 @@ function SettingsPage() {
         </p>
       </div>
 
+      {/* Coming soon notice */}
+      <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+        Settings management is in read-only preview. Changes will be persisted in a future release.
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Admin Profile */}
         <div className="rounded-xl border bg-card shadow-sm p-5 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <User className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold">Admin Profile</h3>
+          </div>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
               SA
@@ -51,7 +75,10 @@ function SettingsPage() {
               />
             </div>
           </div>
-          <button className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          <button
+            onClick={handleSaveProfile}
+            className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
             Save Profile
           </button>
         </div>
@@ -63,33 +90,33 @@ function SettingsPage() {
             <h3 className="text-sm font-semibold">Platform Settings</h3>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">Maintenance Mode</p>
-                <p className="text-xs text-muted-foreground">Disable public access</p>
-              </div>
-              <div className="h-5 w-9 rounded-full bg-muted relative cursor-pointer">
-                <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">Email Notifications</p>
-                <p className="text-xs text-muted-foreground">System email alerts</p>
-              </div>
-              <div className="h-5 w-9 rounded-full bg-success relative cursor-pointer">
-                <div className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">Auto-Verification</p>
-                <p className="text-xs text-muted-foreground">Auto-verify trusted hospitals</p>
-              </div>
-              <div className="h-5 w-9 rounded-full bg-muted relative cursor-pointer">
-                <div className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-card shadow" />
-              </div>
-            </div>
+            <ToggleRow
+              label="Maintenance Mode"
+              description="Disable public access"
+              value={maintenanceMode}
+              onChange={(v) => {
+                setMaintenanceMode(v);
+                handleToggle("Maintenance Mode", v);
+              }}
+            />
+            <ToggleRow
+              label="Email Notifications"
+              description="System email alerts"
+              value={emailNotifications}
+              onChange={(v) => {
+                setEmailNotifications(v);
+                handleToggle("Email Notifications", v);
+              }}
+            />
+            <ToggleRow
+              label="Auto-Verification"
+              description="Auto-verify trusted hospitals"
+              value={autoVerification}
+              onChange={(v) => {
+                setAutoVerification(v);
+                handleToggle("Auto-Verification", v);
+              }}
+            />
           </div>
         </div>
 
@@ -125,6 +152,41 @@ function SettingsPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  description,
+  value,
+  onChange,
+}: {
+  label: string;
+  description: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between rounded-lg border p-3">
+      <div>
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <button
+        onClick={() => onChange(!value)}
+        className={`relative h-5 w-9 rounded-full transition-colors duration-200 focus:outline-none ${
+          value ? "bg-primary" : "bg-muted"
+        }`}
+        role="switch"
+        aria-checked={value}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform duration-200 ${
+            value ? "translate-x-4" : "translate-x-0.5"
+          }`}
+        />
+      </button>
     </div>
   );
 }

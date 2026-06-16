@@ -68,18 +68,46 @@ export function getHospitalValidity(hospital: {
 
 // ─── Candidate helpers ───────────────────────────────────────────────────────
 
-export const formatCandidate = (c: any) => ({
-  ...c,
-  skills: safeJsonParse(c.skills, []),
-  languages: safeJsonParse(c.languages, []),
-  procedures: safeJsonParse(c.procedures, []),
-  education: safeJsonParse(c.education, []),
-  certifications: safeJsonParse(c.certifications, []),
-  experience: safeJsonParse(c.experience, []),
-  preferredLocations: safeJsonParse(c.preferredLocations, []),
-  profile: c.profileJson ? safeJsonParse(c.profileJson, null) : null,
-  supportingDocuments: safeJsonParse(c.supportingDocuments, []),
-});
+function redactCandidateContact(candidate: any) {
+  if (!candidate) return candidate;
+  const c = { ...candidate };
+  delete c.email;
+  delete c.phone;
+  delete c.mobile;
+  delete c.cvUrl;
+  delete c.cvCloudinaryId;
+  delete c.uploadedCvData;
+  if (c.profileJson) {
+    const profile = safeJsonParse<Record<string, unknown>>(c.profileJson, {});
+    delete profile.email;
+    delete profile.phone;
+    delete profile.mobile;
+    c.profileJson = profile;
+  }
+  if (c.profile && typeof c.profile === 'object') {
+    c.profile = { ...c.profile };
+    delete c.profile.email;
+    delete c.profile.phone;
+    delete c.profile.mobile;
+  }
+  return c;
+}
+
+export const formatCandidate = (c: any, options?: { redactContact?: boolean }) => {
+  const source = options?.redactContact ? redactCandidateContact(c) : c;
+  return {
+    ...source,
+    skills: safeJsonParse(source.skills, []),
+    languages: safeJsonParse(source.languages, []),
+    procedures: safeJsonParse(source.procedures, []),
+    education: safeJsonParse(source.education, []),
+    certifications: safeJsonParse(source.certifications, []),
+    experience: safeJsonParse(source.experience, []),
+    preferredLocations: safeJsonParse(source.preferredLocations, []),
+    profile: source.profileJson ? safeJsonParse(source.profileJson, null) : null,
+    supportingDocuments: safeJsonParse(source.supportingDocuments, []),
+  };
+};
 
 export const formatLockedCandidate = (c: any) => ({
   id: c.id,
@@ -87,6 +115,30 @@ export const formatLockedCandidate = (c: any) => ({
   specialty: c.specialty,       // safe — broad clinical category
   experienceYears: c.experienceYears, // safe — number only
 });
+
+export function buildSearchBlob(data: any): string {
+  const lower = (value: unknown) => {
+    if (typeof value === 'object' && value !== null) {
+      return JSON.stringify(value).toLowerCase();
+    }
+    return String(value ?? '').toLowerCase();
+  };
+  return [
+    data.name,
+    data.role,
+    data.specialty,
+    data.location,
+    data.summary,
+    data.currentEmployer,
+    data.skills,
+    data.education,
+    data.certifications,
+    data.experience,
+    data.profileJson,
+    data.preferredLocations,
+    data.procedures,
+  ].map(lower).join(' ');
+}
 
 export async function syncFormProfile(
   candidateId: string,
@@ -154,6 +206,8 @@ export async function syncFormProfile(
     preferredLocations: profile.preferredLocations || [],
     availabilityStatus: profile.availabilityStatus || null,
   };
+
+  updateData.searchBlob = buildSearchBlob(updateData);
 
   // Only update Cloudinary CV fields if a new file was uploaded.
   // Do NOT wipe existing cvUrl/cvCloudinaryId when none is provided.
@@ -319,6 +373,7 @@ export const formatJob = (job: any, profile?: any) => ({
   hospital: job.hospital?.name ?? job.hospital ?? 'Unknown Hospital',
   hospitalVerified: job.hospital?.verified ?? false,
   hospitalAbout: job.hospital?.about ?? '',
+  postedBy: job.postedBy ? { id: job.postedBy.id, name: job.postedBy.name, email: job.postedBy.email } : null,
   tags: safeJsonParse(job.tags, []),
   responsibilities: safeJsonParse(job.responsibilities, []),
   requirements: safeJsonParse(job.requirements, []),
@@ -329,13 +384,20 @@ export const formatJob = (job: any, profile?: any) => ({
   matchPercent: profile ? computeJobMatch(job, profile) : undefined,
 });
 
-export const formatApp = (app: any) => ({
+export const formatApp = (app: any, options?: { redactCandidateContact?: boolean }) => ({
   ...app,
+  ...(options?.redactCandidateContact
+    ? {
+        cvUrl: null,
+        cvCloudinaryId: null,
+        uploadedCvData: null,
+      }
+    : {}),
   customFieldResponses: safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
   interviewHistory: safeJsonParse(app.interviewHistory, null),
   requestedDocumentList: safeJsonParse(app.requestedDocumentList, [] as string[]),
   supportingDocuments: safeJsonParse(app.supportingDocuments, []),
-  candidate: formatCandidate(app.candidate),
+  candidate: formatCandidate(app.candidate, { redactContact: options?.redactCandidateContact }),
   job: app.job
     ? {
         ...app.job,

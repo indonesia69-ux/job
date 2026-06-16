@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, Building2, ShieldCheck } from "lucide-react";
+import { Loader2, CheckCircle2, Building2, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,18 @@ type HospitalInfo = {
   limit: number;
 };
 
+type SignupStep = "details" | "otp";
+type RecruiterSignupDraft = {
+  name: string;
+  fullName: string;
+  username: string;
+  mobile: string;
+  email: string;
+  password: string;
+  role: "RECRUITER";
+  inviteCode: string;
+};
+
 function SignupPage() {
   const navigate = useNavigate();
   const [agreeCertify, setAgreeCertify] = useState(false);
@@ -42,6 +54,11 @@ function SignupPage() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [signupStep, setSignupStep] = useState<SignupStep>("details");
+  const [signupDraft, setSignupDraft] = useState<RecruiterSignupDraft | null>(null);
+  const [signupOtp, setSignupOtp] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Invite code state
   const [inviteCode, setInviteCode] = useState("");
@@ -65,7 +82,6 @@ function SignupPage() {
       return;
     }
     verifyCode(code);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inviteCode]);
 
   const verifyCode = async (code: string) => {
@@ -89,6 +105,10 @@ function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (signupStep === "otp") {
+      await handleVerifySignupOtp();
+      return;
+    }
 
     if (!hospitalInfo) {
       setFormError("Please enter a valid 12-character invite code first.");
@@ -127,19 +147,21 @@ function SignupPage() {
     setLoading(true);
 
     try {
-      const res = await fetch(`${apiBase()}/api/auth/register`, {
+      const draft: RecruiterSignupDraft = {
+        name: fullName,
+        fullName,
+        username,
+        mobile,
+        email,
+        password,
+        role: "RECRUITER",
+        inviteCode: inviteCode.trim().toUpperCase(),
+      };
+
+      const res = await fetch(`${apiBase()}/api/auth/signup/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fullName, // mapping standard 'name' field for compat
-          fullName,
-          username,
-          mobile,
-          email,
-          password,
-          role: "RECRUITER",
-          inviteCode: inviteCode.trim().toUpperCase(),
-        }),
+        body: JSON.stringify({ mobile, role: "RECRUITER" }),
       });
 
       const data = await res.json();
@@ -151,9 +173,65 @@ function SignupPage() {
         return;
       }
 
+      setSignupDraft(draft);
+      setSignupOtp("");
+      setSignupStep("otp");
+      toast.success("OTP sent to your mobile number.");
+    } catch {
+      const msg = "Network error. Is the backend running?";
+      setFormError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySignupOtp = async () => {
+    if (!signupDraft) {
+      setSignupStep("details");
+      setFormError("Please enter your signup details again.");
+      return;
+    }
+    if (signupOtp.length < 6) {
+      setFormError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
+    setFormError(null);
+    setLoading(true);
+    try {
+      const verifyRes = await fetch(`${apiBase()}/api/auth/signup/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: signupDraft.mobile, otp: signupOtp, role: "RECRUITER" }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        const msg = verifyData.error || "Invalid OTP.";
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const res = await fetch(`${apiBase()}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...signupDraft,
+          signup_token: verifyData.signup_token,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = loginErrorMessage(res.status, data.error);
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+
       saveAuth(data.token, data.user);
       toast.success(
-        `Welcome to ApronHanger! You're now a recruiter for ${hospitalInfo.hospitalName}.`,
+        `Welcome to ApronHanger! You're now a recruiter for ${hospitalInfo?.hospitalName ?? "your hospital"}.`,
       );
       setLoginSuccess(true);
       setTimeout(() => {
@@ -163,6 +241,7 @@ function SignupPage() {
       const msg = "Network error. Is the backend running?";
       setFormError(msg);
       toast.error(msg);
+    } finally {
       setLoading(false);
     }
   };
@@ -249,8 +328,43 @@ function SignupPage() {
           </div>
         )}
 
+        {hospitalInfo && signupStep === "otp" && signupDraft ? (
+          <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div>
+              <Label htmlFor="signupOtp">
+                Mobile OTP <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="signupOtp"
+                value={signupOtp}
+                onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="123456"
+                className="mt-1.5 h-11 text-center text-lg font-semibold tracking-widest"
+                disabled={loading || loginSuccess}
+                required
+              />
+            </div>
+            <p className="text-[12px] text-muted-foreground">
+              Enter the OTP sent to {signupDraft.mobile}.
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-9 px-0 text-[13px]"
+              onClick={() => {
+                setSignupStep("details");
+                setSignupOtp("");
+                setFormError(null);
+              }}
+              disabled={loading || loginSuccess}
+            >
+              Edit signup details
+            </Button>
+          </div>
+        ) : null}
+
         {/* Personal details — only shown after valid code */}
-        {hospitalInfo && (
+        {hospitalInfo && signupStep === "details" && (
           <>
             <div className="space-y-1.5">
               <Label htmlFor="username">
@@ -324,14 +438,23 @@ function SignupPage() {
               <Label htmlFor="password">
                 Password <span className="text-destructive">*</span>
               </Label>
-              <Input
-                ref={passwordRef}
-                id="password"
-                type="password"
-                className="h-11"
-                aria-invalid={!!fieldErrors.password}
-                required
-              />
+              <div className="relative">
+                <Input
+                  ref={passwordRef}
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  className="h-11 pr-10"
+                  aria-invalid={!!fieldErrors.password}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
               {fieldErrors.password && (
                 <p className="text-xs text-destructive">{fieldErrors.password}</p>
               )}
@@ -342,14 +465,27 @@ function SignupPage() {
               <Label htmlFor="confirmPassword">
                 Confirm Password <span className="text-destructive">*</span>
               </Label>
-              <Input
-                ref={confirmPasswordRef}
-                id="confirmPassword"
-                type="password"
-                className="h-11"
-                aria-invalid={!!fieldErrors.confirmPassword}
-                required
-              />
+              <div className="relative">
+                <Input
+                  ref={confirmPasswordRef}
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  className="h-11 pr-10"
+                  aria-invalid={!!fieldErrors.confirmPassword}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {fieldErrors.confirmPassword && (
                 <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>
               )}
@@ -395,10 +531,34 @@ function SignupPage() {
             >
               {loading || loginSuccess ? (
                 <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending OTP…
+                </>
+              ) : (
+                "Send OTP"
+              )}
+            </Button>
+            {loginSuccess && (
+              <LottiePlayer
+                src="/successful_signup_signin.json"
+                loop={false}
+                className="mx-auto mt-4 h-14 w-14 sm:h-16 sm:w-16"
+              />
+            )}
+          </>
+        )}
+        {hospitalInfo && signupStep === "otp" && (
+          <>
+            <Button
+              type="submit"
+              className="h-11 w-full text-[14px] font-medium mt-2"
+              disabled={loading || loginSuccess || signupOtp.length < 6}
+            >
+              {loading || loginSuccess ? (
+                <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating account…
                 </>
               ) : (
-                "Create account"
+                "Verify & create account"
               )}
             </Button>
             {loginSuccess && (

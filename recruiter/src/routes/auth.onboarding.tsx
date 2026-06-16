@@ -181,6 +181,54 @@ function FieldError({ msg }: { msg?: string }) {
   return <p className="mt-1 text-xs text-destructive">{msg}</p>;
 }
 
+function displayValue(value?: string | number | boolean | string[]) {
+  if (Array.isArray(value)) return value.length ? value.join(", ") : "Not provided";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (value === 0) return "0";
+  if (!value) return "Not provided";
+  return String(value);
+}
+
+function ReviewSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      <div className="grid gap-3 rounded-lg border border-border bg-muted/20 p-4 text-[13px] sm:grid-cols-2">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ReviewRow({
+  label,
+  value,
+  span,
+  highlight,
+}: {
+  label: string;
+  value?: string | number | boolean | string[];
+  span?: boolean;
+  highlight?: boolean;
+}) {
+  const rendered = displayValue(value);
+  const missing = rendered === "Not provided";
+  return (
+    <div className={span ? "sm:col-span-2" : ""}>
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p
+        className={[
+          "break-words font-medium",
+          highlight ? "font-semibold text-primary" : "",
+          missing ? "italic text-muted-foreground/60" : "text-foreground",
+        ].join(" ")}
+      >
+        {rendered}
+      </p>
+    </div>
+  );
+}
+
 export function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(INITIAL);
@@ -1146,6 +1194,68 @@ export function OnboardingPage() {
               )}
             </div>
           </div>
+          <div className="space-y-5">
+            <ReviewSection title="Organization Details">
+              <ReviewRow label="Organization Name" value={form.hospitalName} />
+              <ReviewRow label="Brand Name" value={form.brandName} />
+              <ReviewRow label="Organization Type" value={form.hospitalType} />
+              <ReviewRow label="Year of Establishment" value={form.founded} />
+              <ReviewRow label="Website" value={form.website} />
+              <ReviewRow label="Description" value={form.about} span />
+            </ReviewSection>
+
+            <ReviewSection title="Registration & Compliance">
+              <ReviewRow label="Registration Number" value={form.registrationNumber} />
+              <ReviewRow label="Registration Authority" value={form.registrationAuthority} />
+              <ReviewRow label="NABH Status" value={form.nabhStatus} />
+              <ReviewRow label="NABL Status" value={form.nablStatus} />
+              <ReviewRow label="GST Number" value={form.gstNumber} />
+              <ReviewRow label="PAN Number" value={form.panNumber} />
+              <ReviewRow label="Ownership Type" value={form.ownershipType} />
+            </ReviewSection>
+
+            <ReviewSection title="Location Details">
+              <ReviewRow label="Address" value={form.address} span />
+              <ReviewRow label="City" value={form.city} />
+              <ReviewRow label="District" value={form.district} />
+              <ReviewRow label="State" value={form.state} />
+              <ReviewRow label="PIN Code" value={form.pinCode} />
+            </ReviewSection>
+
+            <ReviewSection title="Primary Contact">
+              <ReviewRow label="Contact Name" value={form.contactName} />
+              <ReviewRow label="Designation" value={form.contactDesignation} />
+              <ReviewRow label="Mobile Number" value={form.phone} />
+              <ReviewRow label="WhatsApp Number" value={form.contactWhatsapp} />
+              <ReviewRow label="Official Email" value={form.email} />
+              <ReviewRow label="Alternate Phone" value={form.contactAlternatePhone} />
+            </ReviewSection>
+
+            <ReviewSection title="Billing Details">
+              <ReviewRow label="Billing Name" value={form.billingName} />
+              <ReviewRow label="Billing GST Number" value={form.billingGstNumber} />
+              <ReviewRow label="Billing Address" value={form.billingAddress} span />
+              <ReviewRow label="Accounts Email" value={form.billingEmail} />
+              <ReviewRow label="Payment Contact Number" value={form.billingPhone} />
+            </ReviewSection>
+
+            <ReviewSection title="Additional Information">
+              <ReviewRow label="Total Beds" value={form.beds} />
+              <ReviewRow label="ICU Beds" value={form.icuBeds} />
+              <ReviewRow label="Number of Doctors" value={form.numberOfDoctors} />
+              <ReviewRow label="Number of Employees" value={form.numberOfEmployees} />
+              <ReviewRow label="Average Monthly Hiring" value={form.averageMonthlyHiring} />
+              <ReviewRow label="Preferred Hiring States" value={form.preferredHiringStates} />
+              <ReviewRow label="Emergency Hiring" value={form.emergencyHiringRequirement} />
+              <ReviewRow label="Internship Hiring" value={form.internshipHiring} />
+              <ReviewRow label="Campus Recruitment" value={form.campusRecruitment} />
+            </ReviewSection>
+
+            <ReviewSection title="Selected Plan">
+              <ReviewRow label="Plan" value={`${form.plan} Plan`} highlight />
+            </ReviewSection>
+          </div>
+
           <p className="text-[12px] text-muted-foreground leading-relaxed">
             By submitting, you confirm that all the details above are accurate and you are
             authorised to register this organization on ApronHanger. Our team will verify the

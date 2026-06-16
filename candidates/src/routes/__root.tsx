@@ -28,11 +28,6 @@ function NotFoundComponent() {
           loop
           className="mx-auto h-36 w-36 sm:h-48 sm:w-48 lg:h-56 lg:w-56 mb-4"
         />
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
         <div className="mt-6">
           <Link
             to="/"
@@ -118,9 +113,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useSSE } from '@/hooks/useSSE';
+
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isFullBleed = pathname.startsWith("/auth");
+
+  useSSE(); // Enable real-time SSE notifications
 
   useEffect(() => {
     if (isAuthenticated()) {

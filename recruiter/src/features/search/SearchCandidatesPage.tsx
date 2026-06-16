@@ -166,7 +166,7 @@ function BasicSearch({
         setLoading(false);
       }
     },
-    [onResult],
+    [onResult, isLocked],
   );
 
   // Initial load + debounced re-search on query change
@@ -669,7 +669,7 @@ function ResultsGrid({
       </div>
     );
   }
-  if (!loading && results.length === 0) {
+  if (!loading && results.length === 0 && (premium || lockedResults.length === 0)) {
     return (
       <Card className="border-dashed border-border bg-card">
         <CardContent className="p-10 text-center text-[13px] text-muted-foreground flex flex-col items-center">
@@ -710,6 +710,11 @@ function ResultsGrid({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="truncate font-medium">{c.name}</span>
+                    {!c.cvSource && (
+                      <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">
+                        Incomplete
+                      </span>
+                    )}
                     {c.verified && <VerifiedBadge />}
                   </div>
                   <div className="text-[12px] text-muted-foreground">
@@ -763,28 +768,42 @@ function ResultsGrid({
         {lockedResults.map((c) => (
           <Card
             key={c.id}
-            className="group relative overflow-hidden border-border bg-card shadow-soft opacity-80 grayscale-[30%] transition-opacity hover:opacity-100"
+            className="group relative overflow-hidden border border-[oklch(0.72_0.14_85_/_0.25)] bg-gradient-to-br from-[oklch(0.16_0.05_265)] via-[oklch(0.20_0.06_260)] to-[oklch(0.12_0.04_265)] shadow-soft transition-all"
           >
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/60 backdrop-blur-[2px]">
-              <Lock className="mb-2 h-6 w-6 text-muted-foreground" />
-              <div className="text-[13px] font-medium text-foreground">Premium Profile</div>
-              <div className="text-[11px] text-muted-foreground">
-                Switch to Premium Search to unlock
+            {/* Unblurred overlay */}
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[oklch(0.16_0.05_265)]/40">
+              <div className="flex flex-col items-center justify-center rounded-xl bg-[oklch(0.16_0.05_265)]/80 p-4 border border-[oklch(0.72_0.14_85_/_0.35)] backdrop-blur-sm shadow-xl">
+                <Crown className="mb-2 h-6 w-6 text-[oklch(0.85_0.14_85)]" />
+                <div className="text-[14px] font-semibold text-[oklch(0.85_0.14_85)]">
+                  Premium Profile
+                </div>
+                <div className="text-[12px] text-[oklch(0.85_0.14_85)]/80 mt-1">
+                  Switch to Premium Search
+                </div>
               </div>
             </div>
-            <CardContent className="space-y-3 p-5 opacity-50">
+
+            {/* Blurred dummy content */}
+            <CardContent className="space-y-3 p-5 blur-[4px] select-none opacity-80">
               <div className="flex items-start gap-3">
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground font-display text-[13px] font-semibold">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[oklch(0.72_0.14_85_/_0.08)] text-[oklch(0.85_0.14_85)] font-display text-[13px] font-semibold border border-[oklch(0.72_0.14_85_/_0.4)]">
                   ?
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="h-4 w-32 rounded bg-muted"></div>
-                  <div className="mt-2 text-[12px] text-muted-foreground">{c.specialty}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="truncate font-medium text-white/90">Physician Name</span>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[oklch(0.72_0.14_85_/_0.4)] bg-[oklch(0.72_0.14_85_/_0.08)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[oklch(0.85_0.14_85)]">
+                      <Crown className="h-2.5 w-2.5" /> Verified
+                    </span>
+                  </div>
+                  <div className="text-[12px] text-white/50 mt-1">{c.specialty}</div>
                 </div>
               </div>
-              <div className="h-3 w-3/4 rounded bg-muted mt-2"></div>
-              <div className="h-3 w-1/2 rounded bg-muted mt-1"></div>
-              <div className="flex items-center justify-between border-t border-border pt-3 text-[11px] text-muted-foreground mt-2">
+              <p className="line-clamp-2 text-[12.5px] text-white/40">
+                Highly experienced medical professional with extensive background in patient care,
+                diagnostics, and clinical operations.
+              </p>
+              <div className="flex items-center justify-between border-t border-white/10 pt-3 text-[11px] text-white/50 mt-2">
                 <span>{c.experienceYears} yrs experience</span>
               </div>
             </CardContent>

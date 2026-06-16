@@ -30,16 +30,24 @@ router.get('/recruiter', requireAuth, requireRole('RECRUITER'), async (req: Requ
     
     const candidates = await prisma.candidate.findMany({
       where: {
-        OR: [
-          { role: { contains: q } },
-          { specialty: { contains: q } },
-          { location: { contains: q } },
-          { skills: { string_contains: q } } // NOTE: skills is a JSON string, so this does a text search inside JSON in Postgres
-        ]
+        isSuspended: false,
+        deletedAt: null,
       },
-      take: 20
+      take: 100
     });
-    res.json(candidates.map(formatCandidate));
+    const filtered = candidates.filter((candidate) =>
+      [
+        candidate.name,
+        candidate.role,
+        candidate.specialty,
+        candidate.location,
+        candidate.summary,
+        candidate.skills,
+        candidate.education,
+        candidate.profileJson,
+      ].map((value) => String(value ?? '').toLowerCase()).join(' ').includes(q),
+    ).slice(0, 20);
+    res.json(filtered.map((candidate) => formatCandidate(candidate, { redactContact: true })));
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Internal server error' });

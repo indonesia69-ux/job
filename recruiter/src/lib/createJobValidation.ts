@@ -57,8 +57,8 @@ export function validateCreateJob(
     errors.description = "Job description should be at least 40 characters";
   }
 
-  const salaryMin = parseInt(input.salaryMin, 10);
-  const salaryMax = parseInt(input.salaryMax, 10);
+  const salaryMin = Number.parseFloat(input.salaryMin);
+  const salaryMax = Number.parseFloat(input.salaryMax);
   if (Number.isNaN(salaryMin) || salaryMin <= 0) {
     errors.salaryMin = "Enter a valid minimum salary (LPA)";
   }

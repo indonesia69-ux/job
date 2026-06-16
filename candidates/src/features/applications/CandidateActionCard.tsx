@@ -202,7 +202,20 @@ export function CandidateActionCard({
               multiple
               className="hidden"
               ref={fileInputRef}
-              onChange={(e) => setDocs(e.target.files)}
+              accept="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={(e) => {
+                const files = e.target.files;
+                if (!files) return;
+                const MAX_MB = 5;
+                for (const f of Array.from(files)) {
+                  if (f.size > MAX_MB * 1024 * 1024) {
+                    toast.error(`"${f.name}" exceeds ${MAX_MB}MB. Please use a smaller file.`);
+                    e.target.value = "";
+                    return;
+                  }
+                }
+                setDocs(files);
+              }}
             />
             <Button
               type="button"
@@ -231,6 +244,20 @@ export function CandidateActionCard({
             </Button>
           )}
         </form>
+      </div>
+    );
+  }
+
+  if (application.apiStatus === "DocumentsUploaded") {
+    return (
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+          <CheckCircle2 className="h-4 w-4" /> Documents Submitted
+        </h4>
+        <p className="text-sm text-amber-800">
+          Your documents have been submitted and are under review by the hospital. You'll be
+          notified once they are approved or if additional documents are required.
+        </p>
       </div>
     );
   }
@@ -274,6 +301,30 @@ export function CandidateActionCard({
             <XCircle className="mr-1.5 h-4 w-4" /> Reject Offer
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (
+    application.joiningDate &&
+    ["JoiningConfirmed", "Joined", "Onboarded"].includes(application.apiStatus)
+  ) {
+    return (
+      <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <h4 className="font-semibold text-emerald-900 mb-2 flex items-center gap-2">
+          <Calendar className="h-4 w-4" /> Joining Date
+        </h4>
+        <p className="text-sm text-emerald-800">
+          Your joining date is{" "}
+          <strong>
+            {new Date(application.joiningDate).toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            })}
+          </strong>
+          .
+        </p>
       </div>
     );
   }

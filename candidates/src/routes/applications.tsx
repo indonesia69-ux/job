@@ -2,7 +2,7 @@ import { apiBase } from "@/lib/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Briefcase, Building2, Calendar, ChevronRight, Inbox } from "lucide-react";
-import { STATUS_FLOW, type ApplicationStatus } from "@/data/applications";
+import { type ApplicationStatus } from "@/data/applications";
 import {
   apiToDisplayStatus,
   statusPillClass,
@@ -15,6 +15,7 @@ import { authHeader } from "@/store/authStore";
 import { requireCandidateAuth } from "@/lib/requireAuth";
 import { cn } from "@/lib/utils";
 import { PageLoader } from "@/components/common/PageLoader";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/applications")({
   beforeLoad: () => requireCandidateAuth("/applications"),
@@ -108,35 +109,45 @@ function sortApplications<T extends { appliedAt: string }>(rows: T[]): T[] {
   );
 }
 
-const TABS: ("All" | ApplicationStatus)[] = [
+const TABS = [
   "All",
   "Applied",
   "Reviewed",
+  "Interview Scheduled",
   "Shortlisted",
-  "Contacted",
+  "Documents Requested",
+  "Offer Sent",
   "Rejected",
-];
+  "Joined",
+] as const;
+
+type TabValue = (typeof TABS)[number];
 
 async function loadApplicationsData(): Promise<AppRow[]> {
   const res = await fetch(`${apiBase()}/api/applications`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to load applications");
   const data = await res.json();
-  return sortApplications(data.map(mapApplication));
+  return sortApplications(data.map(mapApplication)) as unknown as AppRow[];
 }
 
 function ApplicationsPage() {
   const [applications, setApplications] = useState<AppRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<(typeof TABS)[number]>("All");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [fetchedAt, setFetchedAt] = useState<Date | null>(null);
+  const [tab, setTab] = useState<TabValue>("All");
 
   const loadApps = () => {
     setLoading(true);
+    setFetchError(null);
     loadApplicationsData()
       .then((rows) => {
         setApplications(rows);
+        setFetchedAt(new Date());
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        setFetchError(err instanceof Error ? err.message : "Could not load applications.");
         setLoading(false);
       });
   };
@@ -147,7 +158,19 @@ function ApplicationsPage() {
 
   if (loading) return <PageLoader />;
 
-  const list = tab === "All" ? applications : applications.filter((a: AppRow) => a.status === tab);
+  if (fetchError) {
+    return (
+      <div className="mx-auto max-w-6xl px-6 py-20 text-center">
+        <p className="text-sm text-destructive">{fetchError}</p>
+        <Button className="mt-4" onClick={loadApps}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  const list =
+    tab === "All" ? applications : applications.filter((a: AppRow) => a.status === tab);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-10">
@@ -155,7 +178,9 @@ function ApplicationsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">My Applications</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {applications.length} applications · last updated today
+            {applications.length} application{applications.length !== 1 ? "s" : ""}
+            {fetchedAt &&
+              ` · fetched at ${fetchedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
       </div>

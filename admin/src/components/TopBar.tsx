@@ -3,7 +3,7 @@ import { Search, Bell, ChevronDown, Menu, LogOut } from "lucide-react";
 // import { notifications } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { useNavigate } from "@tanstack/react-router";
-import { apiBase, authHeader } from "@/lib/api";
+import { apiBase, authHeader , apiFetch } from "@/lib/api";
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -34,8 +34,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(
-          `${apiBase()}/api/admin/search?q=${encodeURIComponent(searchQuery)}`,
+        const res = await apiFetch(`${apiBase()}/api/admin/search?q=${encodeURIComponent(searchQuery)}`,
           {
             headers: authHeader(),
           },

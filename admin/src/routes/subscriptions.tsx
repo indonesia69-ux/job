@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CreditCard, Edit, Ban, CheckCircle, X, History, AlertCircle } from "lucide-react";
-import { apiBase, authHeader } from "@/lib/api";
+import { apiBase, authHeader , apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/subscriptions")({
   component: SubscriptionsPage,
@@ -32,7 +32,7 @@ function SubscriptionsPage() {
   const fetchSubscriptions = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase()}/api/admin/subscriptions`, { headers: authHeader() });
+      const res = await apiFetch(`${apiBase()}/api/admin/subscriptions`, { headers: authHeader() });
       if (res.ok) {
         const data = await res.json();
         setPlans(data.data || []);
@@ -74,7 +74,7 @@ function SubscriptionsPage() {
     setBillingTarget(plan);
     setBillingLoading(true);
     try {
-      const res = await fetch(`${apiBase()}/api/admin/subscriptions/${plan.id}/history`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/subscriptions/${plan.id}/history`, {
         headers: authHeader(),
       });
       if (res.ok) {
@@ -168,7 +168,9 @@ function SubscriptionsPage() {
                       {p.planExpiresAt ? new Date(p.planExpiresAt).toLocaleDateString() : "N/A"}
                     </td>
                     <td className="px-4 py-3">
-                      {p.daysRemaining > 0 ? (
+                      {!p.planExpiresAt ? (
+                        <span className="text-xs text-muted-foreground font-medium">—</span>
+                      ) : p.daysRemaining > 0 ? (
                         <span
                           className={`text-xs font-medium ${p.daysRemaining <= 7 ? "text-destructive" : "text-muted-foreground"}`}
                         >

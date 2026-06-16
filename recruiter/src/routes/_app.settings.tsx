@@ -1,13 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { loadHospitalProfile } from "@/lib/recruiterData";
+import { authHeader } from "@/store/authStore";
+import { apiBase } from "@/lib/api";
 import { PageLoader } from "@/components/common/PageLoader";
 
 export const Route = createFileRoute("/_app/settings")({
   staleTime: 0,
   loader: async () => {
-    const hospital = await loadHospitalProfile();
-    return { hospital };
+    const [hospital, userRes] = await Promise.all([
+      loadHospitalProfile(),
+      fetch(`${apiBase()}/api/auth/me`, { headers: authHeader() }),
+    ]);
+    const userJson = userRes.ok ? await userRes.json().catch(() => null) : null;
+    return { hospital, userPrefs: userJson?.user };
   },
   pendingComponent: PageLoader,
   head: () => ({

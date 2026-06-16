@@ -27,8 +27,8 @@ export function downloadCvAsPdf(elementId: string, fileName: string): void {
         <title>${fileName}</title>
         ${styles}
         <style>
-          @page { margin: 12mm; }
-          body { margin: 0; padding: 16px; background: white; }
+          @page { margin: 0; }
+          body { margin: 0; padding: 12mm; background: white; }
           @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
         </style>
       </head>

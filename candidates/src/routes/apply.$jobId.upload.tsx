@@ -16,6 +16,7 @@ import {
 import { type UploadedFile, uploadCvToBackend } from "@/lib/fileUpload";
 import { uploadApplySchema } from "@/lib/validations";
 import { useAuth } from "@/store/authStore";
+import { useProfile } from "@/store/profileStore";
 import { Route as ApplyParentRoute } from "./apply.$jobId";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
@@ -26,10 +27,11 @@ export const Route = createFileRoute("/apply/$jobId/upload")({
 function UploadApplyPage() {
   const { job, alreadyApplied } = ApplyParentRoute.useLoaderData();
   const { user, token } = useAuth();
+  const profile = useProfile();
   const navigate = useNavigate();
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(profile?.phone ?? "");
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
@@ -82,7 +84,7 @@ function UploadApplyPage() {
     const cv = files[0];
     setSubmitting(true);
     try {
-      const uploadResult = await uploadCvToBackend(cv.file, token ?? "");
+      const uploadResult = await uploadCvToBackend(cv.file!, token ?? "");
 
       await submitUploadApplication(
         job.id,

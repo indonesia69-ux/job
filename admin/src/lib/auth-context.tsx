@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { apiBase } from "./api";
+import { apiBase, apiFetch } from "./api";
 
 const STORAGE_KEY = "apronhanger.admin.session";
 
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${apiBase()}/api/admin/auth/login`, {
+    const res = await apiFetch(`${apiBase()}/api/admin/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),

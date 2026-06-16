@@ -10,7 +10,18 @@ import { uploadRawBuffer } from '../lib/cloudinary';
 const router = Router();
 
 // ─── Multer for offer-letter PDF upload ──────────────────────────────────────
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ 
+  storage: multer.memoryStorage(), 
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (allowedMimeTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid file type: ${file.mimetype}. Only PDF, JPEG, PNG, and WebP are allowed.`));
+    }
+  }
+});
 
 // ─── Status definitions ───────────────────────────────────────────────────────
 
@@ -41,13 +52,13 @@ const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
   '*':                         ['DocumentsRequested'],   // doc request can come from ANY status
   'Applied':                   ['Reviewed'],
   'Reviewed':                  ['InterviewScheduled', 'Rejected'],
-  'RescheduleRequested':       ['InterviewScheduled'],
+  'RescheduleRequested':       ['InterviewScheduled', 'InterviewDeclined', 'Rejected'],
   'InterviewAccepted':         ['InterviewCompleted', 'NoShow'],
   'InterviewCompleted':        ['Shortlisted', 'Rejected', 'OnHold', 'NextRound'],
   'NoShow':                    ['Rejected', 'InterviewRescheduled'],
   'InterviewRescheduled':      ['InterviewScheduled'],
   'Shortlisted':               ['DocumentsRequested'],
-  'OnHold':                    ['DocumentsRequested', 'Rejected', 'InterviewScheduled'],
+  'OnHold':                    ['Shortlisted', 'Rejected', 'DocumentsRequested', 'InterviewScheduled'],
   'DocumentsUploaded':         ['DocumentsApproved', 'AdditionalDocumentsRequired', 'DocumentsRejected'],
   'AdditionalDocumentsRequired': ['DocumentsRequested'],
   'DocumentsApproved':         ['OfferSent'],
@@ -90,6 +101,9 @@ function validateTransitionPayload(
       return { ok: false, error: 'meetingLink is required for Virtual interviews' };
     if (body.interviewType === 'Physical' && !body.venue)
       return { ok: false, error: 'venue is required for Physical interviews' };
+    const interviewDate = new Date(String(body.interviewDate));
+    if (Number.isNaN(interviewDate.getTime())) return { ok: false, error: 'interviewDate must be valid' };
+    if (interviewDate.getTime() <= Date.now()) return { ok: false, error: 'Interview date/time must be in the future' };
   }
   if (targetStatus === 'RescheduleRequested') {
     if (!body.candidateResponseNote) return { ok: false, error: 'A reason is required to request a reschedule' };
@@ -104,6 +118,8 @@ function validateTransitionPayload(
   }
   if (targetStatus === 'JoiningConfirmed') {
     if (!body.joiningDate) return { ok: false, error: 'joiningDate is required' };
+    const joiningDate = new Date(String(body.joiningDate));
+    if (Number.isNaN(joiningDate.getTime())) return { ok: false, error: 'joiningDate must be valid' };
   }
   return { ok: true };
 }
@@ -170,8 +186,24 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
     if (req.user!.role === 'RECRUITER') {
       const hospitalId = req.user!.hospitalId;
       if (!hospitalId) { res.json([]); return; }
-      const jobs = await prisma.job.findMany({ where: { hospitalId }, select: { id: true } });
-      where = { jobId: { in: jobs.map(j => j.id) } };
+
+      // If caller requests a specific job, filter directly — avoids over-fetching
+      const requestedJobId = typeof req.query.jobId === 'string' ? req.query.jobId : null;
+      if (requestedJobId) {
+        // Verify the job belongs to this hospital (auth guard)
+        const job = await prisma.job.findFirst({
+          where: { id: requestedJobId, hospitalId },
+          select: { id: true },
+        });
+        if (!job) {
+          res.status(403).json({ error: 'Job not found or access denied' });
+          return;
+        }
+        where = { jobId: requestedJobId };
+      } else {
+        const jobs = await prisma.job.findMany({ where: { hospitalId }, select: { id: true } });
+        where = { jobId: { in: jobs.map(j => j.id) } };
+      }
     } else if (req.user!.role === 'CANDIDATE') {
       where = { candidateId: req.user!.candidateId! };
     }
@@ -193,7 +225,7 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
         prisma.application.count({ where })
       ]);
       res.json({
-        data: applications.map(formatApp),
+        data: applications.map((app) => formatApp(app, { redactCandidateContact: req.user!.role === 'RECRUITER' })),
         total,
         page,
         limit,
@@ -206,8 +238,35 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
       where,
       include: { candidate: true, job: { include: { hospital: true } } },
       orderBy: { appliedOn: 'desc' },
+      take: 50,
     });
-    res.json(applications.map(formatApp));
+    res.json(applications.map((app) => formatApp(app, { redactCandidateContact: req.user!.role === 'RECRUITER' })));
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── GET /api/applications/:id/recruiter-cv ──────────────────────────────────
+router.get('/:id/recruiter-cv', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+  try {
+    const app = await prisma.application.findUnique({
+      where: { id: String(req.params.id) },
+      include: {
+        candidate: true,
+        job: { include: { hospital: true } },
+      },
+    });
+    if (!app) { res.status(404).json({ error: 'Application not found' }); return; }
+    if (!req.user!.hospitalId || app.job.hospitalId !== req.user!.hospitalId) {
+      res.status(403).json({ error: 'Forbidden' }); return;
+    }
+    const formatted = formatApp(app, { redactCandidateContact: true });
+    res.json({
+      applicationId: formatted.id,
+      candidate: formatted.candidate,
+      job: formatted.job,
+    });
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -235,7 +294,7 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     if (req.user!.role === 'CANDIDATE' && app.candidateId !== req.user!.candidateId) {
       res.status(403).json({ error: 'Forbidden' }); return;
     }
-    res.json(formatApp(app));
+    res.json(formatApp(app, { redactCandidateContact: req.user!.role === 'RECRUITER' }));
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -333,6 +392,12 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
       },
       include: { candidate: true, job: { include: { hospital: true } } },
     });
+    await notifyRecruiter(
+      job.hospitalId,
+      'New Application',
+      `${application.candidate.name} applied for ${application.job.role}.`,
+      `/applicants?jobId=${application.jobId}`,
+    );
     res.status(201).json(formatApp(application));
   } catch (error: any) {
     logger.error(error);
@@ -487,7 +552,14 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
         await notifyRecruiter(hospitalId, 'Reschedule Requested', `${candidateName} has requested to reschedule their interview for ${jobRole}.`, `/applicants?jobId=${existing.jobId}`);
         break;
       case 'InterviewDeclined':
-        await notifyRecruiter(hospitalId, 'Interview Declined', `${candidateName} has declined the interview for ${jobRole}.`, `/applicants?jobId=${existing.jobId}`);
+        if (existing.status === 'RescheduleRequested') {
+          await notifyCandidate(candidateUserId, 'Reschedule Rejected', `${hospitalName} could not approve your reschedule request for ${jobRole}.`, '/applications');
+        } else {
+          await notifyRecruiter(hospitalId, 'Interview Declined', `${candidateName} has declined the interview for ${jobRole}.`, `/applicants?jobId=${existing.jobId}`);
+        }
+        break;
+      case 'Rejected':
+        await notifyCandidate(candidateUserId, 'Application Closed', `${hospitalName} has closed your application for ${jobRole}.`, '/applications');
         break;
       case 'DocumentsRequested': {
         const n = Array.isArray(rest.requestedDocumentList) ? rest.requestedDocumentList.length : 0;
@@ -529,7 +601,7 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
         break;
     }
 
-    res.json(formatApp(updated));
+    res.json(formatApp(updated, { redactCandidateContact: userRole === 'RECRUITER' }));
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Internal server error' });
@@ -579,23 +651,26 @@ router.post('/:id/documents', requireAuth, requireRole('CANDIDATE'), upload.arra
     const names: string[] = Array.isArray(req.body.names) ? req.body.names : (req.body.name ? [req.body.name] : []);
 
     const timestamp = Date.now();
-    const created = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const uploadPromises = files.map((file, i) => {
       const publicId = `app_${app.id}_doc_${timestamp}_${i}`;
-      const result = await uploadRawBuffer(file.buffer, 'applications/documents', publicId);
-      const doc = await prisma.applicationDocument.create({
-        data: {
-          applicationId: app.id,
-          name: names[i] || file.originalname,
-          url: result.secure_url,
-          cloudinaryId: result.public_id,
-          mime: file.mimetype,
-          uploadedBy: 'CANDIDATE',
-        },
-      });
-      created.push(doc);
-    }
+      return uploadRawBuffer(file.buffer, 'applications/documents', publicId).then(result => ({ file, result, i }));
+    });
+    
+    const uploadResults = await Promise.all(uploadPromises);
+
+    const docData = uploadResults.map(({ file, result, i }) => ({
+      applicationId: app.id,
+      name: names[i] || file.originalname,
+      url: result.secure_url,
+      cloudinaryId: result.public_id,
+      mime: file.mimetype,
+      uploadedBy: 'CANDIDATE',
+    }));
+
+    await prisma.applicationDocument.createMany({ data: docData });
+    const created = await prisma.applicationDocument.findMany({
+      where: { applicationId: app.id, cloudinaryId: { in: docData.map(d => d.cloudinaryId) } }
+    });
 
     // Move status to DocumentsUploaded if currently in DocumentsRequested or AdditionalDocumentsRequired
     if (app.status === 'DocumentsRequested' || app.status === 'AdditionalDocumentsRequired') {

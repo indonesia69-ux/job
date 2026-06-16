@@ -11,6 +11,8 @@ import {
   Building2,
   Users,
   BarChart3,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
@@ -23,6 +25,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(DEMO_CREDENTIALS.email);
   const [password, setPassword] = useState(DEMO_CREDENTIALS.password);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
@@ -137,12 +140,19 @@ function LoginPage() {
                 <div className="relative mt-1">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="h-11 w-full rounded-lg border bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+                    className="h-11 w-full rounded-lg border bg-background pl-9 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 

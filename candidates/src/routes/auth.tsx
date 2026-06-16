@@ -29,6 +29,13 @@ import { toast } from "sonner";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 type Mode = "signin" | "signup";
+type SignupStep = "details" | "otp";
+type SignupDraft = {
+  email: string;
+  password: string;
+  name: string;
+  mobile: string;
+};
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -65,6 +72,9 @@ function AuthPage() {
   const [loginSuccess, setLoginSuccess] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [signupStep, setSignupStep] = useState<SignupStep>("details");
+  const [signupDraft, setSignupDraft] = useState<SignupDraft | null>(null);
+  const [signupOtp, setSignupOtp] = useState("");
   const nameRef = useRef<HTMLInputElement>(null);
   const mobileRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -72,6 +82,11 @@ function AuthPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mode === "signup" && signupStep === "otp") {
+      await handleVerifySignupOtp();
+      return;
+    }
+
     const email = emailRef.current?.value ?? "";
     const password = passwordRef.current?.value ?? "";
     const name = nameRef.current?.value ?? "";
@@ -94,13 +109,29 @@ function AuthPage() {
     setFormError(null);
     setLoading(true);
     try {
-      const endpoint = mode === "signin" ? "/api/auth/login" : "/api/auth/register";
-      const body: Record<string, string> = { email, password };
       if (mode === "signup") {
-        body.name = name;
-        body.mobile = mobile;
-        body.role = "CANDIDATE";
+        const draft = { email, password, name, mobile };
+        const res = await fetch(`${apiBase()}/api/auth/signup/send-otp`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile, role: "CANDIDATE" }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          const msg = loginErrorMessage(res.status, data.error);
+          setFormError(msg);
+          toast.error(msg);
+          return;
+        }
+        setSignupDraft(draft);
+        setSignupOtp("");
+        setSignupStep("otp");
+        toast.success("OTP sent to your mobile number.");
+        return;
       }
+
+      const endpoint = "/api/auth/login";
+      const body: Record<string, string> = { email, password };
       const res = await fetch(`${apiBase()}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -142,6 +173,70 @@ function AuthPage() {
       const msg = "Network error. Please check your connection and try again.";
       setFormError(msg);
       toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifySignupOtp = async () => {
+    if (!signupDraft) {
+      setSignupStep("details");
+      setFormError("Please enter your signup details again.");
+      return;
+    }
+    if (signupOtp.length < 6) {
+      setFormError("Please enter a valid 6-digit OTP.");
+      return;
+    }
+
+    setFormError(null);
+    setLoading(true);
+    try {
+      const verifyRes = await fetch(`${apiBase()}/api/auth/signup/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mobile: signupDraft.mobile, otp: signupOtp, role: "CANDIDATE" }),
+      });
+      const verifyData = await verifyRes.json();
+      if (!verifyRes.ok) {
+        const msg = verifyData.error || "Invalid OTP.";
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const res = await fetch(`${apiBase()}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...signupDraft,
+          role: "CANDIDATE",
+          signup_token: verifyData.signup_token,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const msg = loginErrorMessage(res.status, data.error);
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      clearProfile();
+      resetHydration();
+      saveAuth(data.token, data.user);
+      const { hydrateProfileFromApi } = await import("@/lib/hydrate");
+      await hydrateProfileFromApi();
+      toast.success("Account created!");
+      setLoginSuccess(true);
+      setTimeout(() => {
+        navigate({ to: "/", search: { q: "", city: "" } });
+      }, 1200);
+    } catch {
+      const msg = "Network error. Please check your connection and try again.";
+      setFormError(msg);
+      toast.error(msg);
+    } finally {
       setLoading(false);
     }
   };
@@ -195,7 +290,40 @@ function AuthPage() {
                   {formError}
                 </p>
               )}
-              {mode === "signup" && (
+              {mode === "signup" && signupStep === "otp" && signupDraft ? (
+                <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+                  <div>
+                    <Label htmlFor="signupOtp" className="text-xs font-medium">
+                      Mobile OTP <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="signupOtp"
+                      value={signupOtp}
+                      onChange={(e) => setSignupOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="123456"
+                      className="mt-1.5 h-11 text-center text-lg font-semibold tracking-widest"
+                      disabled={loading}
+                      required
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter the OTP sent to {signupDraft.mobile}.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSignupStep("details");
+                      setSignupOtp("");
+                      setFormError(null);
+                    }}
+                    className="text-xs font-medium text-brand hover:underline"
+                    disabled={loading}
+                  >
+                    Edit signup details
+                  </button>
+                </div>
+              ) : null}
+              {mode === "signup" && signupStep === "details" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-xs font-medium">
                     Full name <span className="text-destructive">*</span>
@@ -216,7 +344,7 @@ function AuthPage() {
                   )}
                 </div>
               )}
-              {mode === "signup" && (
+              {mode === "signup" && signupStep === "details" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="mobile" className="text-xs font-medium">
                     Mobile Number <span className="text-destructive">*</span>
@@ -238,6 +366,7 @@ function AuthPage() {
                 </div>
               )}
 
+              {(mode === "signin" || signupStep === "details") && (
               <div className="space-y-1.5">
                 <Label htmlFor="email" className="text-xs font-medium">
                   Email <span className="text-destructive">*</span>
@@ -258,7 +387,9 @@ function AuthPage() {
                   <p className="text-xs text-destructive">{fieldErrors.email}</p>
                 )}
               </div>
+              )}
 
+              {(mode === "signin" || signupStep === "details") && (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password" className="text-xs font-medium">
@@ -267,7 +398,6 @@ function AuthPage() {
                   {mode === "signin" && (
                     <Link
                       to="/auth/forgot-password"
-                      search={{}}
                       className="text-xs font-medium text-brand hover:underline"
                     >
                       Forgot password?
@@ -297,6 +427,7 @@ function AuthPage() {
                   </button>
                 </div>
               </div>
+              )}
 
               <Button
                 type="submit"
@@ -307,7 +438,9 @@ function AuthPage() {
                   ? "Please wait…"
                   : mode === "signin"
                     ? "Sign in"
-                    : "Create account"}
+                    : signupStep === "otp"
+                      ? "Verify & create account"
+                      : "Send OTP"}
                 {!(loading || loginSuccess) && <ArrowRight className="ml-2 h-4 w-4" />}
               </Button>
               {loginSuccess && (
@@ -333,6 +466,9 @@ function AuthPage() {
                 type="button"
                 onClick={() => {
                   setMode(mode === "signin" ? "signup" : "signin");
+                  setSignupStep("details");
+                  setSignupDraft(null);
+                  setSignupOtp("");
                   setFormError(null);
                   setFieldErrors({});
                 }}

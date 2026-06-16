@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ImpersonateRouteImport } from './routes/impersonate'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AuthIndexRouteImport } from './routes/auth.index'
@@ -24,7 +25,13 @@ import { Route as AppJobsRouteImport } from './routes/_app.jobs'
 import { Route as AppApplicantsRouteImport } from './routes/_app.applicants'
 import { Route as AppJobsIndexRouteImport } from './routes/_app.jobs.index'
 import { Route as AppJobsNewRouteImport } from './routes/_app.jobs.new'
+import { Route as AppJobsJobIdEditRouteImport } from './routes/_app.jobs.$jobId.edit'
 
+const ImpersonateRoute = ImpersonateRouteImport.update({
+  id: '/impersonate',
+  path: '/impersonate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -99,10 +106,16 @@ const AppJobsNewRoute = AppJobsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppJobsRoute,
 } as any)
+const AppJobsJobIdEditRoute = AppJobsJobIdEditRouteImport.update({
+  id: '/$jobId/edit',
+  path: '/$jobId/edit',
+  getParentRoute: () => AppJobsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/impersonate': typeof ImpersonateRoute
   '/applicants': typeof AppApplicantsRoute
   '/jobs': typeof AppJobsRouteWithChildren
   '/search': typeof AppSearchRoute
@@ -115,8 +128,10 @@ export interface FileRoutesByFullPath {
   '/auth/': typeof AuthIndexRoute
   '/jobs/new': typeof AppJobsNewRoute
   '/jobs/': typeof AppJobsIndexRoute
+  '/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
 }
 export interface FileRoutesByTo {
+  '/impersonate': typeof ImpersonateRoute
   '/applicants': typeof AppApplicantsRoute
   '/search': typeof AppSearchRoute
   '/settings': typeof AppSettingsRoute
@@ -129,11 +144,13 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthIndexRoute
   '/jobs/new': typeof AppJobsNewRoute
   '/jobs': typeof AppJobsIndexRoute
+  '/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/impersonate': typeof ImpersonateRoute
   '/_app/applicants': typeof AppApplicantsRoute
   '/_app/jobs': typeof AppJobsRouteWithChildren
   '/_app/search': typeof AppSearchRoute
@@ -147,12 +164,14 @@ export interface FileRoutesById {
   '/auth/': typeof AuthIndexRoute
   '/_app/jobs/new': typeof AppJobsNewRoute
   '/_app/jobs/': typeof AppJobsIndexRoute
+  '/_app/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/impersonate'
     | '/applicants'
     | '/jobs'
     | '/search'
@@ -165,8 +184,10 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/jobs/new'
     | '/jobs/'
+    | '/jobs/$jobId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/impersonate'
     | '/applicants'
     | '/search'
     | '/settings'
@@ -179,10 +200,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/jobs/new'
     | '/jobs'
+    | '/jobs/$jobId/edit'
   id:
     | '__root__'
     | '/_app'
     | '/auth'
+    | '/impersonate'
     | '/_app/applicants'
     | '/_app/jobs'
     | '/_app/search'
@@ -196,15 +219,24 @@ export interface FileRouteTypes {
     | '/auth/'
     | '/_app/jobs/new'
     | '/_app/jobs/'
+    | '/_app/jobs/$jobId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  ImpersonateRoute: typeof ImpersonateRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/impersonate': {
+      id: '/impersonate'
+      path: '/impersonate'
+      fullPath: '/impersonate'
+      preLoaderRoute: typeof ImpersonateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -310,17 +342,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobsNewRouteImport
       parentRoute: typeof AppJobsRoute
     }
+    '/_app/jobs/$jobId/edit': {
+      id: '/_app/jobs/$jobId/edit'
+      path: '/$jobId/edit'
+      fullPath: '/jobs/$jobId/edit'
+      preLoaderRoute: typeof AppJobsJobIdEditRouteImport
+      parentRoute: typeof AppJobsRoute
+    }
   }
 }
 
 interface AppJobsRouteChildren {
   AppJobsNewRoute: typeof AppJobsNewRoute
   AppJobsIndexRoute: typeof AppJobsIndexRoute
+  AppJobsJobIdEditRoute: typeof AppJobsJobIdEditRoute
 }
 
 const AppJobsRouteChildren: AppJobsRouteChildren = {
   AppJobsNewRoute: AppJobsNewRoute,
   AppJobsIndexRoute: AppJobsIndexRoute,
+  AppJobsJobIdEditRoute: AppJobsJobIdEditRoute,
 }
 
 const AppJobsRouteWithChildren =
@@ -367,6 +408,7 @@ const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  ImpersonateRoute: ImpersonateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

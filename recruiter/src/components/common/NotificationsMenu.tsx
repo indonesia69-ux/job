@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import {
   DropdownMenu,
@@ -7,6 +8,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LottiePlayer } from "./LottiePlayer";
+import { apiBase } from "@/lib/api";
+import { authHeader } from "@/store/authStore";
 
 type Item = {
   id: string;
@@ -25,12 +28,49 @@ type Props = {
 };
 
 export function NotificationsMenu({
-  items = [],
+  items: initialItems = [],
   align = "end",
   triggerClassName,
   contentClassName = "w-[360px]",
   emptyHint = "Application and pipeline updates will appear here.",
 }: Props) {
+  const [items, setItems] = useState<Item[]>(initialItems);
+  useEffect(() => {
+    let mounted = true;
+    fetch(`${apiBase()}/api/notifications`, { headers: authHeader() })
+      .then((res) => (res.ok ? res.json() : { data: [] }))
+      .then((data) => {
+        if (!mounted) return;
+        setItems(
+          (data.data || []).map((n: any) => ({
+            id: n.id,
+            title: n.title,
+            detail: n.message,
+            unread: !n.read,
+            time: new Date(n.createdAt).toLocaleString("en-IN", {
+              day: "numeric",
+              month: "short",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            link: n.link,
+          })),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const markRead = async (id: string) => {
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
+    await fetch(`${apiBase()}/api/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: authHeader(),
+    }).catch(() => undefined);
+  };
+
   const unreadCount = items.filter((n) => n.unread).length;
 
   return (
@@ -65,23 +105,34 @@ export function NotificationsMenu({
           </div>
         ) : (
           <div className="max-h-[420px] overflow-y-auto">
-            {items.map((n) => (
-              <div
-                key={n.id}
-                className="flex gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-medium text-foreground">{n.title}</p>
-                    {n.unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
+            {items.map((n: Item & { link?: string | null }) => {
+              const content = (
+                <div
+                  onClick={() => markRead(n.id)}
+                  className="flex gap-3 border-b px-4 py-3 last:border-b-0 hover:bg-muted/40"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-foreground">{n.title}</p>
+                      {n.unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
+                    </div>
+                    {n.detail && (
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {n.detail}
+                      </p>
+                    )}
+                    {n.time && <p className="mt-1 text-[11px] text-muted-foreground">{n.time}</p>}
                   </div>
-                  {n.detail && (
-                    <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.detail}</p>
-                  )}
-                  {n.time && <p className="mt-1 text-[11px] text-muted-foreground">{n.time}</p>}
                 </div>
-              </div>
-            ))}
+              );
+              return n.link ? (
+                <a key={n.id} href={n.link}>
+                  {content}
+                </a>
+              ) : (
+                <div key={n.id}>{content}</div>
+              );
+            })}
           </div>
         )}
       </DropdownMenuContent>

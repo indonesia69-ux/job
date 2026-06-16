@@ -435,7 +435,7 @@ function toProfile(s: FormState): Profile {
     documentChecklist: s.documentChecklist,
     supportingDocuments: s.documents.map((d) => ({
       name: d.name,
-      url: d.url,
+      url: d.url || "",
       publicId: d.publicId || "",
       mime: d.mime || "",
     })),
@@ -543,7 +543,7 @@ export function ProfileFormWizard({
           | { url: string; publicId: string; name?: string; mime?: string }[]
           | undefined = undefined;
 
-        const validFiles = state.documents.filter((d) => d.file).map((d) => d.file);
+        const validFiles = state.documents.filter((d) => !!d.file).map((d) => d.file as File);
         if (validFiles.length > 0) {
           try {
             supportingDocsUpload = await uploadDocumentsToBackend(validFiles, getToken() ?? "");
@@ -779,11 +779,14 @@ export function ProfileFormWizard({
                   Continue <ChevronRight className="h-4 w-4" />
                 </Button>
               ) : (
-                !applyMode && (
-                  <Button type="button" onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? "Saving..." : submitLabel} <Check className="h-4 w-4" />
-                  </Button>
-                )
+                <Button type="button" onClick={handleSubmit} disabled={submitting}>
+                  {submitting
+                    ? applyMode
+                      ? "Submitting..."
+                      : "Saving..."
+                    : submitLabel}{" "}
+                  <Check className="h-4 w-4" />
+                </Button>
               )}
             </div>
           </div>

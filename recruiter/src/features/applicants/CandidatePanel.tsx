@@ -1,4 +1,4 @@
-import { Briefcase, Mail, MapPin, Phone, FileText, Download } from "lucide-react";
+import { Briefcase, MapPin, FileText, Download } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { updateApplicationStatus } from "@/lib/recruiterData";
@@ -43,6 +43,7 @@ export function CandidatePanel({
     }
   };
 
+  // Keep apiStatus only for the terminal-status check; WorkflowActions does its own conversion.
   const apiStatus = displayToApiStatus(candidate?.status as DisplayApplicantStatus);
   const locked = candidate ? isTerminalApplicationStatus(apiStatus) : true;
   const statusClass = candidate ? statusPillClass(candidate.status) : "";
@@ -58,7 +59,16 @@ export function CandidatePanel({
                   {candidate.initials}
                 </span>
                 <div className="flex-1">
-                  <SheetTitle className="font-display text-[18px]">{candidate.name}</SheetTitle>
+                  <SheetTitle className="font-display text-[18px]">
+                    <div className="flex items-center gap-2">
+                      {candidate.name}
+                      {!candidate.cvSource && (
+                        <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-500/20 dark:text-orange-400 mt-1">
+                          Incomplete
+                        </span>
+                      )}
+                    </div>
+                  </SheetTitle>
                   <div className="text-[12.5px] text-muted-foreground">
                     {candidate.role} · {candidate.specialty}
                   </div>
@@ -80,13 +90,11 @@ export function CandidatePanel({
                 <Meta icon={<Briefcase className="h-3.5 w-3.5" />}>
                   {candidate.experienceYears} yrs
                 </Meta>
-                <Meta icon={<Mail className="h-3.5 w-3.5" />}>{candidate.email}</Meta>
-                <Meta icon={<Phone className="h-3.5 w-3.5" />}>{candidate.phone}</Meta>
               </div>
 
               <WorkflowActions
                 applicationId={candidate.applicationId!}
-                status={apiStatus}
+                status={candidate.status}
                 onUpdate={() => router.invalidate()}
               />
 
@@ -108,24 +116,9 @@ export function CandidatePanel({
                   size="sm"
                   variant="ghost"
                   className="h-9"
-                  onClick={() => {
-                    if (candidate.cvUrl) {
-                      window.open(candidate.cvUrl, "_blank");
-                      toast.success("Download opened in new tab");
-                    } else if (candidate.uploadedCvData) {
-                      const a = document.createElement("a");
-                      a.href = candidate.uploadedCvData;
-                      a.download = candidate.uploadedCvName || `${candidate.name}-CV.pdf`;
-                      a.click();
-                      toast.success("Download started");
-                    } else if (candidate.formProfile) {
-                      onViewCv(candidate.id);
-                    } else {
-                      toast.error("No CV available");
-                    }
-                  }}
+                  onClick={() => onViewCv(candidate.id)}
                 >
-                  <Download className="mr-1.5 h-3.5 w-3.5" /> PDF
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Download CV
                 </Button>
               </div>
             </SheetHeader>
@@ -407,32 +400,20 @@ export function CandidatePanel({
                 </TabsContent>
 
                 <TabsContent value="docs" className="mt-5 space-y-5">
-                  {/* CV / uploaded file */}
-                  {(candidate.cvUrl || candidate.uploadedCvData) && (
-                    <Section title="Attached CV">
-                      <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5">
-                        <span className="truncate text-[13px] text-foreground">
-                          {candidate.uploadedCvName || "CV Document"}
-                        </span>
-                        <button
-                          type="button"
-                          className="ml-2 shrink-0 text-primary hover:underline text-[12px] font-medium flex items-center gap-1"
-                          onClick={() => {
-                            if (candidate.cvUrl) {
-                              window.open(candidate.cvUrl, "_blank");
-                            } else if (candidate.uploadedCvData) {
-                              const a = document.createElement("a");
-                              a.href = candidate.uploadedCvData;
-                              a.download = candidate.uploadedCvName || "cv.pdf";
-                              a.click();
-                            }
-                          }}
-                        >
-                          <Download className="h-3.5 w-3.5" /> Open
-                        </button>
-                      </div>
-                    </Section>
-                  )}
+                  <Section title="Candidate CV">
+                    <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5">
+                      <span className="truncate text-[13px] text-foreground">
+                        Sanitized ApronHanger CV
+                      </span>
+                      <button
+                        type="button"
+                        className="ml-2 shrink-0 text-primary hover:underline text-[12px] font-medium flex items-center gap-1"
+                        onClick={() => onViewCv(candidate.id)}
+                      >
+                        <Download className="h-3.5 w-3.5" /> Open
+                      </button>
+                    </div>
+                  </Section>
 
                   {/* Supporting Documents */}
                   {candidate.supportingDocuments && candidate.supportingDocuments.length > 0 && (

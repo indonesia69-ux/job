@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const emailRef = useRef<HTMLInputElement>(null);
@@ -127,16 +129,25 @@ function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input
-            id="password"
-            ref={passwordRef}
-            type="password"
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className="h-11"
-            aria-invalid={!!fieldErrors.password}
-            required
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              ref={passwordRef}
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className="h-11 pr-10"
+              aria-invalid={!!fieldErrors.password}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
           {fieldErrors.password && (
             <p className="text-xs text-destructive">{fieldErrors.password}</p>
           )}

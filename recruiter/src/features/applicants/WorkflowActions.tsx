@@ -14,6 +14,7 @@ export function WorkflowActions({
   onUpdate,
 }: {
   applicationId: string;
+  /** Display status string (e.g. "Interview Scheduled"), NOT the raw API status. */
   status: string;
   onUpdate: () => void;
 }) {
@@ -81,14 +82,66 @@ export function WorkflowActions({
         </>
       )}
 
-      {/* 3. Reschedule Requested -> Reschedule */}
+      {/* 3. Reschedule Requested -> Approve / Reject / Cancel */}
       {apiStatus === "RescheduleRequested" && (
-        <Button size="sm" className="h-9" disabled={loading} onClick={() => setModal("reschedule")}>
-          Reschedule Interview
-        </Button>
+        <>
+          <Button
+            size="sm"
+            className="h-9"
+            disabled={loading}
+            onClick={() => setModal("reschedule")}
+          >
+            Approve Reschedule
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9"
+            disabled={loading}
+            onClick={() => setStatus("InterviewDeclined", {}, "Reschedule request rejected")}
+          >
+            Reject Reschedule
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
+            disabled={loading}
+            onClick={() => setStatus("Rejected", {}, "Interview cancelled")}
+          >
+            Cancel Interview
+          </Button>
+        </>
       )}
 
-      {/* 4. Interview Actions: Accepted/Rescheduled/Scheduled */}
+      {/* 3b. Interview Scheduled — waiting for candidate to accept/decline */}
+      {apiStatus === "InterviewScheduled" && (
+        <>
+          <p className="w-full text-[11.5px] text-muted-foreground italic">
+            Awaiting candidate response (accept / decline).
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9"
+            disabled={loading}
+            onClick={() => setModal("documents")}
+          >
+            Request Documents
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
+            disabled={loading}
+            onClick={() => setStatus("Rejected", {}, "Interview cancelled")}
+          >
+            Cancel Interview
+          </Button>
+        </>
+      )}
+
+      {/* 4. Interview Actions: Accepted / Rescheduled */}
       {(apiStatus === "InterviewAccepted" || apiStatus === "InterviewRescheduled") && (
         <>
           <Button
@@ -111,7 +164,7 @@ export function WorkflowActions({
         </>
       )}
 
-      {/* 5. Interview Completed -> Outcome */}
+      {/* 5. Interview Completed / Next Round → Outcome */}
       {(apiStatus === "InterviewCompleted" || apiStatus === "NextRound") && (
         <>
           <Button
@@ -152,6 +205,29 @@ export function WorkflowActions({
         </>
       )}
 
+      {/* 5b. No Show → Reschedule or Reject */}
+      {apiStatus === "NoShow" && (
+        <>
+          <Button
+            size="sm"
+            className="h-9"
+            disabled={loading}
+            onClick={() => setModal("reschedule")}
+          >
+            Reschedule Interview
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
+            disabled={loading}
+            onClick={() => setStatus("Rejected", {}, "Candidate rejected after no-show")}
+          >
+            Reject
+          </Button>
+        </>
+      )}
+
       {/* 6. Shortlisted -> Request Docs / Send Offer */}
       {apiStatus === "Shortlisted" && (
         <>
@@ -163,6 +239,28 @@ export function WorkflowActions({
             onClick={() => setModal("documents")}
           >
             Request Documents
+          </Button>
+        </>
+      )}
+
+      {apiStatus === "OnHold" && (
+        <>
+          <Button
+            size="sm"
+            className="h-9"
+            disabled={loading}
+            onClick={() => setStatus("Shortlisted", {}, "Candidate shortlisted")}
+          >
+            Shortlist
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
+            disabled={loading}
+            onClick={() => setStatus("Rejected", {}, "Candidate rejected")}
+          >
+            Reject
           </Button>
         </>
       )}
@@ -265,7 +363,12 @@ export function WorkflowActions({
           isOpen={true}
           isReschedule={true}
           onClose={() => setModal("none")}
-          onSubmit={async (p) => setStatus("InterviewScheduled", p, "Interview rescheduled")}
+          onSubmit={async (p) => {
+            // From NoShow: backend requires NoShow → InterviewRescheduled.
+            // We set InterviewRescheduled (with schedule payload) so the recruiter
+            // can then move to InterviewScheduled in the next step.
+            await setStatus("InterviewRescheduled", p, "Interview rescheduled");
+          }}
         />
       )}
       {modal === "nextRound" && (

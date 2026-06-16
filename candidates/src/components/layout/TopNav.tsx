@@ -140,7 +140,6 @@ export function TopNav() {
                       <User className="h-4 w-4" /> View profile
                     </Link>
                   </DropdownMenuItem>
-                  {/* Hidden for now until CV Builder is ready
                   <DropdownMenuItem asChild>
                     <Link
                       to={profile ? "/cv-preview" : "/build-cv"}
@@ -149,7 +148,6 @@ export function TopNav() {
                       <Briefcase className="h-4 w-4" /> {profile ? "My CV" : "Build my CV"}
                     </Link>
                   </DropdownMenuItem>
-                  */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={handleSignOut}

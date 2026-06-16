@@ -12,7 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { AdminStoreProvider } from "@/lib/admin-store";
-import { apiBase } from "@/lib/api";
+import { apiBase , apiFetch } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPageLoader } from "@/components/common/PageLoader";
@@ -29,11 +29,6 @@ function NotFoundComponent() {
           loop
           className="mx-auto h-36 w-36 sm:h-48 sm:w-48 lg:h-56 lg:w-56 mb-4"
         />
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist.
-        </p>
         <div className="mt-6">
           <Link
             to="/"
@@ -66,7 +61,13 @@ function GlobalErrorComponent({ error, reset }: { error: Error; reset: () => voi
   );
 }
 
+import { requireAdminAuth } from "@/lib/requireAuth";
+
 export const Route = createRootRoute({
+  beforeLoad: ({ location }) => {
+    if (location.pathname === "/login") return;
+    requireAdminAuth(location.pathname + location.searchStr);
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -118,7 +119,7 @@ function RootComponent() {
       });
     }, 2000);
 
-    fetch(`${apiBase()}/health`)
+    apiFetch(`${apiBase()}/health`)
       .then(() => {
         clearTimeout(timer);
         if (toastId) toast.dismiss(toastId);
@@ -137,11 +138,15 @@ function RootComponent() {
   );
 }
 
+import { useSSE } from '@/hooks/useSSE';
+
 function AppShell() {
   const { isAuthenticated, isReady } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const isLoginRoute = pathname === "/login";
+
+  useSSE(); // Enable real-time SSE notifications
 
   useEffect(() => {
     if (isReady && !isAuthenticated && !isLoginRoute) {

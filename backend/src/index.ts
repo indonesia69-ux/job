@@ -30,11 +30,13 @@ import adminStatsRoutes from './routes/admin/adminStatsRoutes';
 import adminJobRoutes from './routes/admin/adminJobRoutes';
 import adminSystemRoutes from './routes/admin/adminSystemRoutes';
 import adminSearchRoutes from './routes/adminSearchRoutes';
+import adminNotificationRoutes from './routes/admin/adminNotificationRoutes';
 import onboardingRoutes from './routes/onboardingRoutes';
 import onboardingVerifyRoutes from './routes/onboardingVerifyRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import planRoutes from './routes/planRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 function requireEnv(name: string): void {
   if (!process.env[name]) {
@@ -53,6 +55,7 @@ function requireEnv(name: string): void {
 ].forEach(requireEnv);
 
 const app = express();
+app.set('trust proxy', 1);
 
 app.use(helmet());
 
@@ -97,10 +100,11 @@ const otpLimiter = rateLimit({
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 // In production, configure ALLOWED_ORIGINS in .env
-const originsCandidate = process.env.ALLOWED_ORIGINS_CANDIDATE ? process.env.ALLOWED_ORIGINS_CANDIDATE.split(',').map(s => s.trim()) : [];
-const originsRecruiter = process.env.ALLOWED_ORIGINS_RECRUITER ? process.env.ALLOWED_ORIGINS_RECRUITER.split(',').map(s => s.trim()) : [];
-const originsAdmin = process.env.ALLOWED_ORIGINS_ADMIN ? process.env.ALLOWED_ORIGINS_ADMIN.split(',').map(s => s.trim()) : [];
-const legacyOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()) : [];
+const parseOrigins = (str?: string) => str ? str.split(',').map(s => s.trim().replace(/\/$/, '')) : [];
+const originsCandidate = parseOrigins(process.env.ALLOWED_ORIGINS_CANDIDATE);
+const originsRecruiter = parseOrigins(process.env.ALLOWED_ORIGINS_RECRUITER);
+const originsAdmin = parseOrigins(process.env.ALLOWED_ORIGINS_ADMIN);
+const legacyOrigins = parseOrigins(process.env.ALLOWED_ORIGINS);
 
 const allowedOrigins = [...new Set([...originsCandidate, ...originsRecruiter, ...originsAdmin, ...legacyOrigins])];
 
@@ -123,6 +127,8 @@ app.use(cors({
 // Limiters must be registered BEFORE the routes they protect
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/signup/send-otp', otpLimiter);
+app.use('/api/auth/signup/verify-otp', otpLimiter);
 app.use('/api/auth/forgot-password', otpLimiter);
 app.use('/api/auth/verify-otp', otpLimiter);
 app.use('/api/auth/reset-password', otpLimiter);
@@ -142,6 +148,7 @@ app.use('/api/admin', adminStatsRoutes);
 app.use('/api/admin', adminJobRoutes);
 app.use('/api/admin', adminSystemRoutes);
 app.use('/api/admin', adminSearchRoutes);
+app.use('/api/admin/notifications', adminNotificationRoutes);
 
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/candidates', searchLimiter, candidateRoutes);
@@ -151,6 +158,7 @@ app.use('/api/search', searchLimiter, searchRoutes);
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/plan', planRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/onboarding', onboardingVerifyRoutes);
@@ -170,7 +178,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
 // ─── Server Start ────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   logger.info(`Server running on http://127.0.0.1:${PORT}`);
   
   // Initialize background cron jobs
@@ -184,3 +192,24 @@ app.listen(PORT, () => {
     logger.warn('WARNING: No production CORS origins are configured; browser API requests will be rejected.');
   }
 });
+
+// ─── Graceful Shutdown ───────────────────────────────────────────────────────
+import prisma from './lib/prisma';
+
+const gracefulShutdown = async (signal: string) => {
+  logger.info(`Received ${signal}, closing server...`);
+  server.close(async () => {
+    logger.info('HTTP server closed.');
+    try {
+      await prisma.$disconnect();
+      logger.info('Prisma disconnected successfully.');
+      process.exit(0);
+    } catch (err) {
+      logger.error('Error during Prisma disconnect: ' + err);
+      process.exit(1);
+    }
+  });
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

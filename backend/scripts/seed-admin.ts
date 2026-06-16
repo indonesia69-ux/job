@@ -16,6 +16,14 @@ async function main() {
     process.exit(1);
   }
 
+  if (adminPassword === 'change-me-123!') {
+    console.warn("\n========================================================");
+    console.warn("⚠️  WARNING: You are using the default admin password!");
+    console.warn("⚠️  This is highly insecure. Please change ADMIN_PASSWORD");
+    console.warn("⚠️  in your .env file immediately after seeding.");
+    console.warn("========================================================\n");
+  }
+
   const existingAdmin = await prisma.adminUser.findUnique({
     where: { email: adminEmail }
   });

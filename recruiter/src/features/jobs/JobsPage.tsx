@@ -1,6 +1,7 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { closeJob, publishDraft } from "@/lib/recruiterData";
+import { useAuth } from "@/store/authStore";
 import {
   Banknote,
   Briefcase,
@@ -35,11 +36,13 @@ import { jobMatchesLocalSearch } from "@/lib/recruiterSearch";
 import { Route } from "@/routes/_app.jobs.index";
 import { toast } from "sonner";
 
-function fmtSalary(min: number, max: number) {
-  return `₹${min}L – ₹${max}L`;
+function fmtSalaryDisplay(min: number, max: number) {
+  const fmt = (n: number) => Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  return `₹${fmt(min)}L - ₹${fmt(max)}L`;
 }
 
 export function JobsPage() {
+  const { user } = useAuth();
   const { jobs: JOBS } = Route.useLoaderData();
   const searchQ = Route.useSearch().q || "";
   const router = useRouter();
@@ -177,8 +180,10 @@ export function JobsPage() {
                         <Users className="mr-2 h-4 w-4" /> View applicants
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => toast("Edit form opened (demo)")}>
-                      <Edit3 className="mr-2 h-4 w-4" /> Edit job
+                    <DropdownMenuItem asChild>
+                      <Link to="/jobs/$jobId/edit" params={{ jobId: j.id }}>
+                        <Edit3 className="mr-2 h-4 w-4" /> Edit job
+                      </Link>
                     </DropdownMenuItem>
                     {j.status === "Draft" && (
                       <DropdownMenuItem
@@ -209,7 +214,7 @@ export function JobsPage() {
                   {j.type} · {j.shift}
                 </Meta>
                 <Meta icon={<Banknote className="h-3.5 w-3.5" />}>
-                  {fmtSalary(j.salaryMin, j.salaryMax)}
+                  {fmtSalaryDisplay(j.salaryMin, j.salaryMax)}
                 </Meta>
                 <Meta icon={<Users className="h-3.5 w-3.5" />}>{j.applicants} applicants</Meta>
               </div>
@@ -227,7 +232,7 @@ export function JobsPage() {
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <div className="text-[11px] text-muted-foreground">
-                  Posted {j.postedOn} · {j.experience}
+                  Posted {j.postedOn} · by {j.postedBy?.id === user?.id ? "you" : (j.postedBy?.name || "someone")}
                 </div>
                 <Button asChild size="sm" variant="outline" className="h-8 text-[12px]">
                   <Link to="/applicants" search={{ jobId: j.id, q: "" }}>

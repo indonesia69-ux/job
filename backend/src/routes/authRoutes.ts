@@ -7,20 +7,100 @@ import { requireAuth, AuthRequest } from '../middleware/auth';
 import { getRecruiterLimit, ensureUsageReset, getHospitalValidity } from '../lib/helpers';
 import { sendOTP, verifyOTP, smartResendOTP } from '../lib/otp';
 import { generateResetToken, validateResetToken, deleteResetToken } from '../lib/resetTokenStore';
+import { generateSignupToken, validateSignupToken, deleteSignupToken } from '../lib/signupTokenStore';
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET;
 if (!SECRET) throw new Error("FATAL: JWT_SECRET environment variable is not set.");
 
+type AuthRole = 'RECRUITER' | 'CANDIDATE';
+
+function isAuthRole(role: unknown): role is AuthRole {
+  return role === 'RECRUITER' || role === 'CANDIDATE';
+}
+
+async function findUserByMobile(mobile: string, role: string) {
+  const normalized = mobile.replace(/\s+/g, '').replace(/^\+91/, '');
+  return await prisma.user.findFirst({
+    where: {
+      role,
+      OR: [
+        { mobile: normalized },
+        { mobile: `+91${normalized}` },
+        { mobile: `+91 ${normalized}` },
+        { mobile: `${normalized.slice(0, 5)} ${normalized.slice(5)}` },
+        { mobile: `+91 ${normalized.slice(0, 5)} ${normalized.slice(5)}` },
+        { mobile }
+      ]
+    }
+  });
+}
+
+// POST /api/auth/signup/send-otp
+router.post('/signup/send-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile, role } = req.body;
+    if (!mobile || !role) {
+      res.status(400).json({ error: 'mobile and role are required' });
+      return;
+    }
+    if (!isAuthRole(role)) {
+      res.status(400).json({ error: 'role must be RECRUITER or CANDIDATE' });
+      return;
+    }
+
+    const existingMobile = await prisma.user.findFirst({ where: { mobile: String(mobile), role } });
+    if (existingMobile) {
+      res.status(409).json({ error: 'Mobile number is already registered for this role' });
+      return;
+    }
+
+    await sendOTP(String(mobile), { templateType: 'verification' });
+    res.json({ message: 'OTP sent successfully' });
+  } catch (err: any) {
+    logger.error(`[auth/signup/send-otp] ${err.message}`);
+    const status = err.statusCode || 500;
+    res.status(status).json({ error: status >= 500 ? 'Failed to send OTP. Please try again.' : err.message });
+  }
+});
+
+// POST /api/auth/signup/verify-otp
+router.post('/signup/verify-otp', async (req: Request, res: Response) => {
+  try {
+    const { mobile, otp, role } = req.body;
+    if (!mobile || !otp || !role) {
+      res.status(400).json({ error: 'mobile, otp, and role are required' });
+      return;
+    }
+    if (!isAuthRole(role)) {
+      res.status(400).json({ error: 'role must be RECRUITER or CANDIDATE' });
+      return;
+    }
+
+    const existingMobile = await prisma.user.findFirst({ where: { mobile: String(mobile), role } });
+    if (existingMobile) {
+      res.status(409).json({ error: 'Mobile number is already registered for this role' });
+      return;
+    }
+
+    await verifyOTP(String(mobile), String(otp));
+    const signup_token = await generateSignupToken(String(mobile), role);
+    res.json({ message: 'OTP verified', signup_token });
+  } catch (err: any) {
+    const status = err.statusCode === 404 ? 400 : (err.statusCode || 400);
+    res.status(status).json({ error: err.message });
+  }
+});
+
 // POST /api/auth/register
 router.post('/register', async (req: Request, res: Response) => {
-  const { email, password, name, fullName, username, mobile, role, inviteCode } = req.body;
+  const { email, password, name, fullName, username, mobile, role, inviteCode, signup_token } = req.body;
 
-  if (!email || !password || !name || !role) {
-    res.status(400).json({ error: 'email, password, name, and role are required' });
+  if (!email || !password || !name || !mobile || !role || !signup_token) {
+    res.status(400).json({ error: 'email, password, name, mobile, role, and signup_token are required' });
     return;
   }
-  if (!['CANDIDATE', 'RECRUITER'].includes(role)) {
+  if (!isAuthRole(role)) {
     res.status(400).json({ error: 'role must be CANDIDATE or RECRUITER' });
     return;
   }
@@ -37,6 +117,12 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 
   try {
+    const validSignupToken = await validateSignupToken(String(signup_token), String(mobile), role);
+    if (!validSignupToken) {
+      res.status(400).json({ error: 'Mobile verification is required before registration' });
+      return;
+    }
+
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       res.status(409).json({ error: 'Email is already registered' });
@@ -109,6 +195,8 @@ router.post('/register', async (req: Request, res: Response) => {
       });
       candidateId = candidate.id;
     }
+
+    await deleteSignupToken(String(signup_token));
 
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId, candidateId, tokenVersion: user.tokenVersion },
@@ -212,7 +300,11 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
         premiumSearchesThisMonth: finalUser.premiumSearchesThisMonth,
         plan: finalUser.hospital?.onboardingPlan || 'Basic',
         jobValidityDays,
-        isLocked
+        isLocked,
+        // Notification preferences
+        notifOnApply: finalUser.notifOnApply ?? true,
+        notifWeekly: finalUser.notifWeekly ?? false,
+        notifHighMatch: finalUser.notifHighMatch ?? true,
       }
     });
   } catch (error) {
@@ -223,42 +315,57 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
 
 // PATCH /api/auth/me
 router.patch('/me', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { name } = req.body;
-  if (!name || typeof name !== 'string' || name.trim().length === 0) {
+  const { name, notifOnApply, notifWeekly, notifHighMatch } = req.body;
+
+  // At least one updatable field must be present
+  const hasName = name !== undefined;
+  const hasNotifUpdate = notifOnApply !== undefined || notifWeekly !== undefined || notifHighMatch !== undefined;
+
+  if (!hasName && !hasNotifUpdate) {
+    res.status(400).json({ error: 'Nothing to update' });
+    return;
+  }
+  if (hasName && (typeof name !== 'string' || name.trim().length === 0)) {
     res.status(400).json({ error: 'Valid name is required' });
     return;
   }
-  
+
   try {
+    const updateData: Record<string, unknown> = {};
+    if (hasName) updateData.name = (name as string).trim();
+    if (notifOnApply !== undefined) updateData.notifOnApply = Boolean(notifOnApply);
+    if (notifWeekly !== undefined) updateData.notifWeekly = Boolean(notifWeekly);
+    if (notifHighMatch !== undefined) updateData.notifHighMatch = Boolean(notifHighMatch);
+
     const updated = await prisma.user.update({
       where: { id: req.user!.id },
-      data: { name: name.trim() }
+      data: updateData,
     });
-    
-    // Generate a new token with the updated name (preserve tokenVersion)
+
+    // Generate a new token with latest user data (preserve tokenVersion)
     const token = jwt.sign(
-      { 
-        id: updated.id, 
-        email: updated.email, 
-        name: updated.name, 
-        role: updated.role, 
-        hospitalId: updated.hospitalId, 
+      {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        role: updated.role,
+        hospitalId: updated.hospitalId,
         candidateId: req.user!.candidateId,
         tokenVersion: updated.tokenVersion
       },
       SECRET,
       { expiresIn: '30d' }
     );
-    
+
     res.json({
       token,
-      user: { 
-        id: updated.id, 
-        email: updated.email, 
-        name: updated.name, 
-        role: updated.role, 
-        hospitalId: updated.hospitalId, 
-        candidateId: req.user!.candidateId 
+      user: {
+        id: updated.id,
+        email: updated.email,
+        name: updated.name,
+        role: updated.role,
+        hospitalId: updated.hospitalId,
+        candidateId: req.user!.candidateId,
       }
     });
   } catch (error) {
@@ -282,14 +389,14 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
       return;
     }
 
-    const user = await prisma.user.findFirst({ where: { mobile, role } });
-    if (!user) {
+    const user = await findUserByMobile(mobile, role);
+    if (!user || !user.mobile) {
       // Do not leak whether the mobile number exists.
       res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
       return;
     }
 
-    await sendOTP(mobile, { templateType: 'reset' });
+    await sendOTP(user.mobile, { templateType: 'reset' });
     res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
   } catch (err: any) {
     logger.error(`[auth/forgot-password] ${err.message}`);
@@ -310,9 +417,15 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
       return;
     }
 
-    await verifyOTP(mobile, otp);
+    const user = await findUserByMobile(mobile, role);
+    if (!user || !user.mobile) {
+      res.status(400).json({ error: 'Invalid or expired OTP' });
+      return;
+    }
 
-    const reset_token = await generateResetToken(mobile, role);
+    await verifyOTP(user.mobile, otp);
+
+    const reset_token = await generateResetToken(user.mobile, role);
     res.json({ message: 'OTP verified', reset_token });
   } catch (err: any) {
     const status = err.statusCode === 404 ? 400 : (err.statusCode || 400);
@@ -370,7 +483,14 @@ router.post('/resend-otp', async (req: Request, res: Response) => {
       return;
     }
 
-    await smartResendOTP(mobile, { templateType: 'reset' });
+    const user = await findUserByMobile(mobile, role);
+    if (!user || !user.mobile) {
+      // Fake success
+      res.json({ message: 'OTP resent successfully' });
+      return;
+    }
+
+    await smartResendOTP(user.mobile, { templateType: 'reset' });
     res.json({ message: 'OTP resent successfully' });
   } catch (err: any) {
     res.status(err.statusCode || 400).json({ error: err.message });

@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export function JoiningDateModal({
   isOpen,
@@ -21,9 +22,16 @@ export function JoiningDateModal({
   const [joiningDate, setJoiningDate] = useState("");
   const [joiningNote, setJoiningNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const minDate = new Date().toISOString().slice(0, 10);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const selected = new Date(`${joiningDate}T00:00:00`);
+    const today = new Date(`${minDate}T00:00:00`);
+    if (Number.isNaN(selected.getTime()) || selected.getTime() < today.getTime()) {
+      toast.error("Choose today or a future joining date.");
+      return;
+    }
     setLoading(true);
     try {
       await onSubmit({
@@ -48,6 +56,7 @@ export function JoiningDateModal({
             <Input
               type="date"
               required
+              min={minDate}
               value={joiningDate}
               onChange={(event) => setJoiningDate(event.target.value)}
             />

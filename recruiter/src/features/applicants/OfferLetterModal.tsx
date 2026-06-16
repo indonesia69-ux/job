@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { uploadOfferLetter, updateApplicationStatus } from "@/lib/recruiterData";
+import { toast } from "sonner";
 
 export function OfferLetterModal({
   applicationId,
@@ -43,7 +44,7 @@ export function OfferLetterModal({
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.message || "Failed to upload offer letter");
+      toast.error(err.message || "Failed to upload offer letter");
     } finally {
       setLoading(false);
     }

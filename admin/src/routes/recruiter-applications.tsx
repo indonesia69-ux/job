@@ -14,14 +14,23 @@ import {
   Hash,
   BedDouble,
   Sparkles,
+  FileText,
+  X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/recruiter-applications")({
   component: RecruiterApplicationsPage,
 });
 
-const STATUS_FILTERS = ["All", "Pending", "Approved", "Rejected"] as const;
-type Filter = (typeof STATUS_FILTERS)[number];
+type Filter = "All" | "Pending" | "Docs Requested" | "Approved" | "Rejected";
+const STATUS_FILTERS: Filter[] = ["All", "Pending", "Docs Requested", "Approved", "Rejected"];
+
+function filterToStatus(f: Filter): string | null {
+  if (f === "Docs Requested") return "RequestMoreDocuments";
+  if (f === "All") return null;
+  return f;
+}
 
 function RecruiterApplicationsPage() {
   const { recruiterApplications, approveRecruiterApplication, rejectRecruiterApplication } =
@@ -30,8 +39,15 @@ function RecruiterApplicationsPage() {
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  // Reject modal state
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  const statusMatch = filterToStatus(filter);
   const filtered = recruiterApplications.filter((a) => {
-    if (filter !== "All" && a.status !== filter) return false;
+    if (statusMatch && a.status !== statusMatch) return false;
     if (
       search &&
       !`${a.hospitalName} ${a.city} ${a.email}`.toLowerCase().includes(search.toLowerCase())
@@ -44,8 +60,28 @@ function RecruiterApplicationsPage() {
 
   const counts = {
     Pending: recruiterApplications.filter((a) => a.status === "Pending").length,
+    "Docs Requested": recruiterApplications.filter(
+      (a) => a.status === "RequestMoreDocuments",
+    ).length,
     Approved: recruiterApplications.filter((a) => a.status === "Approved").length,
     Rejected: recruiterApplications.filter((a) => a.status === "Rejected").length,
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return;
+    setRejectLoading(true);
+    try {
+      await rejectRecruiterApplication(rejectTarget, rejectReason.trim());
+      toast.success("Application rejected. Hospital has been notified.");
+      setRejectModalOpen(false);
+      setRejectTarget(null);
+      setRejectReason("");
+      setSelectedId(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to reject application.");
+    } finally {
+      setRejectLoading(false);
+    }
   };
 
   return (
@@ -59,9 +95,15 @@ function RecruiterApplicationsPage() {
       </div>
 
       {/* Stat row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatCard label="Total" value={recruiterApplications.length} icon={Inbox} />
         <StatCard label="Pending" value={counts.Pending} icon={Sparkles} tone="warning" />
+        <StatCard
+          label="Docs Requested"
+          value={counts["Docs Requested"]}
+          icon={FileText}
+          tone="warning"
+        />
         <StatCard label="Approved" value={counts.Approved} icon={CheckCircle2} tone="success" />
         <StatCard label="Rejected" value={counts.Rejected} icon={XCircle} tone="destructive" />
       </div>
@@ -83,6 +125,11 @@ function RecruiterApplicationsPage() {
               }`}
             >
               {f}
+              {f !== "All" && counts[f as keyof typeof counts] > 0 && (
+                <span className="ml-1.5 rounded-full bg-current/10 px-1.5 py-0.5 text-[10px]">
+                  {counts[f as keyof typeof counts]}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -90,7 +137,10 @@ function RecruiterApplicationsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setSelectedId(null);
+            }}
             placeholder="Search hospital, city, email…"
             className="h-9 w-full sm:w-80 rounded-lg border bg-card pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
           />
@@ -237,7 +287,11 @@ function RecruiterApplicationsPage() {
                     <CheckCircle2 className="h-4 w-4" /> Approve
                   </button>
                   <button
-                    onClick={() => rejectRecruiterApplication(selected.id, "Rejected by admin")}
+                    onClick={() => {
+                      setRejectTarget(selected.id);
+                      setRejectReason("");
+                      setRejectModalOpen(true);
+                    }}
                     className="h-10 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5"
                   >
                     <XCircle className="h-4 w-4" /> Reject
@@ -255,8 +309,56 @@ function RecruiterApplicationsPage() {
                   Application rejected.
                 </p>
               )}
+              {selected.status === "RequestMoreDocuments" && selected.requestedDocuments && (
+                <div className="mt-4 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                  <p className="font-semibold mb-1">Documents requested:</p>
+                  <p className="whitespace-pre-wrap">{selected.requestedDocuments}</p>
+                </div>
+              )}
             </aside>
           )}
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">Reject Application</h3>
+              <button
+                onClick={() => setRejectModalOpen(false)}
+                className="rounded p-1 hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Please provide a reason. This will be sent to the hospital via email.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              placeholder="e.g., The registration number provided could not be verified."
+              className="w-full h-32 p-3 text-sm rounded-md border bg-background mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setRejectModalOpen(false)}
+                disabled={rejectLoading}
+                className="px-4 py-2 text-sm font-medium rounded-md hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectSubmit}
+                disabled={!rejectReason.trim() || rejectLoading}
+                className="px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+              >
+                {rejectLoading ? "Rejecting…" : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -301,12 +403,16 @@ function StatusPill({ status }: { status: RecruiterApplication["status"] }) {
       ? "bg-success/15 text-success border-success/30"
       : status === "Rejected"
         ? "bg-destructive/10 text-destructive border-destructive/30"
-        : "bg-warning/15 text-warning-foreground border-warning/40";
+        : status === "RequestMoreDocuments"
+          ? "bg-warning/15 text-warning border-warning/30"
+          : "bg-warning/15 text-warning-foreground border-warning/40";
+  const label =
+    status === "RequestMoreDocuments" ? "Docs Requested" : status;
   return (
     <span
       className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}
     >
-      {status}
+      {label}
     </span>
   );
 }
@@ -319,9 +425,7 @@ function PlanBadge({ plan }: { plan: string }) {
         ? "bg-info/15 text-info"
         : "bg-muted text-muted-foreground";
   return (
-    <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${cls}`}
-    >
+    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
       {plan}
     </span>
   );

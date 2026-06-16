@@ -39,7 +39,18 @@ export function CvDocument({
   const titleLine = [c.grade, c.specialty || c.role].filter(Boolean).join(" · ") || c.headline;
 
   return (
-    <div id={id} className={`overflow-hidden rounded-2xl border bg-card shadow-soft ${className}`}>
+    <div
+      id={id}
+      className={`relative overflow-hidden rounded-2xl border bg-card shadow-soft ${className}`}
+    >
+      <div
+        data-watermark
+        className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-[0.08] print:opacity-[0.1]"
+      >
+        <span className="-rotate-45 select-none text-6xl font-bold uppercase tracking-[0.2em] text-foreground">
+          ApronHanger
+        </span>
+      </div>
       <div className="relative overflow-hidden bg-[linear-gradient(135deg,oklch(0.19_0.045_265),oklch(0.29_0.07_260)_55%,oklch(0.55_0.18_262))] px-8 py-8 text-primary-foreground">
         <div className="absolute inset-x-0 bottom-0 h-1 bg-warning" />
         <div className="relative flex flex-wrap items-start justify-between gap-6">

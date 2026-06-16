@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export function InterviewSchedulerModal({
   isOpen,
@@ -29,9 +30,15 @@ export function InterviewSchedulerModal({
   const [interviewerName, setInterviewerName] = useState("");
   const [interviewerEmail, setInterviewerEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const minDateTime = new Date(Date.now() + 60 * 1000).toISOString().slice(0, 16);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const selected = new Date(date);
+    if (Number.isNaN(selected.getTime()) || selected.getTime() <= Date.now()) {
+      toast.error("Choose a future date and time.");
+      return;
+    }
     setLoading(true);
     try {
       await onSubmit({
@@ -61,6 +68,7 @@ export function InterviewSchedulerModal({
             <Input
               type="datetime-local"
               required
+              min={minDateTime}
               value={date}
               onChange={(e) => setDate(e.target.value)}
             />

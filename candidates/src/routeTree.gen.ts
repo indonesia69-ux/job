@@ -12,13 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SavedJobsRouteImport } from './routes/saved-jobs'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as ImpersonateRouteImport } from './routes/impersonate'
 import { Route as CvPreviewRouteImport } from './routes/cv-preview'
 import { Route as BuildCvRouteImport } from './routes/build-cv'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobsJobIdRouteImport } from './routes/jobs.$jobId'
-import { Route as AuthForgotPasswordRouteImport } from './routes/auth.forgot-password'
+import { Route as AuthForgotPasswordRouteImport } from './routes/auth_.forgot-password'
 import { Route as ApplyJobIdRouteImport } from './routes/apply.$jobId'
 import { Route as ApplyJobIdIndexRouteImport } from './routes/apply.$jobId.index'
 import { Route as ApplyJobIdUploadRouteImport } from './routes/apply.$jobId.upload'
@@ -37,6 +38,11 @@ const ProfileRoute = ProfileRouteImport.update({
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImpersonateRoute = ImpersonateRouteImport.update({
+  id: '/impersonate',
+  path: '/impersonate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CvPreviewRoute = CvPreviewRouteImport.update({
@@ -70,9 +76,9 @@ const JobsJobIdRoute = JobsJobIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => AuthRoute,
+  id: '/auth_/forgot-password',
+  path: '/auth/forgot-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApplyJobIdRoute = ApplyJobIdRouteImport.update({
   id: '/apply/$jobId',
@@ -98,9 +104,10 @@ const ApplyJobIdFormRoute = ApplyJobIdFormRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/applications': typeof ApplicationsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/build-cv': typeof BuildCvRoute
   '/cv-preview': typeof CvPreviewRoute
+  '/impersonate': typeof ImpersonateRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/saved-jobs': typeof SavedJobsRoute
@@ -114,9 +121,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/applications': typeof ApplicationsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/build-cv': typeof BuildCvRoute
   '/cv-preview': typeof CvPreviewRoute
+  '/impersonate': typeof ImpersonateRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/saved-jobs': typeof SavedJobsRoute
@@ -130,14 +138,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/applications': typeof ApplicationsRoute
-  '/auth': typeof AuthRouteWithChildren
+  '/auth': typeof AuthRoute
   '/build-cv': typeof BuildCvRoute
   '/cv-preview': typeof CvPreviewRoute
+  '/impersonate': typeof ImpersonateRoute
   '/messages': typeof MessagesRoute
   '/profile': typeof ProfileRoute
   '/saved-jobs': typeof SavedJobsRoute
   '/apply/$jobId': typeof ApplyJobIdRouteWithChildren
-  '/auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/auth_/forgot-password': typeof AuthForgotPasswordRoute
   '/jobs/$jobId': typeof JobsJobIdRoute
   '/apply/$jobId/form': typeof ApplyJobIdFormRoute
   '/apply/$jobId/upload': typeof ApplyJobIdUploadRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/build-cv'
     | '/cv-preview'
+    | '/impersonate'
     | '/messages'
     | '/profile'
     | '/saved-jobs'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/build-cv'
     | '/cv-preview'
+    | '/impersonate'
     | '/messages'
     | '/profile'
     | '/saved-jobs'
@@ -182,11 +193,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/build-cv'
     | '/cv-preview'
+    | '/impersonate'
     | '/messages'
     | '/profile'
     | '/saved-jobs'
     | '/apply/$jobId'
-    | '/auth/forgot-password'
+    | '/auth_/forgot-password'
     | '/jobs/$jobId'
     | '/apply/$jobId/form'
     | '/apply/$jobId/upload'
@@ -196,13 +208,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApplicationsRoute: typeof ApplicationsRoute
-  AuthRoute: typeof AuthRouteWithChildren
+  AuthRoute: typeof AuthRoute
   BuildCvRoute: typeof BuildCvRoute
   CvPreviewRoute: typeof CvPreviewRoute
+  ImpersonateRoute: typeof ImpersonateRoute
   MessagesRoute: typeof MessagesRoute
   ProfileRoute: typeof ProfileRoute
   SavedJobsRoute: typeof SavedJobsRoute
   ApplyJobIdRoute: typeof ApplyJobIdRouteWithChildren
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   JobsJobIdRoute: typeof JobsJobIdRoute
 }
 
@@ -227,6 +241,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/impersonate': {
+      id: '/impersonate'
+      path: '/impersonate'
+      fullPath: '/impersonate'
+      preLoaderRoute: typeof ImpersonateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cv-preview': {
@@ -271,12 +292,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobsJobIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/auth/forgot-password': {
-      id: '/auth/forgot-password'
-      path: '/forgot-password'
+    '/auth_/forgot-password': {
+      id: '/auth_/forgot-password'
+      path: '/auth/forgot-password'
       fullPath: '/auth/forgot-password'
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
-      parentRoute: typeof AuthRoute
+      parentRoute: typeof rootRouteImport
     }
     '/apply/$jobId': {
       id: '/apply/$jobId'
@@ -309,16 +330,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthRouteChildren {
-  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
-}
-
-const AuthRouteChildren: AuthRouteChildren = {
-  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
-}
-
-const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
-
 interface ApplyJobIdRouteChildren {
   ApplyJobIdFormRoute: typeof ApplyJobIdFormRoute
   ApplyJobIdUploadRoute: typeof ApplyJobIdUploadRoute
@@ -338,13 +349,15 @@ const ApplyJobIdRouteWithChildren = ApplyJobIdRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApplicationsRoute: ApplicationsRoute,
-  AuthRoute: AuthRouteWithChildren,
+  AuthRoute: AuthRoute,
   BuildCvRoute: BuildCvRoute,
   CvPreviewRoute: CvPreviewRoute,
+  ImpersonateRoute: ImpersonateRoute,
   MessagesRoute: MessagesRoute,
   ProfileRoute: ProfileRoute,
   SavedJobsRoute: SavedJobsRoute,
   ApplyJobIdRoute: ApplyJobIdRouteWithChildren,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   JobsJobIdRoute: JobsJobIdRoute,
 }
 export const routeTree = rootRouteImport

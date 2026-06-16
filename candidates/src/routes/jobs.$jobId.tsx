@@ -23,14 +23,19 @@ export const Route = createFileRoute("/jobs/$jobId")({
     if (!res.ok) throw notFound();
     const job = await res.json();
 
-    // Fetch similar jobs (just fetching all and filtering for simplicity right now)
-    const allRes = await fetch(`${apiBase()}/api/jobs`);
-    let similar = [];
-    if (allRes.ok) {
-      const allJobs = await allRes.json();
-      similar = allJobs
-        .filter((j: any) => j.id !== job.id && j.category === job.category)
-        .slice(0, 4);
+    // Fetch similar jobs using a targeted category filter to avoid loading the entire catalogue
+    let similar: any[] = [];
+    if (job.category) {
+      const simRes = await fetch(
+        `${apiBase()}/api/jobs?category=${encodeURIComponent(job.category)}&excludeId=${job.id}&limit=4`,
+      );
+      if (simRes.ok) {
+        const simData = await simRes.json();
+        // Backend returns a bare array; guard against future pagination wrapper
+        similar = (Array.isArray(simData) ? simData : (simData.jobs ?? []))
+          .filter((j: any) => j.id !== job.id)
+          .slice(0, 4);
+      }
     }
     return { job, similar };
   },
@@ -38,7 +43,7 @@ export const Route = createFileRoute("/jobs/$jobId")({
     meta: loaderData
       ? [
           { title: `${loaderData.job.role} — ${loaderData.job.hospital} | ApronHanger` },
-          { name: "description", content: loaderData.job.description.slice(0, 150) },
+          { name: "description", content: (loaderData.job.description ?? "").slice(0, 150) },
         ]
       : [],
   }),

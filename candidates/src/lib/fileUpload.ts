@@ -18,9 +18,11 @@ function backendBaseUrl(): string {
 }
 
 export type UploadedFile = {
-  file: File;
+  file?: File;
   name: string;
   mime: string;
+  url?: string;
+  publicId?: string;
   data?: string; // Kept optional for backwards compatibility
 };
 

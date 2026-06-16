@@ -334,6 +334,7 @@ function RenewalDialog({
   planExpiresAt,
   isDowngrade,
   onSuccess,
+  planPrices,
 }: {
   open: boolean;
   onClose: () => void;
@@ -342,6 +343,7 @@ function RenewalDialog({
   planExpiresAt: string | null;
   isDowngrade: boolean;
   onSuccess: () => void;
+  planPrices: Record<string, number>;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -393,7 +395,8 @@ function RenewalDialog({
             <p className="text-muted-foreground">
               Your plan will upgrade to <strong>{targetPlan}</strong> at your next renewal on{" "}
               <strong>{formatDate(planExpiresAt)}</strong>. You'll be billed the full{" "}
-              <strong>₹{(7500).toLocaleString("en-IN")}/month</strong> rate at that time.
+              <strong>₹{(planPrices[targetPlan] ?? 0).toLocaleString("en-IN")}/month</strong> rate
+              at that time.
             </p>
           )}
         </div>
@@ -830,6 +833,7 @@ export function PlanTab() {
           currentPlan={plan}
           planExpiresAt={planExpiresAt}
           isDowngrade={PLAN_ORDER.indexOf(renewalTarget) < PLAN_ORDER.indexOf(plan)}
+          planPrices={planPrices}
           onSuccess={() => {
             refreshPlan();
             setRenewalTarget(null);

@@ -11,9 +11,12 @@ import {
   Briefcase,
   MapPin,
   Users,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
+import { updateApplicationStatus } from "@/lib/recruiterData";
+import { useRouter } from "@tanstack/react-router";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,14 +45,19 @@ export function ApplicantsPage() {
     totalCandidates,
   } = Route.useLoaderData();
   const navigate = Route.useNavigate();
+  const router = useRouter();
   const { jobId: jobIdFromUrl, q: searchQFromUrl } = Route.useSearch();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(jobIdFromUrl ?? null);
   const [statusFilter, setStatusFilter] = useState<ApplicantStatus | "All">("All");
   const [view, setView] = useState<"table" | "cards">("table");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [cvId, setCvId] = useState<string | null>(null);
+  // Local pagination over the filtered list (20 per page)
+  const ITEMS_PER_PAGE = 20;
+  const [localPage, setLocalPage] = useState(1);
 
   useEffect(() => {
     if (jobIdFromUrl) setSelectedJobId(jobIdFromUrl);
@@ -58,6 +66,12 @@ export function ApplicantsPage() {
   useEffect(() => {
     if (searchQFromUrl) setQuery(searchQFromUrl);
   }, [searchQFromUrl]);
+
+  // Reset selection + local page whenever any filter changes
+  useEffect(() => {
+    setSelected([]);
+    setLocalPage(1);
+  }, [selectedJobId, statusFilter, query]);
 
   const postedJobs = useMemo(
     () =>
@@ -108,8 +122,52 @@ export function ApplicantsPage() {
     );
   }, [selectedJobId, statusFilter, query, CANDIDATES]);
 
-  const allChecked = selected.length > 0 && selected.length === list.length;
-  const toggleAll = () => setSelected(allChecked ? [] : list.map((c: { id: string }) => c.id));
+  // Paginate the FILTERED list (not the raw server list)
+  const totalFilteredPages = Math.max(1, Math.ceil(list.length / ITEMS_PER_PAGE));
+  const paginatedList = useMemo(
+    () => list.slice((localPage - 1) * ITEMS_PER_PAGE, localPage * ITEMS_PER_PAGE),
+    [list, localPage],
+  );
+
+  const bulkAction = async (targetStatus: ApplicantStatus) => {
+    const targets = (list as any[]).filter((c) => selected.includes(c.id) && c.applicationId);
+    const skipped = selected.length - targets.length;
+    if (targets.length === 0) {
+      toast.error(
+        skipped > 0
+          ? `${skipped} selected candidate${skipped > 1 ? "s have" : " has"} no linked application.`
+          : "No candidates selected.",
+      );
+      return;
+    }
+    setBulkLoading(true);
+    try {
+      const results = await Promise.allSettled(
+        targets.map((c) => updateApplicationStatus(c.applicationId, targetStatus)),
+      );
+      const passed = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+      if (failed === 0) {
+        toast.success(
+          `${passed} updated${skipped > 0 ? ` · ${skipped} skipped (no application)` : ""}`,
+        );
+      } else {
+        toast.warning(
+          `${passed} updated, ${failed} failed${skipped > 0 ? `, ${skipped} skipped (no application)` : ""}`,
+        );
+      }
+      setSelected([]);
+      await router.invalidate();
+    } catch {
+      toast.error("Bulk action failed");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const allChecked = selected.length > 0 && selected.length === paginatedList.length;
+  const toggleAll = () =>
+    setSelected(allChecked ? [] : paginatedList.map((c: { id: string }) => c.id));
   const toggleOne = (id: string) =>
     setSelected((arr) => (arr.includes(id) ? arr.filter((x) => x !== id) : [...arr, id]));
 
@@ -302,16 +360,19 @@ export function ApplicantsPage() {
         <div className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-4 py-2.5">
           <div className="text-[13px] text-foreground">
             <span className="font-medium">{selected.length}</span> selected
+            {bulkLoading && (
+              <span className="ml-2 inline-flex items-center gap-1 text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" /> updating…
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
               variant="outline"
               className="h-8"
-              onClick={() => {
-                toast.success(`${selected.length} shortlisted`);
-                setSelected([]);
-              }}
+              disabled={bulkLoading}
+              onClick={() => bulkAction("Shortlisted")}
             >
               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Shortlist
             </Button>
@@ -319,10 +380,8 @@ export function ApplicantsPage() {
               size="sm"
               variant="outline"
               className="h-8 border-destructive/30 text-destructive hover:bg-destructive/5"
-              onClick={() => {
-                toast("Candidates rejected");
-                setSelected([]);
-              }}
+              disabled={bulkLoading}
+              onClick={() => bulkAction("Rejected")}
             >
               <XCircle className="mr-1.5 h-3.5 w-3.5" /> Reject
             </Button>
@@ -332,7 +391,7 @@ export function ApplicantsPage() {
 
       {view === "table" ? (
         <ApplicantsTable
-          list={list}
+          list={paginatedList}
           selected={selected}
           allChecked={allChecked}
           toggleAll={toggleAll}
@@ -341,29 +400,33 @@ export function ApplicantsPage() {
           setCvId={setCvId}
         />
       ) : (
-        <ApplicantsCards list={list} setOpenId={setOpenId} />
+        <ApplicantsCards list={paginatedList} setOpenId={setOpenId} />
       )}
 
-      {totalCandidates > limit && (
+      {/* Pagination controls for the filtered list */}
+      {totalFilteredPages > 1 && (
         <div className="flex items-center justify-between pt-4 pb-2">
           <div className="text-sm text-muted-foreground">
-            Showing {(page - 1) * limit + 1} - {Math.min(page * limit, totalCandidates)} of{" "}
-            {totalCandidates} applicants
+            Showing {(localPage - 1) * ITEMS_PER_PAGE + 1}–
+            {Math.min(localPage * ITEMS_PER_PAGE, list.length)} of {list.length} applicants
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={page <= 1}
-              onClick={() => navigate({ search: (prev: any) => ({ ...prev, page: page - 1 }) })}
+              disabled={localPage <= 1}
+              onClick={() => setLocalPage((p) => Math.max(1, p - 1))}
             >
               Previous
             </Button>
+            <span className="text-[13px] text-muted-foreground">
+              {localPage} / {totalFilteredPages}
+            </span>
             <Button
               variant="outline"
               size="sm"
-              disabled={page * limit >= totalCandidates}
-              onClick={() => navigate({ search: (prev: any) => ({ ...prev, page: page + 1 }) })}
+              disabled={localPage >= totalFilteredPages}
+              onClick={() => setLocalPage((p) => Math.min(totalFilteredPages, p + 1))}
             >
               Next
             </Button>

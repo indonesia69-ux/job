@@ -6,6 +6,7 @@ import { loadHospitalProfile } from "@/lib/recruiterData";
 import { validateCreateJob, type CreateJobFieldErrors } from "@/lib/createJobValidation";
 import { JobDescriptionEditor } from "@/components/jobs/JobDescriptionEditor";
 import { JobCustomFormBuilder } from "@/components/jobs/JobCustomFormBuilder";
+import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { type JobCustomField, validateCustomFieldsForPost } from "@/lib/jobCustomFields";
 import { sanitizeJobDescriptionHtml } from "@/lib/sanitizeHtml";
 import { Save } from "lucide-react";
@@ -113,6 +114,11 @@ export function CreateJobPage() {
   const [customFormEnabled, setCustomFormEnabled] = useState(false);
   const [customFields, setCustomFields] = useState<JobCustomField[]>([]);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [posting, setPosting] = useState(false);
+  // ── Additional wired fields ─────────────────────────────────────
+  const [shift, setShift] = useState("");
+  const [subSpecialty, setSubSpecialty] = useState("");
+  const [openings, setOpenings] = useState("");
 
   useEffect(() => {
     loadHospitalProfile().then((h) => {
@@ -143,12 +149,14 @@ export function CreateJobPage() {
         location: locationStr,
         city: city.trim() || state || "TBD",
         description: description || "",
-        salaryMin: parseInt(salaryMin, 10) || 0,
-        salaryMax: parseInt(salaryMax, 10) || 0,
+        salaryMin: Number.parseFloat(salaryMin) || 0,
+        salaryMax: Number.parseFloat(salaryMax) || 0,
         experienceMin: parseInt(expMin, 10) || 0,
         experienceMax: parseInt(expMax, 10) || 0,
         tags,
         status: "Draft",
+        shift: shift || undefined,
+        subSpecialty: subSpecialty.trim() || undefined,
         customApplicationFields: [],
       };
       const res = await fetch(`${apiBase()}/api/jobs`, {
@@ -205,6 +213,7 @@ export function CreateJobPage() {
         className="mx-auto w-full max-w-[1100px] space-y-6"
         onSubmit={async (e) => {
           e.preventDefault();
+          if (posting) return;
           if (profileComplete === false) {
             toast.error("Complete your hospital profile in Settings before posting a job.");
             return;
@@ -238,6 +247,7 @@ export function CreateJobPage() {
             }
           }
           const cleanDescription = sanitizeJobDescriptionHtml(description);
+          setPosting(true);
           try {
             const locationStr = city.trim() ? `${city.trim()}, ${state}` : state;
             const jobCategory = role === "Other" ? "Other" : role;
@@ -255,11 +265,13 @@ export function CreateJobPage() {
               experienceMax: parseInt(expMax, 10) || 0,
               tags,
               type,
+              shift: shift || undefined,
+              subSpecialty: subSpecialty.trim() || undefined,
               description: cleanDescription,
               location: locationStr,
               city: city.trim() || state,
-              salaryMin: parseInt(salaryMin, 10),
-              salaryMax: parseInt(salaryMax, 10),
+              salaryMin: Number.parseFloat(salaryMin),
+              salaryMax: Number.parseFloat(salaryMax),
               requirements: requirementLines.length > 0 ? requirementLines : undefined,
               status: "Active",
               customApplicationFields: customFormEnabled
@@ -288,6 +300,8 @@ export function CreateJobPage() {
             navigate({ to: "/jobs", search: { q: "" } });
           } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to post opportunity");
+          } finally {
+            setPosting(false);
           }
         }}
       >
@@ -379,7 +393,12 @@ export function CreateJobPage() {
               </Field>
             )}
             <Field label="Sub-specialty (optional)">
-              <Input placeholder="e.g. Interventional, Pulmonology" className="h-11" />
+              <Input
+                placeholder="e.g. Interventional, Pulmonology"
+                className="h-11"
+                value={subSpecialty}
+                onChange={(e) => setSubSpecialty(e.target.value)}
+              />
             </Field>
             <Field label="Designation title" required error={fieldErrors.designation}>
               <Input
@@ -518,7 +537,7 @@ export function CreateJobPage() {
               </div>
             </Field>
             <Field label="Shift">
-              <Select>
+              <Select value={shift} onValueChange={setShift}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder="Select shift" />
                 </SelectTrigger>
@@ -532,7 +551,14 @@ export function CreateJobPage() {
               </Select>
             </Field>
             <Field label="Number of openings">
-              <Input type="number" placeholder="e.g. 2" min={1} className="h-11" />
+              <Input
+                type="number"
+                placeholder="e.g. 2"
+                min={1}
+                className="h-11"
+                value={openings}
+                onChange={(e) => setOpenings(e.target.value)}
+              />
             </Field>
           </div>
         </Section>
@@ -663,13 +689,16 @@ export function CreateJobPage() {
                 variant="outline"
                 className="h-10"
                 onClick={saveDraft}
-                disabled={savingDraft}
+                disabled={savingDraft || posting}
               >
                 <Save className="mr-1.5 h-4 w-4" />
                 {savingDraft ? "Saving…" : "Save as draft"}
               </Button>
-              <Button type="submit" className="h-10 px-6">
-                Post Opportunity
+              <Button type="submit" className="h-10 px-6" disabled={posting || savingDraft}>
+                {posting && (
+                  <LottiePlayer src="/loading_state.json" loop className="mr-1.5 h-7 w-7" />
+                )}
+                {posting ? "Posting..." : "Post Opportunity"}
               </Button>
             </div>
           </CardContent>

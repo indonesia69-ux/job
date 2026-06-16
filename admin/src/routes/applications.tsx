@@ -1,9 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-// import { applications } from "@/lib/mock-data";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Eye, Flag, RefreshCw } from "lucide-react";
+import { Eye, Flag } from "lucide-react";
 import { useState } from "react";
-
 import { useAdminStore } from "@/lib/admin-store";
 import { toast } from "sonner";
 
@@ -11,38 +9,100 @@ export const Route = createFileRoute("/applications")({
   component: ApplicationsPage,
 });
 
+// Statuses must exactly match backend VALID_STATUSES list
+const STATUSES = [
+  "All",
+  "Applied",
+  "Reviewed",
+  "InterviewScheduled",
+  "InterviewAccepted",
+  "InterviewDeclined",
+  "RescheduleRequested",
+  "InterviewCompleted",
+  "NoShow",
+  "InterviewRescheduled",
+  "Shortlisted",
+  "OnHold",
+  "NextRound",
+  "Rejected",
+  "DocumentsRequested",
+  "DocumentsUploaded",
+  "DocumentsApproved",
+  "AdditionalDocumentsRequired",
+  "DocumentsRejected",
+  "OfferSent",
+  "OfferAccepted",
+  "OfferRejected",
+  "JoiningConfirmed",
+  "Joined",
+  "Onboarded",
+  "Dropped",
+  "JobClosed",
+];
+
 function ApplicationsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [hospitalFilter, setHospitalFilter] = useState("All");
   const [jobFilter, setJobFilter] = useState("All");
+  // Track which application IDs are mid-flag-animation
+  const [flagAnimating, setFlagAnimating] = useState<Set<string>>(new Set());
+
   const { applications, hospitals, jobs, updateApplicationStatus, toggleApplicationFlag } =
     useAdminStore();
-  const statuses = [
-    "All",
-    "Pending",
-    "Reviewed",
-    "Shortlisted",
-    "Rejected",
-    "InterviewScheduled",
-    "InterviewCompleted",
-    "InterviewRescheduled",
-    "InterviewCancelled",
-    "InterviewNoShow",
-    "OfferLetterRequested",
-    "OfferLetterProcessing",
-    "OfferLetterCirculated",
-    "OfferAccepted",
-    "OfferRejected",
-    "Joined",
-  ];
+
   const filtered = applications.filter((a) => {
     if (statusFilter !== "All" && a.status !== statusFilter) return false;
     if (jobFilter !== "All" && a.jobId !== jobFilter) return false;
-    // job object has hospitalId
     const jobForApp = jobs.find((j) => j.id === a.jobId);
     if (hospitalFilter !== "All" && jobForApp?.hospitalId !== hospitalFilter) return false;
     return true;
   });
+
+  function openCv(a: (typeof applications)[0]) {
+    const base64 = a.uploadedCvData;
+    const url = a.cvUrl;
+
+    if (url && !url.startsWith("data:")) {
+      // Regular HTTP URL — open in new tab
+      window.open(url, "_blank");
+    } else if (base64 || url?.startsWith("data:")) {
+      // Base64 data URI — trigger download
+      const data = base64 || url!;
+      const name = a.uploadedCvName || "cv.pdf";
+      const link = document.createElement("a");
+      link.href = data;
+      link.download = name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success(`Downloading ${name}`);
+    } else {
+      toast.info("No CV attached to this application.");
+    }
+  }
+
+  async function handleFlagToggle(id: string) {
+    try {
+      await toggleApplicationFlag(id);
+      // Trigger bounce animation
+      setFlagAnimating((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      setTimeout(() => {
+        setFlagAnimating((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 600);
+      const app = applications.find((a) => a.id === id);
+      toast.success(app?.isFlagged ? "Flag removed" : "Application flagged");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle flag");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -51,6 +111,7 @@ function ApplicationsPage() {
         <p className="text-sm text-muted-foreground mt-1">Track and manage all job applications</p>
       </div>
 
+      {/* Filters row */}
       <div className="flex flex-col sm:flex-row gap-4">
         <select
           value={hospitalFilter}
@@ -84,18 +145,24 @@ function ApplicationsPage() {
         </select>
       </div>
 
+      {/* Status filter chips */}
       <div className="flex flex-wrap gap-2">
-        {statuses.map((s) => (
+        {STATUSES.map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "border bg-card hover:bg-accent"}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+              statusFilter === s
+                ? "bg-primary text-primary-foreground"
+                : "border bg-card hover:bg-accent"
+            }`}
           >
-            {s.replace(/([A-Z])/g, " $1").trim()}
+            {s === "All" ? "All" : s.replace(/([A-Z])/g, " $1").trim()}
           </button>
         ))}
       </div>
 
+      {/* Table */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -113,9 +180,23 @@ function ApplicationsPage() {
               {filtered.map((a) => (
                 <tr
                   key={a.id}
-                  className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                  className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                    a.isFlagged ? "bg-amber-500/5" : ""
+                  }`}
                 >
-                  <td className="px-4 py-3 font-medium">{a.candidate}</td>
+                  {/* Candidate — linked to full profile */}
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      to="/candidates/$id"
+                      params={{ id: a.candidateId }}
+                      className="hover:underline hover:text-primary inline-flex items-center gap-1.5"
+                    >
+                      {a.candidate}
+                      {a.isFlagged && (
+                        <Flag className="h-3 w-3 text-amber-500 fill-amber-400 shrink-0" />
+                      )}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">{a.job}</td>
                   <td className="px-4 py-3 text-muted-foreground">{a.hospital}</td>
                   <td className="px-4 py-3">
@@ -124,25 +205,23 @@ function ApplicationsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{a.applied}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
+                      {/* View CV */}
                       <button
                         className="rounded p-1.5 hover:bg-accent"
                         title="View CV"
-                        onClick={() => {
-                          if (a.cvUrl) {
-                            window.open(a.cvUrl, "_blank");
-                          } else {
-                            alert("No CV attached to this application");
-                          }
-                        }}
+                        onClick={() => openCv(a)}
                       >
                         <Eye className="h-3.5 w-3.5" />
                       </button>
+
+                      {/* Status override dropdown */}
                       <select
+                        defaultValue=""
                         onChange={async (e) => {
                           if (!e.target.value) return;
                           try {
                             await updateApplicationStatus(a.id, e.target.value);
-                            toast.success("Application status updated");
+                            toast.success("Status updated");
                             e.target.value = "";
                           } catch (err: any) {
                             toast.error(err.message || "Failed to update status");
@@ -151,28 +230,31 @@ function ApplicationsPage() {
                         className="rounded p-1 text-xs border bg-card hover:bg-accent focus:outline-none"
                         title="Override Status"
                       >
-                        <option value="">Status...</option>
-                        {statuses
-                          .filter((s) => s !== "All")
-                          .map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
+                        <option value="">Status…</option>
+                        {STATUSES.filter((s) => s !== "All").map((s) => (
+                          <option key={s} value={s}>
+                            {s.replace(/([A-Z])/g, " $1").trim()}
+                          </option>
+                        ))}
                       </select>
+
+                      {/* Flag button — animated */}
                       <button
-                        onClick={async () => {
-                          try {
-                            await toggleApplicationFlag(a.id);
-                            toast.success("Flag toggled");
-                          } catch (err: any) {
-                            toast.error(err.message || "Failed to toggle flag");
-                          }
-                        }}
-                        className="rounded p-1.5 hover:bg-accent"
-                        title="Flag"
+                        onClick={() => handleFlagToggle(a.id)}
+                        title={a.isFlagged ? "Remove flag" : "Flag this application"}
+                        className={`rounded p-1.5 hover:bg-accent transition-all duration-200 ${
+                          flagAnimating.has(a.id) ? "animate-bounce" : ""
+                        } ${
+                          a.isFlagged
+                            ? "text-amber-500"
+                            : "text-muted-foreground hover:text-amber-500"
+                        }`}
                       >
-                        <Flag className="h-3.5 w-3.5" />
+                        <Flag
+                          className={`h-3.5 w-3.5 transition-all duration-200 ${
+                            a.isFlagged ? "fill-amber-400" : ""
+                          }`}
+                        />
                       </button>
                     </div>
                   </td>

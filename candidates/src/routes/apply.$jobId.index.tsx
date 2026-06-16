@@ -78,7 +78,7 @@ function ApplyChooser() {
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-foreground">{job.role}</h1>
-          <VerifiedBadge />
+          {job.hospitalVerified && <VerifiedBadge label="Verified Hospital" />}
         </div>
         <p className="text-sm text-muted-foreground">
           {job.hospital} · {job.location}

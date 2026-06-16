@@ -21,7 +21,7 @@ router.get('/jobs', requireAdmin, async (req: AdminAuthRequest, res: Response) =
       prisma.job.count({ where }),
       prisma.job.findMany({
         where,
-        include: { hospital: true },
+        include: { hospital: true, postedBy: true },
         orderBy: { createdAt: 'desc' },
         take,
         skip
@@ -33,9 +33,10 @@ router.get('/jobs', requireAdmin, async (req: AdminAuthRequest, res: Response) =
       id: job.id,
       title: job.role,
       hospitalId: job.hospitalId,
-      recruiterId: '', // Default since jobs are associated with hospitals
+      recruiterId: job.postedById || '',
       location: job.location,
       status: job.status,
+      isFlagged: job.isFlagged || false,
       posted: job.postedOn ? new Date(job.postedOn).toISOString().slice(0, 10) : ''
     }));
 
@@ -50,6 +51,20 @@ router.patch('/jobs/:id/status', requireAdmin, async (req: AdminAuthRequest, res
   try {
     const id = req.params.id as string;
     const { status } = req.body;
+
+    if (status === 'Closed') {
+      const TERMINAL_APP_STATUSES = [
+        'Onboarded', 'Dropped', 'OfferRejected', 'DocumentsRejected',
+        'Rejected', 'InterviewDeclined', 'JobClosed',
+      ];
+      await prisma.application.updateMany({
+        where: {
+          jobId: id,
+          status: { notIn: TERMINAL_APP_STATUSES },
+        },
+        data: { status: 'JobClosed' },
+      });
+    }
 
     const updated = await prisma.job.update({
       where: { id },

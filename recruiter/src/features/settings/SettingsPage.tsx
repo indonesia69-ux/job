@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { saveHospitalProfile, type HospitalProfile } from "@/lib/recruiterData";
-import { authHeader, getUser } from "@/store/authStore";
+import { authHeader, getUser, login } from "@/store/authStore";
 import { apiBase } from "@/lib/api";
 import { Route } from "@/routes/_app.settings";
 import { PlanTab } from "@/features/settings/PlanTab";
@@ -46,6 +46,13 @@ export function SettingsPage() {
   const [recruiterName, setRecruiterName] = useState(user?.name ?? "");
   const [savingName, setSavingName] = useState(false);
 
+  // Notification preferences
+  const { userPrefs } = Route.useLoaderData();
+  const [notifOnApply, setNotifOnApply] = useState(userPrefs?.notifOnApply ?? true);
+  const [notifWeekly, setNotifWeekly] = useState(userPrefs?.notifWeekly ?? false);
+  const [notifHighMatch, setNotifHighMatch] = useState(userPrefs?.notifHighMatch ?? true);
+  const [savingNotif, setSavingNotif] = useState(false);
+
   const set = <K extends keyof HospitalProfile>(k: K, v: HospitalProfile[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
@@ -75,11 +82,38 @@ export function SettingsPage() {
         body: JSON.stringify({ name: recruiterName.trim() }),
       });
       if (!res.ok) throw new Error("Failed to update name");
+      const data = await res.json();
+      // Persist new token so header stays fresh without page reload
+      if (data.token && data.user) {
+        login(data.token, data.user);
+      }
       toast.success("Your name updated successfully");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not update name");
     } finally {
       setSavingName(false);
+    }
+  };
+
+  /** Save notification preferences via PATCH /api/auth/me */
+  const saveNotifPrefs = async () => {
+    setSavingNotif(true);
+    try {
+      const res = await fetch(`${apiBase()}/api/auth/me`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...authHeader() },
+        body: JSON.stringify({
+          notifOnApply,
+          notifWeekly,
+          notifHighMatch,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      toast.success("Notification preferences saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save preferences");
+    } finally {
+      setSavingNotif(false);
     }
   };
 
@@ -288,17 +322,36 @@ export function SettingsPage() {
         {/* ── Notifications Tab ── */}
         <TabsContent value="notif" className="mt-5">
           <Card className="border-border bg-card shadow-soft">
-            <CardContent className="space-y-4 p-6">
-              {[
-                "Email me when a new candidate applies",
-                "Email me weekly hiring summary",
-                "Notify me of high-match candidates (>90%)",
-              ].map((label, i) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-[13.5px]">{label}</span>
-                  <Switch defaultChecked={i !== 1} />
-                </div>
-              ))}
+            <CardContent className="space-y-5 p-6">
+              <div className="space-y-4">
+                {(
+                  [
+                    {
+                      label: "Email me when a new candidate applies",
+                      value: notifOnApply,
+                      setter: setNotifOnApply,
+                    },
+                    {
+                      label: "Email me weekly hiring summary",
+                      value: notifWeekly,
+                      setter: setNotifWeekly,
+                    },
+                    {
+                      label: "Notify me of high-match candidates (>90%)",
+                      value: notifHighMatch,
+                      setter: setNotifHighMatch,
+                    },
+                  ] as const
+                ).map(({ label, value, setter }) => (
+                  <div key={label} className="flex items-center justify-between">
+                    <span className="text-[13.5px]">{label}</span>
+                    <Switch checked={value} onCheckedChange={(v) => setter(v)} aria-label={label} />
+                  </div>
+                ))}
+              </div>
+              <Button size="sm" onClick={saveNotifPrefs} disabled={savingNotif}>
+                {savingNotif ? "Saving…" : "Save preferences"}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

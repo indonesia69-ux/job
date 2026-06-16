@@ -13,8 +13,9 @@ export const Route = createFileRoute("/_app/applicants")({
     limit: typeof search.limit === "number" ? search.limit : 50,
   }),
   staleTime: 0,
-  loaderDeps: ({ search: { page, limit } }) => ({ page, limit }),
-  loader: async ({ deps: { page, limit } }) => await loadRecruiterDashboard(page, limit),
+  loaderDeps: ({ search: { page, limit, jobId, q } }) => ({ page, limit, jobId, q }),
+  loader: async ({ deps: { page, limit, jobId } }) =>
+    await loadRecruiterDashboard(page, limit, jobId),
   pendingComponent: PageLoader,
   head: () => ({
     meta: [

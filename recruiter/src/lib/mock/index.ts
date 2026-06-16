@@ -30,12 +30,12 @@ export type Job = {
 export type Candidate = {
   id: string;
   applicationId?: string;
+  /**
+   * CV source tag only — used to decide which CV view to show.
+   * Raw CV bytes/URLs are intentionally omitted from this type;
+   * they are redacted by the backend for all recruiter requests.
+   */
   cvSource?: "form" | "upload";
-  cvUrl?: string;
-  cvCloudinaryId?: string;
-  uploadedCvName?: string;
-  uploadedCvMime?: string;
-  uploadedCvData?: string;
   formProfile?: FormProfile | null;
   name: string;
   initials: string;
@@ -51,8 +51,7 @@ export type Candidate = {
   matchPercent: number;
   verified: boolean;
   registration: string;
-  email: string;
-  phone: string;
+  // email and phone intentionally absent — redacted by backend for recruiters
   languages: string[];
   procedures: string[];
   skills: string[];

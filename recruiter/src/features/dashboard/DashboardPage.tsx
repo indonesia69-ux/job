@@ -19,7 +19,8 @@ export function DashboardPage() {
   const { candidates: CANDIDATES, jobs: JOBS, stats, hospital } = Route.useLoaderData();
   const hospitalLabel = hospital?.shortName || hospital?.name || "Your hospital";
   const KPI = stats.kpis.map((k, i) => ({ ...k, icon: KPI_ICONS[i] ?? Briefcase }));
-  const suggested = stats.suggested.length ? stats.suggested : CANDIDATES.slice(0, 5);
+  const isRealSuggestion = stats.suggested.length > 0;
+  const suggested = isRealSuggestion ? stats.suggested : CANDIDATES.slice(0, 5);
   const recentApplicants = CANDIDATES.slice(0, 5);
   const recentJobs = JOBS.slice(0, 3);
 
@@ -53,7 +54,7 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <VerifiedBadge label="Verified Hospital" size="md" />
+          {hospital?.verified && <VerifiedBadge label="Verified Hospital" size="md" />}
           {isLocked ? (
             <Button disabled className="h-10">
               Post opportunity <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -121,7 +122,7 @@ export function DashboardPage() {
             {recentJobs.map((j: any) => (
               <Link
                 to="/applicants"
-                search={{ q: "" }}
+                search={{ jobId: j.id, q: "" }}
                 key={j.id}
                 className="block rounded-lg border border-border bg-background px-3 py-3 transition-colors hover:bg-muted/40"
               >
@@ -214,7 +215,7 @@ export function DashboardPage() {
               Suggested candidates
             </h2>
             <p className="text-[12px] text-muted-foreground">
-              Matched against your active openings
+              {isRealSuggestion ? "Matched against your active openings" : "Recent applicants"}
             </p>
           </div>
           <Button asChild variant="ghost" size="sm" className="h-7 text-[12px]">

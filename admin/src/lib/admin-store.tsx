@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode, useMemo, useEffect } from "react";
-import { apiBase, authHeader } from "./api";
+import { apiBase, authHeader, apiFetch } from "./api";
 import { useAuth } from "./auth-context";
 
 // ============= Types =============
@@ -32,15 +32,19 @@ export interface Job {
   recruiterId: string;
   location: string;
   status: "Active" | "Closed" | "Draft";
+  isFlagged?: boolean;
   posted: string;
 }
 
 export interface Candidate {
   id: string;
+  userId?: string;
   name: string;
+  email: string;
   role: string;
   specialty: string;
   experience: string;
+  location?: string;
   verified: boolean;
   status: EntityStatus;
   joined: string;
@@ -49,6 +53,7 @@ export interface Candidate {
   uploadedCvData?: string;
   cvSource?: string;
   supportingDocuments?: any[];
+  isSuspended?: boolean;
 }
 
 export interface Application {
@@ -61,6 +66,9 @@ export interface Application {
   job?: string;
   hospital?: string;
   cvUrl?: string;
+  isFlagged?: boolean;
+  uploadedCvName?: string;
+  uploadedCvData?: string;
 }
 
 export type PlanTier = "Basic" | "Pro" | "Premium";
@@ -97,6 +105,8 @@ export interface RecruiterApplication {
   campusRecruitment?: boolean;
   address: string;
   website: string;
+  founded?: number;
+  about?: string;
   phone: string;
   email: string;
   contactName?: string;
@@ -194,7 +204,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const headers = authHeader();
 
       // Fetch hospitals & onboarding apps
-      const hospRes = await fetch(`${apiBase()}/api/admin/hospitals`, { headers });
+      const hospRes = await apiFetch(`${apiBase()}/api/admin/hospitals`, { headers });
       if (hospRes.ok) {
         const { data: rawData } = await hospRes.json();
 
@@ -206,7 +216,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             name: h.name,
             location: `${h.city || ""}, ${h.state || ""}`.replace(/^, /, ""),
             verified: h.verified,
-            status: "Active", // TODO: Add status field to DB later if needed
+            status: h.isSuspended ? "Suspended" : "Active",
             joined: h.approvedAt ? new Date(h.approvedAt).toISOString().slice(0, 10) : "",
             inviteCode: h.inviteCode || undefined,
           }));
@@ -246,6 +256,8 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             campusRecruitment: h.campusRecruitment || false,
             address: h.address || "",
             website: h.website || "",
+            founded: h.founded || 0,
+            about: h.about || "",
             phone: h.phone || h.submittedPhone || "",
             email: h.email || h.submittedEmail || "",
             contactName: h.submittedBy || "",
@@ -269,7 +281,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch recruiters
-      const recRes = await fetch(`${apiBase()}/api/admin/recruiters`, { headers });
+      const recRes = await apiFetch(`${apiBase()}/api/admin/recruiters`, { headers });
       if (recRes.ok) {
         const { data } = await recRes.json();
         setRecruiters(
@@ -286,18 +298,22 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch candidates
-      const candRes = await fetch(`${apiBase()}/api/admin/candidates`, { headers });
+      const candRes = await apiFetch(`${apiBase()}/api/admin/candidates`, { headers });
       if (candRes.ok) {
         const { data } = await candRes.json();
         setCandidates(
           data.map((c: any) => ({
             id: c.id,
+            userId: c.userId,
             name: c.name,
+            email: c.email || "",
             role: c.role || "",
             specialty: c.specialty || "",
             experience: `${c.experienceYears || 0} years`,
+            location: c.location || c.city || "",
             verified: c.verified,
             status: c.isSuspended ? "Suspended" : "Active",
+            isSuspended: c.isSuspended || false,
             joined: c.createdAt ? new Date(c.createdAt).toISOString().slice(0, 10) : "N/A",
             cvUrl: c.cvUrl,
             uploadedCvName: c.uploadedCvName,
@@ -312,27 +328,27 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       }
 
       // Fetch stats
-      const statsRes = await fetch(`${apiBase()}/api/admin/stats`, { headers });
+      const statsRes = await apiFetch(`${apiBase()}/api/admin/stats`, { headers });
       if (statsRes.ok) {
         setStats(await statsRes.json());
       }
 
       // Fetch logs
-      const logsRes = await fetch(`${apiBase()}/api/admin/logs`, { headers });
+      const logsRes = await apiFetch(`${apiBase()}/api/admin/logs`, { headers });
       if (logsRes.ok) {
         const { data } = await logsRes.json();
         setLogs(data ?? []);
       }
 
       // Fetch jobs
-      const jobsRes = await fetch(`${apiBase()}/api/admin/jobs`, { headers });
+      const jobsRes = await apiFetch(`${apiBase()}/api/admin/jobs`, { headers });
       if (jobsRes.ok) {
         const { data } = await jobsRes.json();
         setJobs(data);
       }
 
       // Fetch applications
-      const appRes = await fetch(`${apiBase()}/api/admin/applications`, { headers });
+      const appRes = await apiFetch(`${apiBase()}/api/admin/applications`, { headers });
       if (appRes.ok) {
         const payload = await appRes.json();
         const data = Array.isArray(payload) ? payload : payload.data || [];
@@ -347,6 +363,9 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             job: a.job?.role || "Unknown",
             hospital: a.job?.hospital?.name || "Unknown",
             cvUrl: a.cvUrl || a.candidate?.cvUrl,
+            isFlagged: a.isFlagged || false,
+            uploadedCvName: a.candidate?.uploadedCvName,
+            uploadedCvData: a.candidate?.uploadedCvData,
           })),
         );
       }
@@ -383,7 +402,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     logs,
 
     verifyHospital: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/verify`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/verify`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -391,7 +410,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     unverifyHospital: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/unverify`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/unverify`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -402,7 +421,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const hospital = hospitals.find((h) => h.id === id);
       if (!hospital) return;
       const endpoint = hospital.status === "Active" ? "suspend" : "reactivate";
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/${endpoint}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/${endpoint}`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -410,7 +429,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     deleteHospital: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}`, {
         method: "DELETE",
         headers: authHeader(),
       });
@@ -421,7 +440,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const recruiter = recruiters.find((r) => r.id === id);
       if (!recruiter) return;
       const endpoint = recruiter.status === "Active" ? "suspend" : "reactivate";
-      const res = await fetch(`${apiBase()}/api/admin/recruiters/${id}/${endpoint}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/recruiters/${id}/${endpoint}`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -429,7 +448,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     resetRecruiterPassword: async (id, mode, newPassword) => {
-      const res = await fetch(`${apiBase()}/api/admin/recruiters/${id}/reset-password`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/recruiters/${id}/reset-password`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ mode, newPassword }),
@@ -438,7 +457,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       return await res.json();
     },
     deleteRecruiter: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/recruiters/${id}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/recruiters/${id}`, {
         method: "DELETE",
         headers: authHeader(),
       });
@@ -449,7 +468,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       const candidate = candidates.find((c) => c.id === id);
       if (!candidate) return;
       const endpoint = candidate.status === "Active" ? "suspend" : "reactivate";
-      const res = await fetch(`${apiBase()}/api/admin/candidates/${id}/${endpoint}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/candidates/${id}/${endpoint}`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -457,7 +476,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     verifyCandidate: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/candidates/${id}/verify`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/candidates/${id}/verify`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -465,7 +484,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     unverifyCandidate: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/candidates/${id}/unverify`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/candidates/${id}/unverify`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -473,7 +492,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     deleteCandidate: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/candidates/${id}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/candidates/${id}`, {
         method: "DELETE",
         headers: authHeader(),
       });
@@ -481,7 +500,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     updateJobStatus: async (id, status) => {
-      const res = await fetch(`${apiBase()}/api/admin/jobs/${id}/status`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/jobs/${id}/status`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -490,7 +509,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     deleteJob: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/jobs/${id}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/jobs/${id}`, {
         method: "DELETE",
         headers: authHeader(),
       });
@@ -498,15 +517,24 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     toggleJobFlag: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/jobs/${id}/flag`, {
+      // Optimistic update — flip immediately so UI responds instantly
+      setJobs((prev) =>
+        prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)),
+      );
+      const res = await apiFetch(`${apiBase()}/api/admin/jobs/${id}/flag`, {
         method: "PATCH",
         headers: authHeader(),
       });
-      if (!res.ok) throw new Error("Failed to flag job");
-      await refreshAll();
+      if (!res.ok) {
+        // Revert on failure
+        setJobs((prev) =>
+          prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)),
+        );
+        throw new Error("Failed to flag job");
+      }
     },
     updateApplicationStatus: async (id, status) => {
-      const res = await fetch(`${apiBase()}/api/admin/applications/${id}/status`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/applications/${id}/status`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -515,17 +543,27 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     toggleApplicationFlag: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/applications/${id}/flag`, {
+      // Optimistic update — flip immediately so the UI responds instantly
+      setApplications((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, isFlagged: !a.isFlagged } : a)),
+      );
+      const res = await apiFetch(`${apiBase()}/api/admin/applications/${id}/flag`, {
         method: "PATCH",
         headers: authHeader(),
       });
-      if (!res.ok) throw new Error("Failed to flag application");
-      await refreshAll();
+      if (!res.ok) {
+        // Revert optimistic update on failure
+        setApplications((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, isFlagged: !a.isFlagged } : a)),
+        );
+        throw new Error("Failed to flag application");
+      }
+      // Skip refreshAll() — optimistic update already reflects the change
     },
 
     // Wire up to POST /api/onboarding/hospitals
     submitRecruiterApplication: async (data) => {
-      const res = await fetch(`${apiBase()}/api/onboarding/hospitals`, {
+      const res = await apiFetch(`${apiBase()}/api/onboarding/hospitals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -547,7 +585,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
 
     approveRecruiterApplication: async (id) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/approve`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/approve`, {
         method: "PATCH",
         headers: authHeader(),
       });
@@ -556,7 +594,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
 
     rejectRecruiterApplication: async (id, reason) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/reject`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/reject`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ reason }),
@@ -566,7 +604,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
 
     requestMoreDocuments: async (id, requestedDocuments) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${id}/request-more-documents`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${id}/request-more-documents`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ requestedDocuments }),
@@ -584,7 +622,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
 
     overrideHospitalPlan: async (hospitalId, plan, expiresAt, note) => {
-      const res = await fetch(`${apiBase()}/api/admin/hospitals/${hospitalId}/plan`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/hospitals/${hospitalId}/plan`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingPlan: plan, planExpiresAt: expiresAt, note }),
@@ -597,7 +635,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
 
     impersonateUser: async (userId) => {
-      const res = await fetch(`${apiBase()}/api/admin/impersonate/${userId}`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/impersonate/${userId}`, {
         method: "POST",
         headers: authHeader(),
       });
@@ -612,7 +650,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       /* handled by subscriptions.tsx directly */
     },
     suspendSubscription: async (hospitalId) => {
-      const res = await fetch(`${apiBase()}/api/admin/subscriptions/${hospitalId}/suspend`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/subscriptions/${hospitalId}/suspend`, {
         method: "POST",
         headers: authHeader(),
       });
@@ -620,7 +658,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
       await refreshAll();
     },
     reactivateSubscription: async (hospitalId) => {
-      const res = await fetch(`${apiBase()}/api/admin/subscriptions/${hospitalId}/reactivate`, {
+      const res = await apiFetch(`${apiBase()}/api/admin/subscriptions/${hospitalId}/reactivate`, {
         method: "POST",
         headers: authHeader(),
       });

@@ -22,6 +22,9 @@ import { Route as CandidatesRouteImport } from './routes/candidates'
 import { Route as ApplicationsRouteImport } from './routes/applications'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as RecruitersIdRouteImport } from './routes/recruiters_.$id'
+import { Route as JobsIdRouteImport } from './routes/jobs_.$id'
+import { Route as CandidatesIdRouteImport } from './routes/candidates_.$id'
 
 const VerificationsRoute = VerificationsRouteImport.update({
   id: '/verifications',
@@ -88,6 +91,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecruitersIdRoute = RecruitersIdRouteImport.update({
+  id: '/recruiters_/$id',
+  path: '/recruiters/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobsIdRoute = JobsIdRouteImport.update({
+  id: '/jobs_/$id',
+  path: '/jobs/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatesIdRoute = CandidatesIdRouteImport.update({
+  id: '/candidates_/$id',
+  path: '/candidates/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +121,9 @@ export interface FileRoutesByFullPath {
   '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
+  '/candidates/$id': typeof CandidatesIdRoute
+  '/jobs/$id': typeof JobsIdRoute
+  '/recruiters/$id': typeof RecruitersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +139,9 @@ export interface FileRoutesByTo {
   '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
+  '/candidates/$id': typeof CandidatesIdRoute
+  '/jobs/$id': typeof JobsIdRoute
+  '/recruiters/$id': typeof RecruitersIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +158,9 @@ export interface FileRoutesById {
   '/subscriptions': typeof SubscriptionsRoute
   '/system-logs': typeof SystemLogsRoute
   '/verifications': typeof VerificationsRoute
+  '/candidates_/$id': typeof CandidatesIdRoute
+  '/jobs_/$id': typeof JobsIdRoute
+  '/recruiters_/$id': typeof RecruitersIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +178,9 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/system-logs'
     | '/verifications'
+    | '/candidates/$id'
+    | '/jobs/$id'
+    | '/recruiters/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +196,9 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/system-logs'
     | '/verifications'
+    | '/candidates/$id'
+    | '/jobs/$id'
+    | '/recruiters/$id'
   id:
     | '__root__'
     | '/'
@@ -181,6 +214,9 @@ export interface FileRouteTypes {
     | '/subscriptions'
     | '/system-logs'
     | '/verifications'
+    | '/candidates_/$id'
+    | '/jobs_/$id'
+    | '/recruiters_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +233,9 @@ export interface RootRouteChildren {
   SubscriptionsRoute: typeof SubscriptionsRoute
   SystemLogsRoute: typeof SystemLogsRoute
   VerificationsRoute: typeof VerificationsRoute
+  CandidatesIdRoute: typeof CandidatesIdRoute
+  JobsIdRoute: typeof JobsIdRoute
+  RecruitersIdRoute: typeof RecruitersIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +331,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recruiters_/$id': {
+      id: '/recruiters_/$id'
+      path: '/recruiters/$id'
+      fullPath: '/recruiters/$id'
+      preLoaderRoute: typeof RecruitersIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/jobs_/$id': {
+      id: '/jobs_/$id'
+      path: '/jobs/$id'
+      fullPath: '/jobs/$id'
+      preLoaderRoute: typeof JobsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidates_/$id': {
+      id: '/candidates_/$id'
+      path: '/candidates/$id'
+      fullPath: '/candidates/$id'
+      preLoaderRoute: typeof CandidatesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +369,9 @@ const rootRouteChildren: RootRouteChildren = {
   SubscriptionsRoute: SubscriptionsRoute,
   SystemLogsRoute: SystemLogsRoute,
   VerificationsRoute: VerificationsRoute,
+  CandidatesIdRoute: CandidatesIdRoute,
+  JobsIdRoute: JobsIdRoute,
+  RecruitersIdRoute: RecruitersIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

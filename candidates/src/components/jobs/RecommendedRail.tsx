@@ -4,6 +4,7 @@ import { MatchRing } from "@/components/common/MatchRing";
 import { VerifiedBadge } from "@/components/common/VerifiedBadge";
 import { formatLPA } from "@/lib/format";
 import { computeJobMatches } from "@/lib/matchJobs";
+import { isAuthenticated } from "@/store/authStore";
 import type { Profile } from "@/data/profile";
 
 export function RecommendedRail({
@@ -15,7 +16,29 @@ export function RecommendedRail({
 }) {
   const recs = computeJobMatches(jobs, profile).slice(0, 5);
 
-  if (recs.length === 0) return null;
+  if (recs.length === 0) {
+    // Only show the prompt when logged in with an incomplete/missing profile
+    if (!isAuthenticated() || (profile && profile.completeness >= 20)) return null;
+    return (
+      <section className="animate-fade-in-up rounded-2xl border border-dashed bg-brand-soft/30 px-6 py-8 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-brand-soft text-primary">
+          <Sparkles className="h-5 w-5" />
+        </div>
+        <h2 className="mt-4 text-base font-semibold text-foreground">
+          Unlock personalised recommendations
+        </h2>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Complete your profile and we'll match you to the best roles instantly.
+        </p>
+        <Link
+          to="/build-cv"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+        >
+          Build my CV <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </section>
+    );
+  }
 
   return (
     <section className="animate-fade-in-up rounded-2xl border bg-gradient-to-br from-brand-soft/60 via-surface to-surface p-6 shadow-soft">

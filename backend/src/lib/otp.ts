@@ -33,6 +33,23 @@ export class OTPError extends Error {
   }
 }
 
+function getTemplateId(templateType: OTPOptions['templateType'] = 'verification'): string {
+  const verificationTemplateId = process.env.FAST2SMS_VERIFICATION_TEMPLATE_ID;
+  const resetTemplateId = process.env.FAST2SMS_RESET_TEMPLATE_ID;
+  const templateId = templateType === 'reset'
+    ? (resetTemplateId || verificationTemplateId)
+    : verificationTemplateId;
+
+  if (!templateId) {
+    const expected = templateType === 'reset'
+      ? 'FAST2SMS_RESET_TEMPLATE_ID or FAST2SMS_VERIFICATION_TEMPLATE_ID'
+      : 'FAST2SMS_VERIFICATION_TEMPLATE_ID';
+    throw new Error(`${expected} is not set`);
+  }
+
+  return templateId;
+}
+
 export async function sendOTP(mobile: string, options: OTPOptions = {}): Promise<Fast2SMSResponse> {
   const {
     expiryMinutes = 10,
@@ -42,14 +59,7 @@ export async function sendOTP(mobile: string, options: OTPOptions = {}): Promise
     templateType = 'verification',
   } = options;
 
-  let templateId;
-  if (templateType === 'verification') {
-    templateId = process.env.FAST2SMS_VERIFICATION_TEMPLATE_ID;
-  } else if (templateType === 'reset') {
-    templateId = process.env.FAST2SMS_RESET_TEMPLATE_ID;
-  }
-  
-  if (!templateId) throw new Error(`FAST2SMS_${templateType.toUpperCase()}_TEMPLATE_ID is not set`);
+  const templateId = getTemplateId(templateType);
 
   const payload: any = {
     mobile,

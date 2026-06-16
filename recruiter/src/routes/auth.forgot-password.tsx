@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, Loader2, ArrowLeft, Phone } from "lucide-react";
+import { ArrowRight, Loader2, ArrowLeft, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ export function ForgotPasswordPage() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [step, setStep] = useState<"phone" | "otp" | "success">("phone");
   const [loading, setLoading] = useState(false);
 
@@ -194,16 +195,25 @@ export function ForgotPasswordPage() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="newPassword">New Password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              placeholder="Min. 8 characters"
-              className="h-11"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="newPassword"
+                type={showPassword ? "text" : "password"}
+                placeholder="Min. 8 characters"
+                className="h-11 px-3 pr-10"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
           <Button
             type="submit"

@@ -36,12 +36,6 @@ function mapFromFormProfile(
     status: string;
     appliedOn: string;
     jobId: string;
-    cvSource?: string;
-    cvUrl?: string;
-    cvCloudinaryId?: string;
-    uploadedCvName?: string;
-    uploadedCvMime?: string;
-    uploadedCvData?: string;
     candidate: Record<string, unknown>;
   },
 ): Candidate {
@@ -77,8 +71,6 @@ function mapFromFormProfile(
     registration: profile.registrationNumber
       ? `${profile.registrationNumber}${profile.registrationCouncil ? ` (${profile.registrationCouncil})` : ""}`
       : "",
-    email: profile.email,
-    phone: profile.phone,
     languages: profile.languages || [],
     procedures: (profile.procedures || []).map((p) =>
       typeof p === "string" ? p : `${p.name}${p.count ? ` (${p.count})` : ""}`,
@@ -108,11 +100,6 @@ function mapFromFormProfile(
     applicationId: app.id,
     cvSource: "form",
     formProfile: profile,
-    cvUrl: (app.cvUrl || c.cvUrl) as string | undefined,
-    cvCloudinaryId: (app.cvCloudinaryId || c.cvCloudinaryId) as string | undefined,
-    uploadedCvName: (app.uploadedCvName || c.uploadedCvName) as string | undefined,
-    uploadedCvMime: (app.uploadedCvMime || c.uploadedCvMime) as string | undefined,
-    uploadedCvData: (app.uploadedCvData || c.uploadedCvData) as string | undefined,
     supportingDocuments: safeJsonParse<any[]>(
       (app as any).supportingDocuments || c.supportingDocuments || undefined,
       [],
@@ -138,11 +125,6 @@ export function mapApiCandidate(app: {
   appliedOn: string;
   jobId: string;
   cvSource?: string;
-  cvUrl?: string;
-  cvCloudinaryId?: string;
-  uploadedCvName?: string;
-  uploadedCvMime?: string;
-  uploadedCvData?: string;
   customFieldResponses?: CustomFieldResponses;
   job?: { customApplicationFields?: JobCustomField[] };
   candidate: Record<string, unknown>;
@@ -243,8 +225,7 @@ export function mapApiCandidate(app: {
     matchPercent: Number(c.matchPercent || 75),
     verified: Boolean(c.verified),
     registration: String(c.registration || ""),
-    email: String(c.email || ""),
-    phone: String(c.phone || ""),
+    // email and phone intentionally omitted — redacted by backend for recruiters
     languages: safeJsonParse<string[]>(c.languages as string | undefined, []),
     procedures: safeJsonParse<string[] | { name: string; count?: number }[]>(
       c.procedures as string | undefined,
@@ -269,13 +250,8 @@ export function mapApiCandidate(app: {
       highlights: e.summary ? [e.summary] : e.highlights || [],
     })),
     applicationId: app.id,
-    cvSource: (appCvSource === "upload" ? "upload" : "form") as "form" | "upload",
+    cvSource: appCvSource ? (appCvSource === "upload" ? "upload" : "form") : undefined,
     formProfile: profile || null,
-    cvUrl: (app.cvUrl as string) || (c.cvUrl as string),
-    cvCloudinaryId: (app.cvCloudinaryId as string) || (c.cvCloudinaryId as string),
-    uploadedCvName: (app.uploadedCvName as string) || (c.uploadedCvName as string),
-    uploadedCvMime: (app.uploadedCvMime as string) || (c.uploadedCvMime as string),
-    uploadedCvData: (app.uploadedCvData as string) || (c.uploadedCvData as string),
     supportingDocuments: safeJsonParse<any[]>(
       (app as any).supportingDocuments ||
         (c.supportingDocuments as string | undefined) ||
@@ -385,12 +361,14 @@ export type RecruiterDashboardData = {
 export async function loadRecruiterDashboard(
   page = 1,
   limit = 50,
+  jobId?: string,
 ): Promise<RecruiterDashboardData> {
   const user = getUser();
   const headers = authHeader();
   const hospitalParam = user?.hospitalId ? `?hospitalId=${user.hospitalId}` : "";
+  const jobParam = jobId ? `&jobId=${encodeURIComponent(jobId)}` : "";
   const [appsRes, jobsRes] = await Promise.all([
-    fetch(`${apiBase()}/api/applications?page=${page}&limit=${limit}`, { headers }),
+    fetch(`${apiBase()}/api/applications?page=${page}&limit=${limit}${jobParam}`, { headers }),
     fetch(`${apiBase()}/api/jobs${hospitalParam}`, { headers }),
   ]);
 
@@ -428,6 +406,28 @@ export async function closeJob(jobId: string): Promise<void> {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Failed to close job");
   }
+}
+
+export async function loadJob(jobId: string): Promise<any> {
+  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, { headers: authHeader() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to load job");
+  }
+  return res.json();
+}
+
+export async function updateJob(jobId: string, payload: Record<string, any>): Promise<any> {
+  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to update job");
+  }
+  return res.json();
 }
 
 export async function publishDraft(jobId: string): Promise<void> {

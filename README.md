@@ -42,6 +42,8 @@ Copy `backend/.env.example` to `backend/.env` and set:
 - `RAZORPAY_KEY_ID`
 - `RAZORPAY_KEY_SECRET`
 - `FAST2SMS_API_KEY`
+- `FAST2SMS_VERIFICATION_TEMPLATE_ID`
+- `FAST2SMS_RESET_TEMPLATE_ID` (optional; password reset falls back to the verification template if unset)
 
 Razorpay test credentials are supported, but they must come from env.
 

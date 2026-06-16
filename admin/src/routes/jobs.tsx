@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Eye, Trash2, Flag, Ban, CheckCircle, Search } from "lucide-react";
 import { useAdminStore } from "@/lib/admin-store";
@@ -13,10 +13,47 @@ export const Route = createFileRoute("/jobs")({
 function JobsPage() {
   const store = useAdminStore();
   const [statusFilter, setStatusFilter] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [flagAnimating, setFlagAnimating] = useState<Set<string>>(new Set());
 
-  const filteredJobs = store.jobs.filter((j) =>
-    statusFilter === "All" ? true : j.status === statusFilter,
-  );
+  const filteredJobs = store.jobs.filter((j) => {
+    const hospital = store.hospitals.find((h) => h.id === j.hospitalId);
+    if (statusFilter !== "All" && j.status !== statusFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const hospitalName = hospital?.name?.toLowerCase() || "";
+      if (
+        !j.title.toLowerCase().includes(q) &&
+        !hospitalName.includes(q) &&
+        !(j.location || "").toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  async function handleFlagToggle(id: string) {
+    try {
+      await store.toggleJobFlag(id);
+      setFlagAnimating((prev) => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+      setTimeout(() => {
+        setFlagAnimating((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 600);
+      const job = store.jobs.find((j) => j.id === id);
+      toast.success(job?.isFlagged ? "Flag removed" : "Job flagged");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to toggle flag");
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -27,7 +64,18 @@ function JobsPage() {
             Global view of all jobs across the platform
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search title, hospital, location…"
+              className="h-9 w-56 rounded-lg border bg-card pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring/30"
+            />
+          </div>
+          {/* Status filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -48,11 +96,9 @@ function JobsPage() {
               <tr className="border-b bg-muted/50">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Job Title</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Hospital</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Recruiter</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted By</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Applicants
-                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Applicants</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
@@ -66,11 +112,26 @@ function JobsPage() {
                 return (
                   <tr
                     key={j.id}
-                    className="border-b last:border-0 hover:bg-muted/30 transition-colors"
+                    className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                      j.isFlagged ? "bg-amber-500/5" : ""
+                    }`}
                   >
-                    <td className="px-4 py-3 font-medium">{j.title}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <span className="inline-flex items-center gap-1.5">
+                        {j.title}
+                        {j.isFlagged && (
+                          <Flag className="h-3 w-3 text-amber-500 fill-amber-400 shrink-0" />
+                        )}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{hospital?.name ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{recruiter?.name ?? "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {recruiter ? (
+                        <Link to="/recruiters/$id" params={{ id: recruiter.id }} className="hover:underline hover:text-primary">
+                          {recruiter.name}
+                        </Link>
+                      ) : "—"}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{j.location}</td>
                     <td className="px-4 py-3">{applicants}</td>
                     <td className="px-4 py-3">
@@ -79,9 +140,14 @@ function JobsPage() {
                     <td className="px-4 py-3 text-muted-foreground">{j.posted}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <button className="rounded p-1.5 hover:bg-accent" title="View">
+                        <Link
+                          to="/jobs/$id"
+                          params={{ id: j.id }}
+                          className="rounded p-1.5 hover:bg-accent inline-flex"
+                          title="View Job Details"
+                        >
                           <Eye className="h-3.5 w-3.5" />
-                        </button>
+                        </Link>
                         <button
                           onClick={async () => {
                             try {
@@ -120,19 +186,23 @@ function JobsPage() {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
+                        {/* Flag button — animated */}
                         <button
-                          onClick={async () => {
-                            try {
-                              await store.toggleJobFlag(j.id);
-                              toast.success("Flag toggled");
-                            } catch (e: any) {
-                              toast.error(e.message || "Failed to toggle flag");
-                            }
-                          }}
-                          className="rounded p-1.5 hover:bg-accent text-muted-foreground hover:text-destructive"
-                          title="Flag Job"
+                          onClick={() => handleFlagToggle(j.id)}
+                          title={j.isFlagged ? "Remove flag" : "Flag this job"}
+                          className={`rounded p-1.5 hover:bg-accent transition-all duration-200 ${
+                            flagAnimating.has(j.id) ? "animate-bounce" : ""
+                          } ${
+                            j.isFlagged
+                              ? "text-amber-500"
+                              : "text-muted-foreground hover:text-amber-500"
+                          }`}
                         >
-                          <Flag className="h-3.5 w-3.5" />
+                          <Flag
+                            className={`h-3.5 w-3.5 transition-all duration-200 ${
+                              j.isFlagged ? "fill-amber-400" : ""
+                            }`}
+                          />
                         </button>
                       </div>
                     </td>
@@ -150,7 +220,11 @@ function JobsPage() {
             icon={Flag}
             lottieFile="nothing_for_the_particular_query.json"
             title="No jobs found"
-            description="Jobs will appear here once recruiters start posting."
+            description={
+              searchQuery
+                ? `No jobs match "${searchQuery}". Try a different search.`
+                : "Jobs will appear here once recruiters start posting."
+            }
           />
         </div>
       )}
