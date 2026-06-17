@@ -117,7 +117,9 @@ export function NotificationsMenu({
                       {n.unread && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />}
                     </div>
                     {n.detail && (
-                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{n.detail}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                        {n.detail}
+                      </p>
                     )}
                     {n.time && <p className="mt-1 text-[11px] text-muted-foreground">{n.time}</p>}
                   </div>

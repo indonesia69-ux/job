@@ -3,7 +3,7 @@ import { redirect } from "@tanstack/react-router";
 /** Redirect guests to sign-in; optional return path after login. */
 export function requireAdminAuth(returnPath?: string) {
   if (typeof window === "undefined") return;
-  
+
   const raw = window.localStorage.getItem("apronhanger.admin.session");
   let isAuthenticated = false;
   if (raw) {

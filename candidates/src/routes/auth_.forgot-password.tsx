@@ -95,7 +95,7 @@ export function ForgotPasswordPage() {
       toast.success("Password reset successfully! Please sign in with your new password.");
       setStep("success");
       setTimeout(() => {
-        window.location.href = '/auth';
+        window.location.href = "/auth";
       }, 2500);
     } catch {
       toast.error("Network error. Please try again.");

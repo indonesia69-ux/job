@@ -172,9 +172,7 @@ function RecruiterDetailsPage() {
             <button
               onClick={async () => {
                 if (
-                  !confirm(
-                    `Login as ${recruiter.name}? This gives a 1-hour impersonation session.`,
-                  )
+                  !confirm(`Login as ${recruiter.name}? This gives a 1-hour impersonation session.`)
                 )
                   return;
                 try {
@@ -184,9 +182,11 @@ function RecruiterDetailsPage() {
                   const url = `${recruiterUrl}/impersonate?token=${encodeURIComponent(result.token)}`;
                   const popup = window.open(url, "_blank");
                   if (!popup) {
-                    navigator.clipboard.writeText(url).then(() =>
-                      toast.info("Popup blocked — impersonation link copied to clipboard"),
-                    );
+                    navigator.clipboard
+                      .writeText(url)
+                      .then(() =>
+                        toast.info("Popup blocked — impersonation link copied to clipboard"),
+                      );
                   } else {
                     toast.success(`Impersonating ${result.user.name} — session expires in 1 hour`);
                   }
@@ -265,9 +265,15 @@ function RecruiterDetailsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Job Title</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Applicants</th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Job Title
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Location
+                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                    Applicants
+                  </th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted</th>
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
@@ -275,9 +281,7 @@ function RecruiterDetailsPage() {
               </thead>
               <tbody>
                 {jobs.map((j) => {
-                  const applicantsCount = store.applications.filter(
-                    (a) => a.jobId === j.id,
-                  ).length;
+                  const applicantsCount = store.applications.filter((a) => a.jobId === j.id).length;
                   return (
                     <tr
                       key={j.id}

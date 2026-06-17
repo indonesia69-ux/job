@@ -393,7 +393,8 @@ function RecruitersList({
                         </button>
                         <button
                           onClick={async () => {
-                            if (!confirm(`Login as ${r.name}? This opens a 1-hour session.`)) return;
+                            if (!confirm(`Login as ${r.name}? This opens a 1-hour session.`))
+                              return;
                             try {
                               const result = await store.impersonateUser(r.id);
                               const recruiterUrl =
@@ -401,9 +402,13 @@ function RecruitersList({
                               const url = `${recruiterUrl}/impersonate?token=${encodeURIComponent(result.token)}`;
                               const popup = window.open(url, "_blank");
                               if (!popup) {
-                                navigator.clipboard.writeText(url).then(() =>
-                                  toast.info("Popup blocked — impersonation link copied to clipboard"),
-                                );
+                                navigator.clipboard
+                                  .writeText(url)
+                                  .then(() =>
+                                    toast.info(
+                                      "Popup blocked — impersonation link copied to clipboard",
+                                    ),
+                                  );
                               } else {
                                 toast.success(`Impersonating ${result.user.name}`);
                               }

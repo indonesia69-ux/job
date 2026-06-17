@@ -238,9 +238,7 @@ function JobDetailsPage() {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                     Account Status
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    Actions
-                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>

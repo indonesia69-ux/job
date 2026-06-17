@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CreditCard, Edit, Ban, CheckCircle, X, History, AlertCircle } from "lucide-react";
-import { apiBase, authHeader , apiFetch } from "@/lib/api";
+import { apiBase, authHeader, apiFetch } from "@/lib/api";
 
 export const Route = createFileRoute("/subscriptions")({
   component: SubscriptionsPage,

@@ -101,8 +101,7 @@ function CandidateDetailsPage() {
                   <Mail className="h-4 w-4" /> {candidate.email}
                 </div>
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />{" "}
-                  {candidate.location || "Location not provided"}
+                  <MapPin className="h-4 w-4" /> {candidate.location || "Location not provided"}
                 </div>
                 <div className="flex items-center gap-2">
                   <Stethoscope className="h-4 w-4" />{" "}
@@ -184,15 +183,11 @@ function CandidateDetailsPage() {
             <button
               onClick={async () => {
                 if (
-                  !confirm(
-                    `Login as ${candidate.name}? You'll get a 1-hour impersonation session.`,
-                  )
+                  !confirm(`Login as ${candidate.name}? You'll get a 1-hour impersonation session.`)
                 )
                   return;
                 try {
-                  const result = await store.impersonateUser(
-                    candidate.userId || candidate.id,
-                  );
+                  const result = await store.impersonateUser(candidate.userId || candidate.id);
                   const candidateUrl =
                     import.meta.env.VITE_CANDIDATE_URL || "http://localhost:5173";
                   window.open(
@@ -277,7 +272,9 @@ function CandidateDetailsPage() {
                   >
                     <div className="flex items-center gap-2 text-sm">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="truncate max-w-[260px]">{doc.name || `Document ${i + 1}`}</span>
+                      <span className="truncate max-w-[260px]">
+                        {doc.name || `Document ${i + 1}`}
+                      </span>
                     </div>
                     <button
                       onClick={() => window.open(doc.url, "_blank")}
@@ -322,9 +319,7 @@ function CandidateDetailsPage() {
                   <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                     App Status
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                    Actions
-                  </th>
+                  <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>

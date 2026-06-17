@@ -113,7 +113,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { useSSE } from '@/hooks/useSSE';
+import { useSSE } from "@/hooks/useSSE";
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });

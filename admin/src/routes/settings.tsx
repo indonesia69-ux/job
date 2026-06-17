@@ -17,7 +17,9 @@ function SettingsPage() {
   };
 
   const handleToggle = (label: string, newValue: boolean) => {
-    toast.info(`${label} ${newValue ? "enabled" : "disabled"} — this setting will be wired in a future update.`);
+    toast.info(
+      `${label} ${newValue ? "enabled" : "disabled"} — this setting will be wired in a future update.`,
+    );
   };
 
   return (

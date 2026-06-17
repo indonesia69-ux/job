@@ -759,11 +759,7 @@ function EmptyState() {
           ApronHanger builds your professional CV from a single structured form. Once it's done, you
           can Quick Apply to any verified role with one tap.
         </p>
-        <Link
-          to="/build-cv"
-          className="ph-btn-primary"
-          style={{ margin: "0 auto" }}
-        >
+        <Link to="/build-cv" className="ph-btn-primary" style={{ margin: "0 auto" }}>
           <FileText size={14} /> Build my CV
         </Link>
       </div>

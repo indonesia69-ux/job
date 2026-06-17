@@ -98,7 +98,9 @@ function JobsPage() {
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Hospital</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted By</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Location</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Applicants</th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
+                  Applicants
+                </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Posted</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
@@ -127,10 +129,16 @@ function JobsPage() {
                     <td className="px-4 py-3 text-muted-foreground">{hospital?.name ?? "—"}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {recruiter ? (
-                        <Link to="/recruiters/$id" params={{ id: recruiter.id }} className="hover:underline hover:text-primary">
+                        <Link
+                          to="/recruiters/$id"
+                          params={{ id: recruiter.id }}
+                          className="hover:underline hover:text-primary"
+                        >
                           {recruiter.name}
                         </Link>
-                      ) : "—"}
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{j.location}</td>
                     <td className="px-4 py-3">{applicants}</td>

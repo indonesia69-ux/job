@@ -19,11 +19,13 @@ function MessagesPage() {
         Messages coming soon
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-        Direct messaging between candidates and hospitals is under development.
-        You'll be notified as soon as it's ready.
+        Direct messaging between candidates and hospitals is under development. You'll be notified
+        as soon as it's ready.
       </p>
       <Button asChild className="mt-6">
-        <Link to="/" search={{ q: "", city: "" }}>Browse opportunities</Link>
+        <Link to="/" search={{ q: "", city: "" }}>
+          Browse opportunities
+        </Link>
       </Button>
     </div>
   );

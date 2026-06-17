@@ -27,16 +27,12 @@ function CandidatesPage() {
               <tr className="border-b bg-muted/50">
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Name</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Role</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Specialty
-                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Specialty</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">
                   Experience
                 </th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-muted-foreground">
-                  Verified
-                </th>
+                <th className="px-4 py-3 text-left font-medium text-muted-foreground">Verified</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Joined</th>
                 <th className="px-4 py-3 text-left font-medium text-muted-foreground">Actions</th>
               </tr>

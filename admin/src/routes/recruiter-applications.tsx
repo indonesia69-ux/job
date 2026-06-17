@@ -60,9 +60,8 @@ function RecruiterApplicationsPage() {
 
   const counts = {
     Pending: recruiterApplications.filter((a) => a.status === "Pending").length,
-    "Docs Requested": recruiterApplications.filter(
-      (a) => a.status === "RequestMoreDocuments",
-    ).length,
+    "Docs Requested": recruiterApplications.filter((a) => a.status === "RequestMoreDocuments")
+      .length,
     Approved: recruiterApplications.filter((a) => a.status === "Approved").length,
     Rejected: recruiterApplications.filter((a) => a.status === "Rejected").length,
   };
@@ -406,8 +405,7 @@ function StatusPill({ status }: { status: RecruiterApplication["status"] }) {
         : status === "RequestMoreDocuments"
           ? "bg-warning/15 text-warning border-warning/30"
           : "bg-warning/15 text-warning-foreground border-warning/40";
-  const label =
-    status === "RequestMoreDocuments" ? "Docs Requested" : status;
+  const label = status === "RequestMoreDocuments" ? "Docs Requested" : status;
   return (
     <span
       className={`shrink-0 inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}`}
@@ -425,7 +423,9 @@ function PlanBadge({ plan }: { plan: string }) {
         ? "bg-info/15 text-info"
         : "bg-muted text-muted-foreground";
   return (
-    <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${cls}`}>
+    <span
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-medium ${cls}`}
+    >
       {plan}
     </span>
   );

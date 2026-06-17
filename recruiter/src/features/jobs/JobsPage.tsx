@@ -232,7 +232,8 @@ export function JobsPage() {
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <div className="text-[11px] text-muted-foreground">
-                  Posted {j.postedOn} · by {j.postedBy?.id === user?.id ? "you" : (j.postedBy?.name || "someone")}
+                  Posted {j.postedOn} · by{" "}
+                  {j.postedBy?.id === user?.id ? "you" : j.postedBy?.name || "someone"}
                 </div>
                 <Button asChild size="sm" variant="outline" className="h-8 text-[12px]">
                   <Link to="/applicants" search={{ jobId: j.id, q: "" }}>

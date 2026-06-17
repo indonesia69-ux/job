@@ -780,11 +780,7 @@ export function ProfileFormWizard({
                 </Button>
               ) : (
                 <Button type="button" onClick={handleSubmit} disabled={submitting}>
-                  {submitting
-                    ? applyMode
-                      ? "Submitting..."
-                      : "Saving..."
-                    : submitLabel}{" "}
+                  {submitting ? (applyMode ? "Submitting..." : "Saving...") : submitLabel}{" "}
                   <Check className="h-4 w-4" />
                 </Button>
               )}

@@ -518,18 +518,14 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
     },
     toggleJobFlag: async (id) => {
       // Optimistic update — flip immediately so UI responds instantly
-      setJobs((prev) =>
-        prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)),
-      );
+      setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)));
       const res = await apiFetch(`${apiBase()}/api/admin/jobs/${id}/flag`, {
         method: "PATCH",
         headers: authHeader(),
       });
       if (!res.ok) {
         // Revert on failure
-        setJobs((prev) =>
-          prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)),
-        );
+        setJobs((prev) => prev.map((j) => (j.id === id ? { ...j, isFlagged: !j.isFlagged } : j)));
         throw new Error("Failed to flag job");
       }
     },

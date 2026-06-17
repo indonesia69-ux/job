@@ -12,7 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { AdminStoreProvider } from "@/lib/admin-store";
-import { apiBase , apiFetch } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPageLoader } from "@/components/common/PageLoader";
@@ -138,7 +138,7 @@ function RootComponent() {
   );
 }
 
-import { useSSE } from '@/hooks/useSSE';
+import { useSSE } from "@/hooks/useSSE";
 
 function AppShell() {
   const { isAuthenticated, isReady } = useAuth();

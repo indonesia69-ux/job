@@ -22,8 +22,7 @@ function SystemLogsPage() {
 
   // Show Load More if: we have a full page (might be more) OR we know total > loaded count
   const hasMore =
-    (total === null && allLogs.length >= PAGE_SIZE) ||
-    (total !== null && allLogs.length < total);
+    (total === null && allLogs.length >= PAGE_SIZE) || (total !== null && allLogs.length < total);
 
   const loadMore = useCallback(async () => {
     setLoadingMore(true);

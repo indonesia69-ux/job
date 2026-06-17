@@ -367,66 +367,66 @@ function AuthPage() {
               )}
 
               {(mode === "signin" || signupStep === "details") && (
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-xs font-medium">
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    ref={emailRef}
-                    type="email"
-                    placeholder="you@example.com"
-                    className="h-11 pl-9"
-                    aria-invalid={!!fieldErrors.email}
-                    required
-                  />
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs font-medium">
+                    Email <span className="text-destructive">*</span>
+                  </Label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      ref={emailRef}
+                      type="email"
+                      placeholder="you@example.com"
+                      className="h-11 pl-9"
+                      aria-invalid={!!fieldErrors.email}
+                      required
+                    />
+                  </div>
+                  {fieldErrors.email && (
+                    <p className="text-xs text-destructive">{fieldErrors.email}</p>
+                  )}
                 </div>
-                {fieldErrors.email && (
-                  <p className="text-xs text-destructive">{fieldErrors.email}</p>
-                )}
-              </div>
               )}
 
               {(mode === "signin" || signupStep === "details") && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-xs font-medium">
-                    Password <span className="text-destructive">*</span>
-                  </Label>
-                  {mode === "signin" && (
-                    <Link
-                      to="/auth/forgot-password"
-                      className="text-xs font-medium text-brand hover:underline"
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-xs font-medium">
+                      Password <span className="text-destructive">*</span>
+                    </Label>
+                    {mode === "signin" && (
+                      <Link
+                        to="/auth/forgot-password"
+                        className="text-xs font-medium text-brand hover:underline"
+                      >
+                        Forgot password?
+                      </Link>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      ref={passwordRef}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="h-11 px-9"
+                      aria-invalid={!!fieldErrors.password}
+                      required
+                    />
+                    {fieldErrors.password && (
+                      <p className="text-xs text-destructive">{fieldErrors.password}</p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
-                      Forgot password?
-                    </Link>
-                  )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    ref={passwordRef}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="h-11 px-9"
-                    aria-invalid={!!fieldErrors.password}
-                    required
-                  />
-                  {fieldErrors.password && (
-                    <p className="text-xs text-destructive">{fieldErrors.password}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
               )}
 
               <Button
