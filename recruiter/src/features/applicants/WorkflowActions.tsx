@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { updateApplicationStatus } from "@/lib/recruiterData";
 import { displayToApiStatus, type DisplayApplicantStatus } from "@/lib/applicationStatus";
@@ -7,6 +8,7 @@ import { InterviewSchedulerModal } from "./InterviewSchedulerModal";
 import { DocumentRequestModal } from "./DocumentRequestModal";
 import { OfferLetterModal } from "./OfferLetterModal";
 import { JoiningDateModal } from "./JoiningDateModal";
+import { usePlan } from "@/features/search/PlanContext";
 
 export function WorkflowActions({
   applicationId,
@@ -18,25 +20,27 @@ export function WorkflowActions({
   status: string;
   onUpdate: () => void;
 }) {
-  const [loading, setLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const [modal, setModal] = useState<
     "none" | "schedule" | "reschedule" | "nextRound" | "documents" | "offer" | "joining"
   >("none");
 
   const setStatus = async (display: DisplayApplicantStatus, payload: any = {}, message: string) => {
-    setLoading(true);
+    setLoadingAction(display);
     try {
-      await updateApplicationStatus(applicationId, display, payload);
+      await updateApplicationStatus(applicationId, display, payload, apiStatus);
       toast.success(message);
       onUpdate();
     } catch (e: any) {
       toast.error(e.message || "Could not update status");
     } finally {
-      setLoading(false);
+      setLoadingAction(null);
     }
   };
 
   const apiStatus = displayToApiStatus(status);
+  const { isPlanSuspended } = usePlan();
+  const isAnyLoading = loadingAction !== null || isPlanSuspended;
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">
@@ -47,18 +51,20 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Reviewed", {}, "Marked as reviewed")}
           >
+            {loadingAction === "Reviewed" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Mark Reviewed
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Candidate rejected")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Reject
           </Button>
         </>
@@ -67,16 +73,22 @@ export function WorkflowActions({
       {/* 2. Reviewed -> Schedule Interview / Reject */}
       {apiStatus === "Reviewed" && (
         <>
-          <Button size="sm" className="h-9" disabled={loading} onClick={() => setModal("schedule")}>
+          <Button
+            size="sm"
+            className="h-9"
+            disabled={isAnyLoading}
+            onClick={() => setModal("schedule")}
+          >
             Schedule Interview
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Candidate rejected")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Reject
           </Button>
         </>
@@ -88,27 +100,34 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setModal("reschedule")}
           >
+            {loadingAction === "InterviewRescheduled" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Approve Reschedule
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("InterviewDeclined", {}, "Reschedule request rejected")}
           >
+            {loadingAction === "InterviewDeclined" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Reject Reschedule
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Interview cancelled")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Cancel Interview
           </Button>
         </>
@@ -124,7 +143,7 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setModal("documents")}
           >
             Request Documents
@@ -133,9 +152,10 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Interview cancelled")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Cancel Interview
           </Button>
         </>
@@ -147,18 +167,22 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9 bg-indigo-600 hover:bg-indigo-700"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("InterviewCompleted", {}, "Interview marked as completed")}
           >
+            {loadingAction === "InterviewCompleted" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Mark Completed
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("NoShow", {}, "Marked as no-show")}
           >
+            {loadingAction === "NoShow" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             No Show
           </Button>
         </>
@@ -170,16 +194,19 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Shortlisted", {}, "Candidate shortlisted")}
           >
+            {loadingAction === "Shortlisted" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Shortlist
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setModal("nextRound")}
           >
             Next Round
@@ -188,18 +215,20 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("OnHold", {}, "Placed on hold")}
           >
+            {loadingAction === "OnHold" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             On Hold
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Candidate rejected")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Reject
           </Button>
         </>
@@ -211,7 +240,7 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setModal("reschedule")}
           >
             Reschedule Interview
@@ -220,9 +249,10 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Candidate rejected after no-show")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Reject
           </Button>
         </>
@@ -235,7 +265,7 @@ export function WorkflowActions({
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setModal("documents")}
           >
             Request Documents
@@ -248,18 +278,22 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Shortlisted", {}, "Candidate shortlisted")}
           >
+            {loadingAction === "Shortlisted" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Shortlist
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Candidate rejected")}
           >
+            {loadingAction === "Rejected" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Reject
           </Button>
         </>
@@ -271,27 +305,36 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("DocumentsApproved", {}, "Documents approved")}
           >
+            {loadingAction === "DocumentsApproved" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Approve Documents
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("AdditionalDocumentsRequired", {}, "Requested more documents")}
           >
+            {loadingAction === "AdditionalDocumentsRequired" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Request More
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("DocumentsRejected", {}, "Documents rejected")}
           >
+            {loadingAction === "DocumentsRejected" && (
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+            )}
             Reject Documents
           </Button>
         </>
@@ -301,7 +344,7 @@ export function WorkflowActions({
         <Button
           size="sm"
           className="h-9 bg-emerald-600 hover:bg-emerald-700"
-          disabled={loading}
+          disabled={isAnyLoading}
           onClick={() => setModal("offer")}
         >
           Send Offer Letter
@@ -310,7 +353,12 @@ export function WorkflowActions({
 
       {/* 8. Offer Accepted -> Confirm Joining */}
       {apiStatus === "OfferAccepted" && (
-        <Button size="sm" className="h-9" disabled={loading} onClick={() => setModal("joining")}>
+        <Button
+          size="sm"
+          className="h-9"
+          disabled={isAnyLoading}
+          onClick={() => setModal("joining")}
+        >
           Confirm Joining
         </Button>
       )}
@@ -320,9 +368,10 @@ export function WorkflowActions({
         <Button
           size="sm"
           className="h-9"
-          disabled={loading}
+          disabled={isAnyLoading}
           onClick={() => setStatus("Joined", {}, "Candidate joined")}
         >
+          {loadingAction === "Joined" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
           Mark as Joined
         </Button>
       )}
@@ -333,18 +382,20 @@ export function WorkflowActions({
           <Button
             size="sm"
             className="h-9 bg-emerald-600 hover:bg-emerald-700"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Onboarded", {}, "Candidate onboarded")}
           >
+            {loadingAction === "Onboarded" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Complete Onboarding
           </Button>
           <Button
             size="sm"
             variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
-            disabled={loading}
+            disabled={isAnyLoading}
             onClick={() => setStatus("Dropped", {}, "Candidate dropped out")}
           >
+            {loadingAction === "Dropped" && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
             Mark Dropped
           </Button>
         </>
@@ -390,6 +441,7 @@ export function WorkflowActions({
       {modal === "offer" && (
         <OfferLetterModal
           applicationId={applicationId}
+          currentStatus={apiStatus}
           isOpen={true}
           onClose={() => setModal("none")}
           onSuccess={() => {

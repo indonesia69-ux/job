@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { saveHospitalProfile, type HospitalProfile } from "@/lib/recruiterData";
 import { authHeader, getUser, login } from "@/store/authStore";
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { Route } from "@/routes/_app.settings";
 import { PlanTab } from "@/features/settings/PlanTab";
 
@@ -76,7 +76,7 @@ export function SettingsPage() {
     if (!recruiterName.trim()) return;
     setSavingName(true);
     try {
-      const res = await fetch(`${apiBase()}/api/auth/me`, {
+      const res = await apiFetch(`${apiBase()}/api/auth/me`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ name: recruiterName.trim() }),
@@ -99,7 +99,7 @@ export function SettingsPage() {
   const saveNotifPrefs = async () => {
     setSavingNotif(true);
     try {
-      const res = await fetch(`${apiBase()}/api/auth/me`, {
+      const res = await apiFetch(`${apiBase()}/api/auth/me`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({

@@ -35,7 +35,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     });
 
     const token = jwt.sign(
-      { id: admin.id, email: admin.email, name: admin.name, role: 'ADMIN' },
+      { id: admin.id, email: admin.email, name: admin.name, role: 'ADMIN', tokenVersion: admin.tokenVersion },
       VERIFIED_SECRET,
       { expiresIn: '12h' }
     );
@@ -44,6 +44,20 @@ router.post('/auth/login', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Admin login failed' });
+  }
+});
+
+// POST /api/admin/auth/logout-all
+router.post('/auth/logout-all', requireAdmin, async (req: AdminAuthRequest, res: Response) => {
+  try {
+    await prisma.adminUser.update({
+      where: { id: req.admin!.id },
+      data: { tokenVersion: { increment: 1 } },
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Failed to invalidate admin sessions' });
   }
 });
 

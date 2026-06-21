@@ -3,6 +3,7 @@ import { Router, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../../lib/prisma';
 import { requireAdmin, AdminAuthRequest } from '../../middleware/auth';
+import { suspendHospitalRecruitersAndCloseJobs } from '../../lib/hospitalSuspend';
 
 const router = Router();
 const SECRET = process.env.JWT_SECRET;
@@ -138,6 +139,8 @@ router.post('/subscriptions/:hospitalId/suspend', requireAdmin, async (req: Admi
       where: { id: req.params.hospitalId as string },
       data: { isSuspended: true }
     });
+
+    await suspendHospitalRecruitersAndCloseJobs(updated.id);
 
     await prisma.activityLog.create({
       data: {

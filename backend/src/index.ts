@@ -8,6 +8,11 @@ import helmet from 'helmet';
 import dotenv from 'dotenv';
 dotenv.config();
 
+import { initSentry, captureException } from './lib/sentry';
+initSentry();
+
+import prisma from './lib/prisma';
+
 // Logger
 import logger from './lib/logger';
 
@@ -37,6 +42,7 @@ import uploadRoutes from './routes/uploadRoutes';
 import planRoutes from './routes/planRoutes';
 import paymentRoutes from './routes/paymentRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import { evaluateCorsOrigin } from './lib/corsConfig';
 
 function requireEnv(name: string): void {
   if (!process.env[name]) {
@@ -60,7 +66,8 @@ app.set('trust proxy', 1);
 app.use(helmet());
 
 // Request logging via morgan + winston
-app.use(morgan('dev', { stream: { write: (message) => logger.info(message.trim()) } }));
+const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(morgan(morganFormat, { stream: { write: (message) => logger.info(message.trim()) } }));
 
 // Reduce payload limit since base64 CV compat is deprecated
 app.use(express.json({ limit: '5mb' }));
@@ -98,6 +105,38 @@ const otpLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const onboardingLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,
+  message: { error: 'Too many registration attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const paymentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many payment requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const publicJobsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many job requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const inviteCodeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Too many invite code attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // ─── CORS ────────────────────────────────────────────────────────────────────
 // In production, configure ALLOWED_ORIGINS in .env
 const parseOrigins = (str?: string) => str ? str.split(',').map(s => s.trim().replace(/\/$/, '')) : [];
@@ -108,16 +147,21 @@ const legacyOrigins = parseOrigins(process.env.ALLOWED_ORIGINS);
 
 const allowedOrigins = [...new Set([...originsCandidate, ...originsRecruiter, ...originsAdmin, ...legacyOrigins])];
 
+// Health check — registered before strict CORS (Render/curl probes omit Origin)
+app.get('/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'ok' });
+  } catch (e) {
+    res.status(503).json({ status: 'error', db: 'unreachable' });
+  }
+});
+
 app.use(cors({
   origin: (origin, callback) => {
-    if (process.env.NODE_ENV === 'production' && allowedOrigins.length === 0) {
-      return callback(new Error('CORS is not configured for production'));
-    }
-    // If no origin restriction set, allow all in development fallback
-    if (allowedOrigins.length === 0) return callback(null, true);
-    // Allow non-browser requests (Postman, etc) or matching origin
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    const result = evaluateCorsOrigin(origin, allowedOrigins, process.env.NODE_ENV || 'development');
+    if (result.allowed) return callback(null, true);
+    callback(new Error(result.error || 'Not allowed by CORS'));
   },
   credentials: true,
 }));
@@ -152,26 +196,24 @@ app.use('/api/admin/notifications', adminNotificationRoutes);
 
 app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/candidates', searchLimiter, candidateRoutes);
-app.use('/api/jobs', jobRoutes);
+app.use('/api/jobs', publicJobsLimiter, jobRoutes);
 app.use('/api/applications', applicationRoutes);
 app.use('/api/search', searchLimiter, searchRoutes);
 app.use('/api/upload', uploadLimiter, uploadRoutes);
 app.use('/api/plan', planRoutes);
-app.use('/api/payment', paymentRoutes);
+app.use('/api/payment', paymentLimiter, paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+app.use('/api/onboarding/hospitals', onboardingLimiter);
+app.use('/api/onboarding/verify-code', inviteCodeLimiter);
 app.use('/api/onboarding', onboardingRoutes);
 app.use('/api/onboarding', onboardingVerifyRoutes);
 app.use('/api/saved-jobs', savedJobRoutes);
 app.use('/api/dashboard/stats', statsRoutes);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', time: new Date().toISOString() });
-});
-
 // ─── Global Error Handler ────────────────────────────────────────────────────
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  captureException(err);
   logger.error(`Unhandled error: ${err.message}`, { stack: err.stack });
   res.status(500).json({ error: 'Internal Server Error' });
 });
@@ -194,7 +236,6 @@ const server = app.listen(PORT, () => {
 });
 
 // ─── Graceful Shutdown ───────────────────────────────────────────────────────
-import prisma from './lib/prisma';
 
 const gracefulShutdown = async (signal: string) => {
   logger.info(`Received ${signal}, closing server...`);

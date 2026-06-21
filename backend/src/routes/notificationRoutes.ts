@@ -28,9 +28,16 @@ function formatNotification(n: {
 
 // ── SSE Stream Endpoint ──────────────────────────────────────────────────────
 router.get('/stream', requireAuth, (req: AuthRequest, res: Response) => {
-  const userId = req.user!.id;
-  // Let the SSEManager handle headers and cleanup
-  sseManager.addUserClient(userId, res);
+  try {
+    const userId = req.user!.id;
+    // Let the SSEManager handle headers and cleanup
+    sseManager.addUserClient(userId, res);
+  } catch (err) {
+    logger.error('SSE stream error:', err);
+    if (!res.headersSent) {
+      res.status(500).end();
+    }
+  }
 });
 
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {

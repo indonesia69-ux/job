@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { jobMatchesSearch } from "@/lib/jobSearch";
@@ -16,7 +16,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { clientLoaderWithHydrate } from "@/lib/clientLoader";
 
 async function loadOpportunities() {
-  const res = await fetch(`${apiBase()}/api/jobs`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/jobs`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to fetch jobs");
   return { jobs: await res.json() };
 }

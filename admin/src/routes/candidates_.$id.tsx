@@ -25,6 +25,16 @@ export const Route = createFileRoute("/candidates_/$id")({
   component: CandidateDetailsPage,
 });
 
+function getCandidatePortalUrl(): string | null {
+  const configured = import.meta.env.VITE_CANDIDATE_URL?.trim() || "";
+  if (configured) return configured;
+  if (import.meta.env.PROD) {
+    console.error("VITE_CANDIDATE_URL is required for production impersonation links.");
+    return null;
+  }
+  return "http://localhost:5173";
+}
+
 function CandidateDetailsPage() {
   const { id } = Route.useParams();
   const router = useRouter();
@@ -188,8 +198,11 @@ function CandidateDetailsPage() {
                   return;
                 try {
                   const result = await store.impersonateUser(candidate.userId || candidate.id);
-                  const candidateUrl =
-                    import.meta.env.VITE_CANDIDATE_URL || "http://localhost:5173";
+                  const candidateUrl = getCandidatePortalUrl();
+                  if (!candidateUrl) {
+                    toast.error("Candidate URL not configured");
+                    return;
+                  }
                   window.open(
                     `${candidateUrl}/impersonate?token=${encodeURIComponent(result.token)}`,
                     "_blank",

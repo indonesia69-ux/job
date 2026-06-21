@@ -24,7 +24,9 @@ export function ForgotPasswordPage() {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [step, setStep] = useState<"phone" | "otp" | "success">("phone");
+  const [step, setStep] = useState<"phone" | "otp" | "reset" | "success">("phone");
+  const [resetToken, setResetToken] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSendOtp = async (e: React.FormEvent) => {
@@ -54,14 +56,10 @@ export function ForgotPasswordPage() {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!otp || otp.length < 6) {
       toast.error("Please enter a valid 6-digit OTP.");
-      return;
-    }
-    if (!newPassword || newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters.");
       return;
     }
     setLoading(true);
@@ -77,12 +75,29 @@ export function ForgotPasswordPage() {
         setLoading(false);
         return;
       }
+      setResetToken(verifyData.reset_token);
+      setMaskedEmail(verifyData.maskedEmail);
+      setStep("reset");
+    } catch {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters.");
+      return;
+    }
+    setLoading(true);
+    try {
       const res = await fetch(`${apiBase()}/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          reset_token: verifyData.reset_token,
+          reset_token: resetToken,
           new_password: newPassword,
           role: "CANDIDATE",
         }),
@@ -134,7 +149,9 @@ export function ForgotPasswordPage() {
               ? "Enter your registered mobile number to receive an OTP."
               : step === "success"
                 ? "Your password has been reset successfully."
-                : `Enter the OTP sent to ${phone} and your new password.`}
+                : step === "otp"
+                  ? `Enter the OTP sent to ${phone}.`
+                  : `Set a new password for ${maskedEmail}`}
           </p>
         </div>
 
@@ -183,8 +200,8 @@ export function ForgotPasswordPage() {
               </Link>
             </div>
           </form>
-        ) : (
-          <form onSubmit={handleResetPassword} className="space-y-4">
+        ) : step === "otp" ? (
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="otp">OTP</Label>
               <Input
@@ -199,6 +216,32 @@ export function ForgotPasswordPage() {
                 required
               />
             </div>
+            <Button
+              type="submit"
+              className="h-11 w-full bg-brand text-brand-foreground shadow-soft hover:bg-brand/90 text-[15px] font-semibold"
+              disabled={loading || otp.length < 6}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-[18px] w-[18px] animate-spin" />
+                  Verifying…
+                </>
+              ) : (
+                "Verify OTP"
+              )}
+            </Button>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => setStep("phone")}
+                className="text-[13px] font-medium text-brand hover:underline inline-flex items-center"
+              >
+                <ArrowLeft className="mr-1 h-3 w-3" /> Change Mobile Number
+              </button>
+            </div>
+          </form>
+        ) : step === "reset" ? (
+          <form onSubmit={handleResetPassword} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="newPassword">New Password</Label>
               <div className="relative">
@@ -224,7 +267,7 @@ export function ForgotPasswordPage() {
             <Button
               type="submit"
               className="h-11 w-full bg-brand text-brand-foreground shadow-soft hover:bg-brand/90 text-[15px] font-semibold"
-              disabled={loading || otp.length < 6 || newPassword.length < 8}
+              disabled={loading || newPassword.length < 8}
             >
               {loading ? (
                 <>
@@ -241,11 +284,11 @@ export function ForgotPasswordPage() {
                 onClick={() => setStep("phone")}
                 className="text-[13px] font-medium text-brand hover:underline inline-flex items-center"
               >
-                <ArrowLeft className="mr-1 h-3 w-3" /> Change Mobile Number
+                <ArrowLeft className="mr-1 h-3 w-3" /> Start Over
               </button>
             </div>
           </form>
-        )}
+        ) : null}
       </div>
     </div>
   );

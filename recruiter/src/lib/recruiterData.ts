@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader, getUser, logout } from "@/store/authStore";
 import type { ApplicantStatus, Candidate } from "@/lib/mock";
 import type { FormProfile } from "@/lib/formProfile";
@@ -308,7 +308,7 @@ export type HospitalProfile = {
 };
 
 export async function loadHospitalProfile(): Promise<HospitalProfile | null> {
-  const res = await fetch(`${apiBase()}/api/hospitals/me`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/hospitals/me`, { headers: authHeader() });
   if (!res.ok) return null;
   return res.json();
 }
@@ -316,7 +316,7 @@ export async function loadHospitalProfile(): Promise<HospitalProfile | null> {
 export async function saveHospitalProfile(
   data: Partial<HospitalProfile>,
 ): Promise<HospitalProfile> {
-  const res = await fetch(`${apiBase()}/api/hospitals/me`, {
+  const res = await apiFetch(`${apiBase()}/api/hospitals/me`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify(data),
@@ -329,11 +329,7 @@ export async function saveHospitalProfile(
 }
 
 export async function loadDashboardStats(): Promise<DashboardStats> {
-  const res = await fetch(`${apiBase()}/api/dashboard/stats`, { headers: authHeader() });
-  if (res.status === 401) {
-    logout();
-    if (typeof window !== "undefined") window.location.href = "/auth/login";
-  }
+  const res = await apiFetch(`${apiBase()}/api/dashboard/stats`, { headers: authHeader() });
   if (!res.ok) {
     return { kpis: [], chart: [], suggested: [] };
   }
@@ -397,7 +393,7 @@ export async function loadRecruiterDashboard(
 }
 
 export async function closeJob(jobId: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, {
+  const res = await apiFetch(`${apiBase()}/api/jobs/${jobId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ status: "Closed" }),
@@ -409,7 +405,7 @@ export async function closeJob(jobId: string): Promise<void> {
 }
 
 export async function loadJob(jobId: string): Promise<any> {
-  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/jobs/${jobId}`, { headers: authHeader() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Failed to load job");
@@ -418,7 +414,7 @@ export async function loadJob(jobId: string): Promise<any> {
 }
 
 export async function updateJob(jobId: string, payload: Record<string, any>): Promise<any> {
-  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, {
+  const res = await apiFetch(`${apiBase()}/api/jobs/${jobId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify(payload),
@@ -431,7 +427,7 @@ export async function updateJob(jobId: string, payload: Record<string, any>): Pr
 }
 
 export async function publishDraft(jobId: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/jobs/${jobId}`, {
+  const res = await apiFetch(`${apiBase()}/api/jobs/${jobId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ status: "Active" }),
@@ -445,7 +441,8 @@ export async function publishDraft(jobId: string): Promise<void> {
 export async function updateApplicationStatus(
   applicationId: string,
   status: DisplayApplicantStatus | ApiApplicationStatus,
-  payload: Record<string, any> = {},
+  payload: Record<string, unknown> = {},
+  currentStatus?: string,
 ): Promise<void> {
   const apiStatus =
     typeof status === "string" &&
@@ -480,10 +477,10 @@ export async function updateApplicationStatus(
       ? status
       : displayToApiStatus(status as DisplayApplicantStatus);
 
-  const res = await fetch(`${apiBase()}/api/applications/${applicationId}`, {
+  const res = await apiFetch(`${apiBase()}/api/applications/${applicationId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify({ status: apiStatus, ...payload }),
+    body: JSON.stringify({ status: apiStatus, currentStatus, ...payload }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -498,7 +495,7 @@ export async function uploadOfferLetter(
   const formData = new FormData();
   formData.append("offerLetter", file);
 
-  const res = await fetch(`${apiBase()}/api/applications/${applicationId}/offer-letter`, {
+  const res = await apiFetch(`${apiBase()}/api/applications/${applicationId}/offer-letter`, {
     method: "POST",
     headers: authHeader(), // Content-Type omitted so browser sets boundary
     body: formData,
@@ -571,7 +568,7 @@ export async function searchCandidates(params: SearchParams = {}): Promise<Searc
   if (params.take) url.searchParams.set("take", String(params.take));
   if (params.skip) url.searchParams.set("skip", String(params.skip));
 
-  const res = await fetch(url.toString(), { headers: authHeader() });
+  const res = await apiFetch(url.toString(), { headers: authHeader() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Search failed");
@@ -647,7 +644,7 @@ export type RazorpayVerifyPayload = {
 };
 
 export async function fetchPlanInfo(): Promise<PlanInfo> {
-  const res = await fetch(`${apiBase()}/api/plan/current`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/plan/current`, { headers: authHeader() });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Failed to fetch plan info");
@@ -656,7 +653,7 @@ export async function fetchPlanInfo(): Promise<PlanInfo> {
 }
 
 export async function upgradeImmediate(newPlan: PlanTier, paymentRef?: string): Promise<PlanInfo> {
-  const res = await fetch(`${apiBase()}/api/plan/upgrade/immediate`, {
+  const res = await apiFetch(`${apiBase()}/api/plan/upgrade/immediate`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ newPlan, paymentRef }),
@@ -669,7 +666,7 @@ export async function upgradeImmediate(newPlan: PlanTier, paymentRef?: string): 
 }
 
 export async function createPaymentOrder(newPlan: PlanTier): Promise<PaymentOrderInfo> {
-  const res = await fetch(`${apiBase()}/api/payment/create-order`, {
+  const res = await apiFetch(`${apiBase()}/api/payment/create-order`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ newPlan }),
@@ -684,7 +681,7 @@ export async function createPaymentOrder(newPlan: PlanTier): Promise<PaymentOrde
 export async function verifyPayment(
   payload: RazorpayVerifyPayload,
 ): Promise<{ success: boolean; plan: PlanTier; amountPaid: number }> {
-  const res = await fetch(`${apiBase()}/api/payment/verify`, {
+  const res = await apiFetch(`${apiBase()}/api/payment/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify(payload),
@@ -697,7 +694,7 @@ export async function verifyPayment(
 }
 
 export async function scheduleRenewalChange(newPlan: PlanTier): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/plan/upgrade/renewal`, {
+  const res = await apiFetch(`${apiBase()}/api/plan/upgrade/renewal`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ newPlan }),
@@ -709,7 +706,7 @@ export async function scheduleRenewalChange(newPlan: PlanTier): Promise<void> {
 }
 
 export async function cancelRenewalChange(): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/plan/upgrade/renewal`, {
+  const res = await apiFetch(`${apiBase()}/api/plan/upgrade/renewal`, {
     method: "DELETE",
     headers: authHeader(),
   });
@@ -720,8 +717,36 @@ export async function cancelRenewalChange(): Promise<void> {
 }
 
 export async function fetchPlanHistory(): Promise<PlanChangeEntry[]> {
-  const res = await fetch(`${apiBase()}/api/plan/history`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/plan/history`, { headers: authHeader() });
   if (!res.ok) return [];
   const data = await res.json();
   return data.data ?? [];
+}
+
+export async function getDowngradePreview(
+  targetPlan: PlanTier,
+): Promise<{ jobsToClose: number; recruitersToSuspend: number }> {
+  const res = await apiFetch(`${apiBase()}/api/plan/downgrade-preview?targetPlan=${targetPlan}`, {
+    headers: authHeader(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to preview downgrade");
+  }
+  const data = await res.json();
+  return {
+    jobsToClose: data.jobsToClose || 0,
+    recruitersToSuspend: data.willSuspend || 0,
+  };
+}
+
+export async function reactivateSuspended(): Promise<void> {
+  const res = await apiFetch(`${apiBase()}/api/plan/reactivate-suspended`, {
+    method: "POST",
+    headers: authHeader(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to reactivate recruiters");
+  }
 }

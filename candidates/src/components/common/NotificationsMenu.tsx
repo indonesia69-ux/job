@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LottiePlayer } from "./LottiePlayer";
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
 
 type Item = {
@@ -35,7 +35,7 @@ export function NotificationsMenu({
   const [items, setItems] = useState<Item[]>(initialItems);
   useEffect(() => {
     let mounted = true;
-    fetch(`${apiBase()}/api/notifications`, { headers: authHeader() })
+    apiFetch(`${apiBase()}/api/notifications`, { headers: authHeader() })
       .then((res) => (res.ok ? res.json() : { data: [] }))
       .then((data) => {
         if (!mounted) return;
@@ -63,7 +63,7 @@ export function NotificationsMenu({
 
   const markRead = async (id: string) => {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
-    await fetch(`${apiBase()}/api/notifications/${id}/read`, {
+    await apiFetch(`${apiBase()}/api/notifications/${id}/read`, {
       method: "PATCH",
       headers: authHeader(),
     }).catch(() => undefined);

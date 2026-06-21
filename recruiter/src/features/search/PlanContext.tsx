@@ -7,24 +7,17 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
+import {
+  fetchPlanCatalog,
+  getPlanFromCatalog,
+  FALLBACK_PLAN_CATALOG,
+  type PlanTier,
+  type PlanCatalogResponse,
+} from "@/lib/planCatalog";
 
-export type PlanTier = "Basic" | "Pro" | "Premium";
-
-export const PLAN_QUOTA: Record<PlanTier, number> = {
-  Basic: 30,
-  Pro: 50,
-  Premium: 100,
-};
-
-export const PLAN_JOB_POSTS: Record<PlanTier, number> = {
-  Basic: 5,
-  Pro: 10,
-  Premium: 15,
-};
-
-// JOB_VALIDITY_DAYS is now dynamic per user
+export type { PlanTier };
 
 type Ctx = {
   plan: PlanTier;
@@ -37,8 +30,10 @@ type Ctx = {
   jobPostsRemaining: number;
   jobValidityDays: number;
   isLocked: boolean;
+  isPlanSuspended: boolean;
   consume: () => boolean;
-  // ── New plan billing fields ────────────────────────────────────────────────
+  planCatalog: PlanCatalogResponse;
+  billingCycleDays: number;
   planExpiresAt: string | null;
   pendingPlan: PlanTier | null;
   pendingPlanAt: string | null;
@@ -50,31 +45,38 @@ type Ctx = {
 
 const PlanCtx = createContext<Ctx | null>(null);
 
-const DEFAULT_PRICES: Record<string, number> = {
-  Basic: 5000,
-  Pro: 7500,
-  Premium: 10000,
-};
-
 export function PlanProvider({ children }: { children: ReactNode }) {
+  const [planCatalog, setPlanCatalog] = useState<PlanCatalogResponse>(FALLBACK_PLAN_CATALOG);
   const [plan, setPlan] = useState<PlanTier>("Basic");
   const [used, setUsed] = useState(0);
   const [jobPostsUsed, setJobPostsUsed] = useState(0);
   const [jobValidityDays, setJobValidityDays] = useState(30);
   const [isLocked, setIsLocked] = useState(false);
+  const [isPlanSuspended, setIsPlanSuspended] = useState(false);
 
-  // ── New billing state ──────────────────────────────────────────────────────
   const [planExpiresAt, setPlanExpiresAt] = useState<string | null>(null);
   const [pendingPlan, setPendingPlan] = useState<PlanTier | null>(null);
   const [pendingPlanAt, setPendingPlanAt] = useState<string | null>(null);
   const [daysRemaining, setDaysRemaining] = useState(0);
-  const [planPrices, setPlanPrices] = useState<Record<string, number>>(DEFAULT_PRICES);
+  const [planPrices, setPlanPrices] = useState<Record<string, number>>(
+    FALLBACK_PLAN_CATALOG.planPrices,
+  );
   const [upgradeCostPreview, setUpgradeCostPreview] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    void fetchPlanCatalog()
+      .then((catalog) => {
+        setPlanCatalog(catalog);
+        setPlanPrices(catalog.planPrices);
+      })
+      .catch(() => {
+        // Keep FALLBACK_PLAN_CATALOG values on failure.
+      });
+  }, []);
 
   const fetchPlanData = useCallback(async () => {
     try {
-      // Fetch base user info
-      const authRes = await fetch(`${apiBase()}/api/auth/me`, { headers: authHeader() });
+      const authRes = await apiFetch(`${apiBase()}/api/auth/me`, { headers: authHeader() });
       if (authRes.ok) {
         const data = await authRes.json();
         if (data.user) {
@@ -87,11 +89,13 @@ export function PlanProvider({ children }: { children: ReactNode }) {
           if (data.user.isLocked !== undefined) {
             setIsLocked(data.user.isLocked);
           }
+          if (data.user.isPlanSuspended !== undefined) {
+            setIsPlanSuspended(data.user.isPlanSuspended);
+          }
         }
       }
 
-      // Fetch extended billing info
-      const planRes = await fetch(`${apiBase()}/api/plan/current`, { headers: authHeader() });
+      const planRes = await apiFetch(`${apiBase()}/api/plan/current`, { headers: authHeader() });
       if (planRes.ok) {
         const pdata = await planRes.json();
         setPlanExpiresAt(pdata.planExpiresAt ?? null);
@@ -111,8 +115,9 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   }, [fetchPlanData]);
 
   const value = useMemo<Ctx>(() => {
-    const quota = PLAN_QUOTA[plan];
-    const jobPostsQuota = PLAN_JOB_POSTS[plan];
+    const currentPlan = getPlanFromCatalog(planCatalog, plan);
+    const quota = currentPlan.premiumSearchLimit;
+    const jobPostsQuota = currentPlan.activeJobLimit;
     return {
       plan,
       setPlan: (p) => setPlan(p),
@@ -124,12 +129,14 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       jobPostsRemaining: Math.max(0, jobPostsQuota - jobPostsUsed),
       jobValidityDays,
       isLocked,
+      isPlanSuspended,
       consume: () => {
-        if (used >= quota || isLocked) return false;
+        if (used >= quota || isLocked || isPlanSuspended) return false;
         setUsed((u) => u + 1);
         return true;
       },
-      // Billing fields
+      planCatalog,
+      billingCycleDays: planCatalog.billingCycleDays,
       planExpiresAt,
       pendingPlan,
       pendingPlanAt,
@@ -144,6 +151,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     jobPostsUsed,
     jobValidityDays,
     isLocked,
+    isPlanSuspended,
+    planCatalog,
     planExpiresAt,
     pendingPlan,
     pendingPlanAt,

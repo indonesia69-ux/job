@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-router";
 import { isAuthenticated } from "@/store/authStore";
 import { useEffect } from "react";
-import { apiBase } from "@/lib/api";
+import { apiBase, setUnauthorizedHandler } from "@/lib/api";
 import { toast, Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
@@ -116,9 +116,20 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 import { useSSE } from "@/hooks/useSSE";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 function RootComponent() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   useSSE(); // Enable real-time SSE notifications
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (!pathname.startsWith("/auth")) {
+        navigate({ to: "/auth/login" });
+      }
+    });
+  }, [navigate, pathname]);
 
   useEffect(() => {
     let toastId: string | number | null = null;

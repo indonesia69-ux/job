@@ -27,10 +27,12 @@ export function CvDocument({
   profile: c,
   id,
   className = "",
+  redactContact = false,
 }: {
   profile: FormProfile;
   id?: string;
   className?: string;
+  redactContact?: boolean;
 }) {
   const locationLabel = c.state || c.city;
   const publications = getPublications(c);
@@ -65,12 +67,16 @@ export function CvDocument({
             )}
             <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs opacity-90">
               {c.email && (
-                <span className="inline-flex items-center gap-1">
+                <span
+                  className={`inline-flex items-center gap-1 ${redactContact ? "blur-md select-none" : ""}`}
+                >
                   <Mail className="h-3 w-3" /> {c.email}
                 </span>
               )}
               {c.phone && (
-                <span className="inline-flex items-center gap-1">
+                <span
+                  className={`inline-flex items-center gap-1 ${redactContact ? "blur-md select-none" : ""}`}
+                >
                   <Phone className="h-3 w-3" /> {c.phone}
                 </span>
               )}

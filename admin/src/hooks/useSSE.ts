@@ -3,23 +3,31 @@ import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { apiBase } from "../lib/api";
 import { toast } from "sonner";
 
-export function useSSE() {
+function getAdminToken(): string | null {
+  try {
+    const raw = localStorage.getItem("apronhanger.admin.session");
+    if (!raw) return null;
+    return JSON.parse(raw).token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Connect admin SSE when authenticated; reconnects when `enabled` flips true after login. */
+export function useSSE(enabled: boolean) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    // Determine token retrieval based on portal logic
-    const getToken = () => {
-      try {
-        const raw = localStorage.getItem("apronhanger.admin.session");
-        if (!raw) return null;
-        return JSON.parse(raw).token;
-      } catch {
-        return null;
+    if (!enabled) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
-    };
+      return;
+    }
 
-    const token = getToken();
-    if (!token) return; // Don't connect if not logged in
+    const token = getAdminToken();
+    if (!token) return;
 
     abortControllerRef.current = new AbortController();
 
@@ -33,18 +41,23 @@ export function useSSE() {
         if (res.ok && res.status === 200) {
           console.log("SSE connection opened.");
         } else if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-          // Client-side errors are usually non-retriable:
           throw new Error("SSE Auth failed");
         }
       },
       onmessage(event) {
         if (event.event === "notification") {
           const data = JSON.parse(event.data);
+          if (!data.id) {
+            console.warn("[useSSE] notification event missing id — skipped for dedup safety");
+            return;
+          }
           toast.info(data.title, {
             description: data.message,
           });
-          // Dispatch a custom window event so other components (like NotificationBell) can update
           window.dispatchEvent(new CustomEvent("sse_notification", { detail: data }));
+        } else if (event.event === "job_created") {
+          const data = JSON.parse(event.data);
+          window.dispatchEvent(new CustomEvent("sse_job_created", { detail: data }));
         }
       },
       onclose() {
@@ -52,14 +65,14 @@ export function useSSE() {
       },
       onerror(err) {
         console.error("SSE Error:", err);
-        // Return nothing to auto-retry, or throw to stop retrying
       },
     });
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
     };
-  }, []);
+  }, [enabled]);
 }

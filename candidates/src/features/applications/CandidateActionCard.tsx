@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
 import { toast } from "sonner";
 import {
@@ -31,7 +31,7 @@ export function CandidateActionCard({
   const setStatus = async (status: string, payload: any = {}) => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase()}/api/applications/${application.id}`, {
+      const res = await apiFetch(`${apiBase()}/api/applications/${application.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify({ status, ...payload }),
@@ -54,7 +54,7 @@ export function CandidateActionCard({
       const formData = new FormData();
       Array.from(docs).forEach((file) => formData.append("documents", file));
 
-      const res = await fetch(`${apiBase()}/api/applications/${application.id}/documents`, {
+      const res = await apiFetch(`${apiBase()}/api/applications/${application.id}/documents`, {
         method: "POST",
         headers: authHeader(),
         body: formData,
@@ -78,7 +78,12 @@ export function CandidateActionCard({
         </h4>
         <div className="text-sm text-indigo-800 space-y-1.5 mb-4">
           <p>
-            <strong>Date:</strong> {new Date(application.interviewDate).toLocaleString()}
+            <strong>Date:</strong>{" "}
+            {new Date(application.interviewDate).toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              dateStyle: "medium",
+              timeStyle: "short",
+            })}
           </p>
           <p>
             <strong>Type:</strong> {application.interviewType}

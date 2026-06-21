@@ -1,23 +1,183 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, Bell, ChevronDown, Menu, LogOut } from "lucide-react";
-// import { notifications } from "@/lib/mock-data";
 import { useAuth } from "@/lib/auth-context";
 import { useNavigate } from "@tanstack/react-router";
 import { apiBase, authHeader, apiFetch } from "@/lib/api";
+import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 
 interface TopBarProps {
   onMenuClick: () => void;
 }
 
-const notifications: any[] = [];
+type AdminNotificationItem = {
+  id: string;
+  title: string;
+  message: string;
+  read: boolean;
+  link?: string | null;
+  time: string;
+  createdAt: string;
+};
+
+function formatNotificationTime(createdAt: string | Date | undefined): string {
+  if (!createdAt) return new Date().toLocaleTimeString();
+  const d = typeof createdAt === "string" ? new Date(createdAt) : createdAt;
+  return Number.isNaN(d.getTime()) ? new Date().toLocaleTimeString() : d.toLocaleString();
+}
+
+function apiRowToItem(row: {
+  id: string;
+  title: string;
+  message: string;
+  read?: boolean;
+  link?: string | null;
+  createdAt?: string;
+}): AdminNotificationItem {
+  const createdAt = row.createdAt ?? new Date().toISOString();
+  return {
+    id: row.id,
+    title: row.title,
+    message: row.message,
+    read: Boolean(row.read),
+    link: row.link ?? null,
+    createdAt,
+    time: formatNotificationTime(createdAt),
+  };
+}
+
+/** Merge by id — newer SSE rows overwrite same id without duplicating list entries. */
+function mergeIntoMap(
+  prev: Map<string, AdminNotificationItem>,
+  items: AdminNotificationItem[],
+): Map<string, AdminNotificationItem> {
+  const next = new Map(prev);
+  for (const item of items) {
+    if (!item.id) continue;
+    const existing = next.get(item.id);
+    next.set(item.id, existing ? { ...existing, ...item } : item);
+  }
+  return next;
+}
+
+function sortedNotificationList(map: Map<string, AdminNotificationItem>): AdminNotificationItem[] {
+  return Array.from(map.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+}
 
 export function TopBar({ onMenuClick }: TopBarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notificationMap, setNotificationMap] = useState<Map<string, AdminNotificationItem>>(
+    () => new Map(),
+  );
+
+  const notifications = sortedNotificationList(notificationMap);
+
+  // Initial fetch — hydrates bell before/alongside SSE; deduped by id with live events.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotificationMap(new Map());
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch(`${apiBase()}/api/admin/notifications`, {
+          headers: authHeader(),
+        });
+        if (!res.ok || cancelled) return;
+        const payload = await res.json();
+        const rows = Array.isArray(payload.data) ? payload.data : [];
+        const items = rows.map((row: Parameters<typeof apiRowToItem>[0]) => apiRowToItem(row));
+        setNotificationMap((prev) => mergeIntoMap(prev, items));
+      } catch (err) {
+        console.error("[TopBar] Failed to load notifications:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const handleNotification = (e: Event) => {
+      const data = (e as CustomEvent).detail;
+      if (!data?.id) return;
+      const item = apiRowToItem({
+        id: data.id,
+        title: data.title,
+        message: data.message,
+        read: data.read ?? false,
+        link: data.link,
+        createdAt: data.createdAt,
+      });
+      setNotificationMap((prev) => mergeIntoMap(prev, [item]));
+    };
+    window.addEventListener("sse_notification", handleNotification);
+    return () => window.removeEventListener("sse_notification", handleNotification);
+  }, []);
+
+  const markAsRead = useCallback(async (id: string) => {
+    setNotificationMap((prev) => {
+      const next = new Map(prev);
+      const item = next.get(id);
+      if (item) next.set(id, { ...item, read: true });
+      return next;
+    });
+    try {
+      await apiFetch(`${apiBase()}/api/admin/notifications/${id}/read`, {
+        method: "PATCH",
+        headers: authHeader(),
+      });
+    } catch (err) {
+      console.error("[TopBar] markAsRead failed:", err);
+    }
+  }, []);
+
+  const markAllAsRead = useCallback(async () => {
+    setNotificationMap((prev) => {
+      const next = new Map(prev);
+      next.forEach((item, id) => {
+        next.set(id, { ...item, read: true });
+      });
+      return next;
+    });
+    try {
+      await apiFetch(`${apiBase()}/api/admin/notifications/read-all`, {
+        method: "PATCH",
+        headers: authHeader(),
+      });
+    } catch (err) {
+      console.error("[TopBar] markAllAsRead failed:", err);
+    }
+  }, []);
+
+  const handleNotificationClick = useCallback(
+    (n: AdminNotificationItem) => {
+      if (!n.read) void markAsRead(n.id);
+      if (n.link) {
+        navigate({ to: n.link });
+        setShowNotifications(false);
+      }
+    },
+    [markAsRead, navigate],
+  );
+
+  const notifRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const closeNotif = useCallback(() => setShowNotifications(false), []);
+  const closeProfile = useCallback(() => setShowProfile(false), []);
+
+  useOnClickOutside(notifRef, closeNotif, showNotifications);
+  useOnClickOutside(profileRef, closeProfile, showProfile);
+
   const [searchResults, setSearchResults] = useState<{
     hospitals: any[];
     recruiters: any[];
@@ -174,7 +334,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <div className="relative">
+        <div className="relative" ref={notifRef}>
           <button
             onClick={() => {
               setShowNotifications(!showNotifications);
@@ -191,26 +351,44 @@ export function TopBar({ onMenuClick }: TopBarProps) {
           </button>
           {showNotifications && (
             <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-lg border bg-card shadow-lg">
-              <div className="border-b px-4 py-3">
+              <div className="flex items-center justify-between border-b px-4 py-3">
                 <p className="text-sm font-semibold">Notifications</p>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void markAllAsRead()}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Mark all read
+                  </button>
+                )}
               </div>
               <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 && (
+                  <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                    No notifications yet
+                  </p>
+                )}
                 {notifications.map((n) => (
-                  <div
+                  <button
                     key={n.id}
-                    className={`border-b px-4 py-3 last:border-0 ${!n.read ? "bg-navy-50/50" : ""}`}
+                    type="button"
+                    onClick={() => handleNotificationClick(n)}
+                    className={`w-full border-b px-4 py-3 text-left last:border-0 hover:bg-accent/50 ${
+                      !n.read ? "bg-navy-50/50" : ""
+                    }`}
                   >
                     <p className="text-sm font-medium">{n.title}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
                     <p className="text-xs text-muted-foreground mt-1">{n.time}</p>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           )}
         </div>
 
-        <div className="relative">
+        <div className="relative" ref={profileRef}>
           <button
             onClick={() => {
               setShowProfile(!showProfile);

@@ -2,11 +2,13 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { closeJob, publishDraft } from "@/lib/recruiterData";
 import { useAuth } from "@/store/authStore";
+import { usePlan } from "@/features/search/PlanContext";
 import {
   Banknote,
   Briefcase,
   Edit3,
   EyeOff,
+  AlertCircle,
   MapPin,
   MoreHorizontal,
   Plus,
@@ -43,6 +45,7 @@ function fmtSalaryDisplay(min: number, max: number) {
 
 export function JobsPage() {
   const { user } = useAuth();
+  const { isPlanSuspended } = usePlan();
   const { jobs: JOBS } = Route.useLoaderData();
   const searchQ = Route.useSearch().q || "";
   const router = useRouter();
@@ -188,7 +191,7 @@ export function JobsPage() {
                     {j.status === "Draft" && (
                       <DropdownMenuItem
                         className="text-success"
-                        disabled={publishingId === j.id}
+                        disabled={publishingId === j.id || isPlanSuspended}
                         onClick={() => handlePublishDraft(j.id)}
                       >
                         <Send className="mr-2 h-4 w-4" />
@@ -198,7 +201,7 @@ export function JobsPage() {
                     {j.status !== "Closed" && (
                       <DropdownMenuItem
                         className="text-destructive"
-                        disabled={closingId === j.id}
+                        disabled={closingId === j.id || isPlanSuspended}
                         onClick={() => handleCloseJob(j.id)}
                       >
                         <EyeOff className="mr-2 h-4 w-4" /> Close job
@@ -229,6 +232,16 @@ export function JobsPage() {
                   </span>
                 ))}
               </div>
+
+              {j.status === "Closed" && j.closedReason === "plan_expired" && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11.5px] text-amber-800 flex items-start gap-2">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    Closed automatically due to plan downgrade or expiry. Renew your plan to post a
+                    new job.
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between border-t border-border pt-3">
                 <div className="text-[11px] text-muted-foreground">

@@ -1,17 +1,37 @@
 import logger from '../lib/logger';
+import { formatInterviewDateTime } from '../lib/formatInterviewDate';
+import { parseUtcIsoDateTime } from '../lib/parseUtcIsoDateTime';
+import { validateUploadMagicBytes, PDF_ONLY_DETECTED_MIMES } from '../lib/validateUploadMagicBytes';
 import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
-import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
+import { requireAuth, requireRole, AuthRequest, requireNotPlanSuspended } from '../middleware/auth';
 import { formatApp, parseJobCustomFields, validateCustomFieldResponses, syncFormProfile, safeJsonParse } from '../lib/helpers';
 import { sendOfferLetterEmail } from '../lib/email';
 import multer from 'multer';
+import { wrapMulter } from '../lib/multerErrors';
 import { uploadRawBuffer } from '../lib/cloudinary';
+import { validateCandidateOwnsCv } from '../lib/validateCandidateCvOwnership';
 
 const router = Router();
 
-// ─── Multer for offer-letter PDF upload ──────────────────────────────────────
-const upload = multer({ 
-  storage: multer.memoryStorage(), 
+const ALLOWED_UPLOAD_MIMES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+]);
+
+function validateMime(mimetype: string) {
+  if (!ALLOWED_UPLOAD_MIMES.has(mimetype)) {
+    throw new Error('Unsupported file format. Please upload a PDF, DOCX, JPG, or PNG.');
+  }
+}
+
+// ─── Multer uploads ───────────────────────────────────────────────────────────
+const documentUpload = multer({
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedMimeTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
@@ -20,7 +40,19 @@ const upload = multer({
     } else {
       cb(new Error(`Invalid file type: ${file.mimetype}. Only PDF, JPEG, PNG, and WebP are allowed.`));
     }
-  }
+  },
+});
+
+const offerLetterUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error(`Invalid file type: ${file.mimetype}. Only PDF is allowed for offer letters.`));
+    }
+  },
 });
 
 // ─── Status definitions ───────────────────────────────────────────────────────
@@ -52,7 +84,7 @@ const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
   '*':                         ['DocumentsRequested'],   // doc request can come from ANY status
   'Applied':                   ['Reviewed'],
   'Reviewed':                  ['InterviewScheduled', 'Rejected'],
-  'RescheduleRequested':       ['InterviewScheduled', 'InterviewDeclined', 'Rejected'],
+  'RescheduleRequested':       ['InterviewScheduled', 'InterviewRescheduled', 'InterviewDeclined', 'Rejected'],
   'InterviewAccepted':         ['InterviewCompleted', 'NoShow'],
   'InterviewCompleted':        ['Shortlisted', 'Rejected', 'OnHold', 'NextRound'],
   'NoShow':                    ['Rejected', 'InterviewRescheduled'],
@@ -93,7 +125,7 @@ function validateTransitionPayload(
   targetStatus: AppStatus,
   body: Record<string, unknown>
 ): { ok: true } | { ok: false; error: string } {
-  if (targetStatus === 'InterviewScheduled' || targetStatus === 'NextRound') {
+  if (targetStatus === 'InterviewScheduled' || targetStatus === 'NextRound' || targetStatus === 'InterviewRescheduled') {
     if (!body.interviewDate) return { ok: false, error: 'interviewDate is required' };
     if (!body.interviewType) return { ok: false, error: 'interviewType (Virtual/Physical) is required' };
     if (!body.interviewerName) return { ok: false, error: 'interviewerName is required' };
@@ -101,9 +133,11 @@ function validateTransitionPayload(
       return { ok: false, error: 'meetingLink is required for Virtual interviews' };
     if (body.interviewType === 'Physical' && !body.venue)
       return { ok: false, error: 'venue is required for Physical interviews' };
-    const interviewDate = new Date(String(body.interviewDate));
-    if (Number.isNaN(interviewDate.getTime())) return { ok: false, error: 'interviewDate must be valid' };
-    if (interviewDate.getTime() <= Date.now()) return { ok: false, error: 'Interview date/time must be in the future' };
+    const parsedInterviewDate = parseUtcIsoDateTime(body.interviewDate, 'interviewDate');
+    if (!parsedInterviewDate.ok) return parsedInterviewDate;
+    if (parsedInterviewDate.date.getTime() <= Date.now()) {
+      return { ok: false, error: 'Interview date/time must be in the future' };
+    }
   }
   if (targetStatus === 'RescheduleRequested') {
     if (!body.candidateResponseNote) return { ok: false, error: 'A reason is required to request a reschedule' };
@@ -170,6 +204,30 @@ async function notifyCandidate(
   await createNotification(candidateUserId, title, message, link);
 }
 
+async function notifyInterviewScheduleChange({
+  candidateUserId,
+  isReschedule,
+  date,
+  interviewType,
+  jobRole,
+  link,
+}: {
+  candidateUserId: string | null | undefined;
+  isReschedule: boolean;
+  date: Date | string | null | undefined;
+  interviewType: string | null | undefined;
+  jobRole: string;
+  link?: string;
+}) {
+  const dateStr = date ? formatInterviewDateTime(date) : '';
+  const typeSuffix = interviewType ? ` (${interviewType})` : '';
+  const title = isReschedule ? 'Interview Rescheduled' : 'Interview Scheduled';
+  const message = isReschedule
+    ? `Your interview for ${jobRole} has been rescheduled to ${dateStr}${typeSuffix}.`
+    : `Your interview for ${jobRole} has been scheduled on ${dateStr}${typeSuffix}.`;
+  await notifyCandidate(candidateUserId, title, message, link ?? '/applications');
+}
+
 async function notifyRecruiter(hospitalId: string, title: string, message: string, link?: string) {
   try {
     const recruiters = await prisma.user.findMany({ where: { hospitalId, role: 'RECRUITER' }, select: { id: true } });
@@ -182,6 +240,10 @@ async function notifyRecruiter(hospitalId: string, title: string, message: strin
 // ─── GET /api/applications ────────────────────────────────────────────────────
 router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    if (req.user!.role === 'ADMIN') {
+      res.status(403).json({ error: 'Use admin API routes for application data.' });
+      return;
+    }
     let where: Record<string, unknown> = {};
     if (req.user!.role === 'RECRUITER') {
       const hospitalId = req.user!.hospitalId;
@@ -276,6 +338,10 @@ router.get('/:id/recruiter-cv', requireAuth, requireRole('RECRUITER'), async (re
 // ─── GET /api/applications/:id ────────────────────────────────────────────────
 router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    if (req.user!.role === 'ADMIN') {
+      res.status(403).json({ error: 'Use admin API routes for application data.' });
+      return;
+    }
     const app = await prisma.application.findUnique({
       where: { id: String(req.params.id) },
       include: {
@@ -308,8 +374,15 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
   if (!candidateId) { res.status(400).json({ error: 'No candidate profile linked to your account' }); return; }
   if (!jobId) { res.status(400).json({ error: 'jobId is required' }); return; }
   try {
-    const job = await prisma.job.findUnique({ where: { id: String(jobId) } });
+    const job = await prisma.job.findUnique({
+      where: { id: String(jobId) },
+      include: { hospital: true },
+    });
     if (!job) { res.status(404).json({ error: 'Job not found' }); return; }
+    if (job.hospital.isSuspended) {
+      res.status(403).json({ error: 'This position is no longer accepting applications.' });
+      return;
+    }
     if (job.status === 'Closed') { res.status(400).json({ error: 'This job is no longer accepting applications' }); return; }
     const existing = await prisma.application.findUnique({
       where: { jobId_candidateId: { jobId: String(jobId), candidateId } },
@@ -328,9 +401,14 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
       cvUrl?: string | null; cvCloudinaryId?: string | null;
     } = {};
 
-    if (cvUrl) {
+    if (cvUrl || cvCloudinaryId) {
+      const cvCheck = validateCandidateOwnsCv(candidateId, cvUrl, cvCloudinaryId);
+      if (!cvCheck.ok) {
+        res.status(400).json({ error: cvCheck.error });
+        return;
+      }
       appCv = {
-        cvUrl: String(cvUrl),
+        cvUrl: cvUrl ? String(cvUrl) : null,
         cvCloudinaryId: cvCloudinaryId ? String(cvCloudinaryId) : null,
         uploadedCvName: cvName ? String(cvName) : null,
         uploadedCvMime: cvMime ? String(cvMime) : null,
@@ -409,7 +487,7 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
 
 // ─── PATCH /api/applications/:id ─────────────────────────────────────────────
 router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
-  const { status, ...rest } = req.body as { status: string } & Record<string, unknown>;
+  const { status, currentStatus, ...rest } = req.body as { status: string; currentStatus?: string } & Record<string, unknown>;
   if (!status) { res.status(400).json({ error: 'status is required' }); return; }
 
   const userRole = req.user!.role as 'RECRUITER' | 'CANDIDATE';
@@ -427,10 +505,27 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     });
     if (!existing) { res.status(404).json({ error: 'Application not found' }); return; }
 
+    // Optimistic concurrency for recruiter status updates
+    if (userRole === 'RECRUITER') {
+      if (currentStatus === undefined || currentStatus === null || String(currentStatus).trim() === '') {
+        res.status(400).json({ error: 'currentStatus is required' });
+        return;
+      }
+      if (existing.status !== currentStatus) {
+        res.status(409).json({ error: 'Application status has changed. Please refresh and try again.' });
+        return;
+      }
+    }
+
     // Auth: recruiter must belong to the hospital
     if (userRole === 'RECRUITER') {
       if (!req.user!.hospitalId || existing.job.hospitalId !== req.user!.hospitalId) {
         res.status(403).json({ error: 'Forbidden' }); return;
+      }
+      const user = await prisma.user.findUnique({ where: { id: req.user!.id }, select: { planSuspendedAt: true } });
+      if (user?.planSuspendedAt) {
+        res.status(403).json({ error: 'Your account is suspended due to a plan change. You cannot update applications.', code: 'PLAN_SUSPENDED' });
+        return;
       }
     }
     // Auth: candidate must own the application
@@ -460,12 +555,12 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 
     // Timestamp milestones
     if (status === 'Reviewed') updateData.reviewedAt = new Date();
-    if (status === 'InterviewScheduled' || status === 'NextRound') updateData.interviewScheduledAt = new Date();
+    if (status === 'InterviewScheduled' || status === 'NextRound' || status === 'InterviewRescheduled') updateData.interviewScheduledAt = new Date();
     if (status === 'OfferSent') updateData.offerSentAt = new Date();
     if (status === 'Joined') updateData.joinedAt = new Date();
 
     // ── Interview scheduling fields ───────────────────────────────────────────
-    if (status === 'InterviewScheduled' || status === 'NextRound') {
+    if (status === 'InterviewScheduled' || status === 'NextRound' || status === 'InterviewRescheduled') {
       const newSchedule = {
         interviewDate: rest.interviewDate,
         interviewType: rest.interviewType,
@@ -475,7 +570,10 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
         interviewerEmail: rest.interviewerEmail ?? null,
         interviewNotes: rest.interviewNotes ?? null,
       };
-      updateData.interviewDate = new Date(rest.interviewDate as string);
+      const parsedInterview = parseUtcIsoDateTime(rest.interviewDate, 'interviewDate');
+      if (parsedInterview.ok) {
+        updateData.interviewDate = parsedInterview.date;
+      }
       updateData.interviewType = rest.interviewType;
       updateData.meetingLink = rest.meetingLink ?? null;
       updateData.venue = rest.venue ?? null;
@@ -539,13 +637,27 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 
     switch (finalStatus) {
       case 'InterviewScheduled': {
-        const isReschedule = (existing.status === 'RescheduleRequested' || existing.status === 'InterviewScheduled');
-        const dateStr = updateData.interviewDate ? new Date(updateData.interviewDate as Date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-        const title = isReschedule ? 'Interview Rescheduled' : 'Interview Scheduled';
-        const msg = isReschedule
-          ? `Your interview for ${jobRole} has been rescheduled to ${dateStr}.`
-          : `Your interview for ${jobRole} has been scheduled on ${dateStr} (${updateData.interviewType}).`;
-        await notifyCandidate(candidateUserId, title, msg, '/applications');
+        const isReschedule =
+          existing.status === 'RescheduleRequested' || existing.status === 'InterviewScheduled';
+        await notifyInterviewScheduleChange({
+          candidateUserId,
+          isReschedule,
+          date: updateData.interviewDate as Date | string | null | undefined,
+          interviewType: updateData.interviewType as string | null | undefined,
+          jobRole,
+          link: '/applications',
+        });
+        break;
+      }
+      case 'InterviewRescheduled': {
+        await notifyInterviewScheduleChange({
+          candidateUserId,
+          isReschedule: true,
+          date: updateData.interviewDate as Date | string | null | undefined,
+          interviewType: updateData.interviewType as string | null | undefined,
+          jobRole,
+          link: '/applications',
+        });
         break;
       }
       case 'RescheduleRequested':
@@ -611,12 +723,16 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 // ─── GET /api/applications/:id/documents ─────────────────────────────────────
 router.get('/:id/documents', requireAuth, async (req: AuthRequest, res: Response) => {
   try {
+    if (req.user!.role === 'ADMIN') {
+      res.status(403).json({ error: 'Use admin API routes for application data.' });
+      return;
+    }
     const app = await prisma.application.findUnique({
       where: { id: String(req.params.id) },
       include: { job: true, candidate: true },
     });
     if (!app) { res.status(404).json({ error: 'Application not found' }); return; }
-    if (req.user!.role === 'RECRUITER' && req.user!.hospitalId && app.job.hospitalId !== req.user!.hospitalId) {
+    if (req.user!.role === 'RECRUITER' && (!req.user!.hospitalId || app.job.hospitalId !== req.user!.hospitalId)) {
       res.status(403).json({ error: 'Forbidden' }); return;
     }
     if (req.user!.role === 'CANDIDATE' && app.candidateId !== req.user!.candidateId) {
@@ -635,7 +751,7 @@ router.get('/:id/documents', requireAuth, async (req: AuthRequest, res: Response
 
 // ─── POST /api/applications/:id/documents ────────────────────────────────────
 // Candidate uploads documents in response to a document request
-router.post('/:id/documents', requireAuth, requireRole('CANDIDATE'), upload.array('documents', 15), async (req: AuthRequest, res: Response) => {
+router.post('/:id/documents', requireAuth, requireRole('CANDIDATE'), wrapMulter(documentUpload.array('documents', 15)), async (req: AuthRequest, res: Response) => {
   try {
     const files = req.files as Express.Multer.File[];
     if (!files || files.length === 0) { res.status(400).json({ error: 'No documents provided' }); return; }
@@ -651,6 +767,13 @@ router.post('/:id/documents', requireAuth, requireRole('CANDIDATE'), upload.arra
     const names: string[] = Array.isArray(req.body.names) ? req.body.names : (req.body.name ? [req.body.name] : []);
 
     const timestamp = Date.now();
+    for (const file of files) {
+      validateMime(file.mimetype);
+      if (!(await validateUploadMagicBytes(file.buffer))) {
+        res.status(400).json({ error: 'Invalid file type.' });
+        return;
+      }
+    }
     const uploadPromises = files.map((file, i) => {
       const publicId = `app_${app.id}_doc_${timestamp}_${i}`;
       return uploadRawBuffer(file.buffer, 'applications/documents', publicId).then(result => ({ file, result, i }));
@@ -692,17 +815,21 @@ router.post('/:id/documents', requireAuth, requireRole('CANDIDATE'), upload.arra
 
 // ─── POST /api/applications/:id/offer-letter ─────────────────────────────────
 // Recruiter uploads offer letter PDF to Cloudinary, returns URL
-router.post('/:id/offer-letter', requireAuth, requireRole('RECRUITER'), upload.single('offerLetter'), async (req: AuthRequest, res: Response) => {
+router.post('/:id/offer-letter', requireAuth, requireRole('RECRUITER'), requireNotPlanSuspended, wrapMulter(offerLetterUpload.single('offerLetter')), async (req: AuthRequest, res: Response) => {
   try {
     const file = req.file;
     if (!file) { res.status(400).json({ error: 'No offer letter file provided' }); return; }
+    if (!(await validateUploadMagicBytes(file.buffer, PDF_ONLY_DETECTED_MIMES))) {
+      res.status(400).json({ error: 'Invalid file type. Only PDF is allowed for offer letters.' });
+      return;
+    }
 
     const app = await prisma.application.findUnique({
       where: { id: String(req.params.id) },
       include: { job: true },
     });
     if (!app) { res.status(404).json({ error: 'Application not found' }); return; }
-    if (req.user!.hospitalId && app.job.hospitalId !== req.user!.hospitalId) {
+    if (!req.user!.hospitalId || app.job.hospitalId !== req.user!.hospitalId) {
       res.status(403).json({ error: 'Forbidden' }); return;
     }
 
@@ -728,6 +855,143 @@ router.post('/:id/offer-letter', requireAuth, requireRole('RECRUITER'), upload.s
   } catch (error: any) {
     logger.error(error);
     res.status(500).json({ error: error.message || 'Failed to upload offer letter' });
+  }
+});
+
+// ─── R6: Serve uploaded CV — recruiter-only, ownership-gated ─────────────────
+function isAllowedCloudinaryUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && parsed.hostname.endsWith('.cloudinary.com');
+  } catch {
+    return false;
+  }
+}
+
+function assertStoredCvOwnedByCandidate(
+  candidateId: string,
+  cvUrl: string | null | undefined,
+  cvCloudinaryId: string | null | undefined,
+): { ok: true } | { ok: false; error: string } {
+  if (!cvUrl && !cvCloudinaryId) {
+    return { ok: false, error: 'No uploaded CV for this application.' };
+  }
+  const ownership = validateCandidateOwnsCv(candidateId, cvUrl, cvCloudinaryId);
+  if (!ownership.ok) {
+    return ownership;
+  }
+  if (cvUrl && !isAllowedCloudinaryUrl(cvUrl)) {
+    return { ok: false, error: 'Invalid CV storage URL' };
+  }
+  return { ok: true };
+}
+
+// GET /api/applications/:applicationId/uploaded-cv
+router.get('/:applicationId/uploaded-cv', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+  try {
+    const { applicationId } = req.params;
+    const recruiterId = req.user!.id;
+    const hospitalId  = req.user!.hospitalId;
+
+    if (!hospitalId) {
+      res.status(403).json({ error: 'No hospital associated with this recruiter account' });
+      return;
+    }
+
+    // Verify the application exists AND belongs to a job posted by this recruiter's hospital
+    const application = await prisma.application.findUnique({
+      where: { id: String(applicationId) },
+      include: {
+        job: { select: { hospitalId: true } },
+        candidate: {
+          select: {
+            uploadedCvMime: true,
+            uploadedCvName: true,
+            cvUrl: true,
+            cvCloudinaryId: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      res.status(404).json({ error: 'Application not found' });
+      return;
+    }
+
+    // Ownership check: the job must belong to the recruiter's hospital
+    if (application.job.hospitalId !== hospitalId) {
+      res.status(403).json({ error: 'You do not have access to this application' });
+      return;
+    }
+
+    // Only uploaded CVs are served through this route
+    if (application.cvSource !== 'upload') {
+      res.status(404).json({ error: 'No uploaded CV for this application — candidate used the structured profile.' });
+      return;
+    }
+
+    const cvData = application.uploadedCvData;
+    const cvMime = application.uploadedCvMime ?? application.candidate?.uploadedCvMime ?? 'application/pdf';
+    const cvName = application.uploadedCvName ?? application.candidate?.uploadedCvName ?? 'cv.pdf';
+    const cvUrl = application.cvUrl ?? application.candidate?.cvUrl;
+    const cvCloudinaryId = application.cvCloudinaryId ?? application.candidate?.cvCloudinaryId;
+
+    // Audit log: security-sensitive file access
+    logger.info(`[cv-access] recruiter=${recruiterId} hospital=${hospitalId} application=${applicationId} file=${cvName}`);
+
+    if (cvData) {
+      // Strip optional data-URI prefix (e.g. "data:application/pdf;base64,")
+      const base64 = cvData.includes(',') ? cvData.split(',')[1] : cvData;
+      const buffer = Buffer.from(base64, 'base64');
+
+      res.set({
+        'Content-Type': cvMime,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(cvName)}"`,
+        'Content-Length': buffer.length,
+        'Cache-Control': 'private, no-store',
+      });
+      res.status(200).send(buffer);
+      return;
+    }
+
+    // Cloudinary fallback — candidate upload flow stores cvUrl, not base64
+    if (cvUrl || cvCloudinaryId) {
+      const storedCvCheck = assertStoredCvOwnedByCandidate(
+        application.candidateId,
+        cvUrl,
+        cvCloudinaryId,
+      );
+      if (!storedCvCheck.ok) {
+        res.status(400).json({ error: storedCvCheck.error });
+        return;
+      }
+      if (!cvUrl) {
+        res.status(404).json({ error: 'Uploaded CV URL not found for this application' });
+        return;
+      }
+
+      const cloudRes = await fetch(cvUrl);
+      if (!cloudRes.ok) {
+        res.status(502).json({ error: 'Failed to retrieve CV from storage' });
+        return;
+      }
+
+      const buffer = Buffer.from(await cloudRes.arrayBuffer());
+      res.set({
+        'Content-Type': cvMime,
+        'Content-Disposition': `attachment; filename="${encodeURIComponent(cvName)}"`,
+        'Content-Length': buffer.length,
+        'Cache-Control': 'private, no-store',
+      });
+      res.status(200).send(buffer);
+      return;
+    }
+
+    res.status(404).json({ error: 'Uploaded CV data not found for this application' });
+  } catch (error) {
+    logger.error(error);
+    res.status(500).json({ error: 'Failed to retrieve uploaded CV' });
   }
 });
 

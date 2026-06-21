@@ -5,10 +5,20 @@ import { requireAdmin, AdminAuthRequest } from '../../middleware/auth';
 
 const router = Router();
 
+function monthRange(base: Date, offsetFromEnd: number) {
+  const d = new Date(base.getFullYear(), base.getMonth() - (5 - offsetFromEnd), 1);
+  return {
+    label: d.toLocaleString('default', { month: 'short' }),
+    start: new Date(d.getFullYear(), d.getMonth(), 1),
+    end: new Date(d.getFullYear(), d.getMonth() + 1, 1),
+  };
+}
+
 // GET /api/admin/stats
 router.get('/stats', requireAdmin, async (req: AdminAuthRequest, res: Response) => {
   try {
-    const sixMonthsAgo = new Date(new Date().setMonth(new Date().getMonth() - 5));
+    const now = new Date();
+    const months = Array.from({ length: 6 }, (_, i) => monthRange(now, i));
 
     const [
       totalHospitals,
@@ -23,13 +33,8 @@ router.get('/stats', requireAdmin, async (req: AdminAuthRequest, res: Response) 
       revenueResult,
       flaggedJobs,
       flaggedApplications,
-      recentJobs,
-      recentCandidates,
-      recentApplications,
-      recentHospitals,
-      recentRevenue,
       jobDistribution,
-      recentActivityLogs
+      recentActivityLogs,
     ] = await Promise.all([
       prisma.hospital.count({ where: { deletedAt: null } }),
       prisma.user.count({ where: { role: 'RECRUITER', deletedAt: null } }),
@@ -43,12 +48,6 @@ router.get('/stats', requireAdmin, async (req: AdminAuthRequest, res: Response) 
       prisma.planChangeLog.aggregate({ _sum: { amountPaid: true }, where: { paymentStatus: 'Paid' } }),
       prisma.job.findMany({ where: { isFlagged: true }, include: { hospital: true } }),
       prisma.application.findMany({ where: { isFlagged: true }, include: { job: true, candidate: true } }),
-      // Fetch recent records for trend calculation
-      prisma.job.findMany({ where: { createdAt: { gte: sixMonthsAgo } }, select: { createdAt: true } }),
-      prisma.candidate.findMany({ where: { createdAt: { gte: sixMonthsAgo } }, select: { createdAt: true } }),
-      prisma.application.findMany({ where: { appliedOn: { gte: sixMonthsAgo } }, select: { appliedOn: true } }),
-      prisma.hospital.findMany({ where: { submittedAt: { gte: sixMonthsAgo }, deletedAt: null }, select: { submittedAt: true } }),
-      prisma.planChangeLog.findMany({ where: { paymentStatus: 'Paid', effectiveAt: { gte: sixMonthsAgo } }, select: { effectiveAt: true, amountPaid: true } }),
       prisma.job.groupBy({ by: ['category'], _count: { id: true } }),
       prisma.activityLog.findMany({
         orderBy: { createdAt: 'desc' },
@@ -57,32 +56,31 @@ router.get('/stats', requireAdmin, async (req: AdminAuthRequest, res: Response) 
       }),
     ]);
 
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const d = new Date();
-      d.setMonth(d.getMonth() - (5 - i));
-      return { label: d.toLocaleString('default', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() };
-    });
-
-    const monthlyTrend = months.map(m => {
-      return {
+    const monthlyTrend = await Promise.all(
+      months.map(async (m) => ({
         name: m.label,
-        jobs: recentJobs.filter(j => j.createdAt.getMonth() === m.month && j.createdAt.getFullYear() === m.year).length,
-        applications: recentApplications.filter(a => a.appliedOn.getMonth() === m.month && a.appliedOn.getFullYear() === m.year).length,
-      };
-    });
+        jobs: await prisma.job.count({ where: { createdAt: { gte: m.start, lt: m.end } } }),
+        applications: await prisma.application.count({ where: { appliedOn: { gte: m.start, lt: m.end } } }),
+      })),
+    );
 
-    const userGrowth = months.map(m => {
-      return {
+    const userGrowth = await Promise.all(
+      months.map(async (m) => ({
         name: m.label,
-        candidates: recentCandidates.filter(c => c.createdAt.getMonth() === m.month && c.createdAt.getFullYear() === m.year).length,
-        hospitals: recentHospitals.filter(h => h.submittedAt && h.submittedAt.getMonth() === m.month && h.submittedAt.getFullYear() === m.year).length,
-      };
-    });
+        candidates: await prisma.candidate.count({ where: { createdAt: { gte: m.start, lt: m.end } } }),
+        hospitals: await prisma.hospital.count({ where: { submittedAt: { gte: m.start, lt: m.end }, deletedAt: null } }),
+      })),
+    );
 
-    const revenueTrend = months.map(m => {
-      const rev = recentRevenue.filter(r => r.effectiveAt.getMonth() === m.month && r.effectiveAt.getFullYear() === m.year).reduce((sum, r) => sum + (r.amountPaid || 0), 0);
-      return { name: m.label, revenue: rev };
-    });
+    const revenueTrend = await Promise.all(
+      months.map(async (m) => {
+        const rev = await prisma.planChangeLog.aggregate({
+          where: { paymentStatus: 'Paid', effectiveAt: { gte: m.start, lt: m.end } },
+          _sum: { amountPaid: true },
+        });
+        return { name: m.label, revenue: rev._sum.amountPaid || 0 };
+      }),
+    );
 
     const roleDistribution = jobDistribution.map(d => ({ name: d.category || 'Other', value: d._count.id }));
 

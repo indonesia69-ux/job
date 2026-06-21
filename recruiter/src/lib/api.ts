@@ -13,3 +13,22 @@ export function apiBase(): string {
   }
   return configured;
 }
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void) {
+  unauthorizedHandler = handler;
+}
+
+export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init);
+  if (res.status === 401) {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : "";
+    if (url && !url.includes("/auth")) {
+      const { logout } = await import("@/store/authStore");
+      logout();
+      unauthorizedHandler?.();
+    }
+  }
+  return res;
+}

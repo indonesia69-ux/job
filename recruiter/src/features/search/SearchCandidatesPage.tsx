@@ -32,7 +32,7 @@ import { type Candidate } from "@/lib/mock";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { CandidatePanel } from "@/features/applicants/CandidatePanel";
 import { CvDialog } from "@/features/applicants/CvDialog";
-import { usePlan, PLAN_QUOTA, type PlanTier } from "./PlanContext";
+import { usePlan, type PlanTier } from "./PlanContext";
 import { searchCandidates } from "@/lib/recruiterData";
 
 // Doctor degrees eligible for Premium Search
@@ -825,5 +825,4 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-export { PLAN_QUOTA };
 export type { PlanTier };

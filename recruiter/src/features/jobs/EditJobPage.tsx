@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { Save } from "lucide-react";
+import { Save, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { usePlan } from "@/features/search/PlanContext";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import { validateCustomFieldsForPost, type JobCustomField } from "@/lib/jobCusto
 import { updateJob } from "@/lib/recruiterData";
 import { Route } from "@/routes/_app.jobs.$jobId.edit";
 
-const STATUS_OPTIONS = ["Active", "Draft", "Closed"] as const;
+const ALL_STATUS_OPTIONS = ["Active", "Draft", "Closed"] as const;
 const TYPE_OPTIONS = ["Full-time", "Part-time", "Locum"] as const;
 
 export function EditJobPage() {
@@ -38,6 +39,7 @@ export function EditJobPage() {
   const [city, setCity] = useState(job.city || "");
   const [type, setType] = useState(job.type || "Full-time");
   const [status, setStatus] = useState(job.status || "Active");
+  const [statusTouched, setStatusTouched] = useState(false);
   const [salaryMin, setSalaryMin] = useState(String(job.salaryMin ?? ""));
   const [salaryMax, setSalaryMax] = useState(String(job.salaryMax ?? ""));
   const [experienceMin, setExperienceMin] = useState(String(job.experienceMin ?? ""));
@@ -53,6 +55,11 @@ export function EditJobPage() {
   );
   const [fieldErrors, setFieldErrors] = useState<CreateJobFieldErrors>({});
   const [saving, setSaving] = useState(false);
+  const { isPlanSuspended } = usePlan();
+
+  useEffect(() => {
+    if (!statusTouched) setStatus(job.status || "Active");
+  }, [job.status, statusTouched]);
 
   const hospitalName = useMemo(
     () => (typeof job.hospital === "string" ? job.hospital : "Your hospital"),
@@ -127,6 +134,16 @@ export function EditJobPage() {
 
   return (
     <form className="mx-auto w-full max-w-[980px] space-y-6" onSubmit={handleSubmit}>
+      {isPlanSuspended && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-[13px] text-destructive flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            Your account is currently suspended (read-only mode). You cannot edit jobs until you
+            renew your plan.
+          </span>
+        </div>
+      )}
+
       <div>
         <h1 className="font-display text-[28px] font-semibold tracking-tight">Edit job</h1>
         <p className="mt-1 text-[14px] text-muted-foreground">{hospitalName}</p>
@@ -210,12 +227,22 @@ export function EditJobPage() {
             />
           </Field>
           <Field label="Status" required>
-            <Select value={status} onValueChange={setStatus}>
+            <Select
+              value={status}
+              onValueChange={(val) => {
+                setStatus(val);
+                setStatusTouched(true);
+              }}
+            >
               <SelectTrigger className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
+                {ALL_STATUS_OPTIONS.filter((option) => {
+                  if (option === "Draft") return job.status === "Draft";
+                  if (option === "Active" && job.closedReason === "plan_expired") return false;
+                  return true;
+                }).map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
@@ -227,10 +254,20 @@ export function EditJobPage() {
             <Input
               value={tagsText}
               onChange={(e) => setTagsText(e.target.value)}
-              placeholder="ICU, Night shift"
+              placeholder="e.g. ICU, Night Shift (comma separated)"
               className="h-11"
             />
           </Field>
+
+          {job.closedReason === "plan_expired" && (
+            <div className="md:col-span-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800 flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <span>
+                This job was closed automatically because your plan expired or downgraded. You
+                cannot reactivate it. Please post a new job instead.
+              </span>
+            </div>
+          )}
           <div className="md:col-span-2">
             <Field label="Requirements">
               <Textarea
@@ -265,7 +302,7 @@ export function EditJobPage() {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={saving}>
+          <Button type="submit" disabled={saving || isPlanSuspended}>
             {saving ? (
               <LottiePlayer src="/loading_state.json" loop className="mr-1.5 h-7 w-7" />
             ) : (

@@ -24,6 +24,7 @@ function Calendar({
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      pagedNavigation={true}
       className={cn(
         "bg-background group/calendar p-3 [--cell-size:2.25rem]",
         "[[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",

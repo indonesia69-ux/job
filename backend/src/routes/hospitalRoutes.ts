@@ -1,7 +1,7 @@
 import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
+import { requireAuth, requireRole, AuthRequest, requireNotPlanSuspended } from '../middleware/auth';
 import { formatHospital } from '../lib/helpers';
 
 const router = Router();
@@ -27,7 +27,7 @@ router.get('/me', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest
 });
 
 // PUT /api/hospitals/me
-router.put('/me', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+router.put('/me', requireAuth, requireRole('RECRUITER'), requireNotPlanSuspended, async (req: AuthRequest, res: Response) => {
   try {
     const hospitalId = req.user!.hospitalId;
     if (!hospitalId) {

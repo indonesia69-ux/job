@@ -15,6 +15,7 @@ import { VerifiedBadge } from "@/components/common/VerifiedBadge";
 import { JobCard } from "@/components/jobs/JobCard";
 import { formatExp, formatLPA } from "@/lib/format";
 import { isHtmlContent } from "@/lib/renderHtml";
+import DOMPurify from "dompurify";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
 export const Route = createFileRoute("/jobs/$jobId")({
@@ -225,6 +226,12 @@ function JobDetails() {
             <p className="mt-3 text-center text-[11px] text-muted-foreground">
               Salary disclosed by hospital · Verified
             </p>
+            {job.applicants > 0 && (
+              <p className="mt-1 text-center text-[11px] text-muted-foreground">
+                🧑‍⚕️ {job.applicants} {job.applicants === 1 ? "person has" : "people have"} already
+                applied
+              </p>
+            )}
           </div>
 
           <div className="rounded-2xl border bg-card p-5 shadow-soft">
@@ -282,7 +289,7 @@ function JobDescriptionContent({ html }: { html: string }) {
     return (
       <div
         className="text-sm leading-relaxed text-foreground/80 [&_a]:text-brand [&_a]:underline [&_em]:italic [&_strong]:font-semibold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
-        dangerouslySetInnerHTML={{ __html: html }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
       />
     );
   }

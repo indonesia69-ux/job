@@ -4,6 +4,7 @@ import {
   HeadContent,
   Scripts,
   Link,
+  useNavigate,
   useRouterState,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
@@ -14,7 +15,7 @@ import { TopNav } from "@/components/layout/TopNav";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
 import { isAuthenticated } from "@/store/authStore";
-import { apiBase } from "@/lib/api";
+import { apiBase, setUnauthorizedHandler } from "@/lib/api";
 import { toast } from "sonner";
 
 import { LottiePlayer } from "@/components/common/LottiePlayer";
@@ -117,9 +118,18 @@ import { useSSE } from "@/hooks/useSSE";
 
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const isFullBleed = pathname.startsWith("/auth");
 
   useSSE(); // Enable real-time SSE notifications
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (!pathname.startsWith("/auth")) {
+        navigate({ to: "/auth" });
+      }
+    });
+  }, [navigate, pathname]);
 
   useEffect(() => {
     if (isAuthenticated()) {

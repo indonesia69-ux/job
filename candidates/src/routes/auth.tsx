@@ -121,6 +121,7 @@ function AuthPage() {
           const msg = loginErrorMessage(res.status, data.error);
           setFormError(msg);
           toast.error(msg);
+          setLoading(false);
           return;
         }
         setSignupDraft(draft);
@@ -142,12 +143,14 @@ function AuthPage() {
         const msg = loginErrorMessage(res.status, data.error);
         setFormError(msg);
         toast.error(msg);
+        setLoading(false);
         return;
       }
       const roleMsg = rolePortalMismatchMessage(data.user?.role, "candidate");
       if (roleMsg) {
         setFormError(roleMsg);
         toast.error(roleMsg);
+        setLoading(false);
         return;
       }
       // Wipe any stale profile from a previous user BEFORE saving the new token.

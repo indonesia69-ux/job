@@ -1,4 +1,5 @@
 import logger from '../lib/logger';
+import { validateUploadMagicBytes } from '../lib/validateUploadMagicBytes';
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
@@ -38,6 +39,10 @@ router.post('/cv', requireAuth, requireRole('CANDIDATE'), upload.single('cv'), a
     }
     
     validateMime(file.mimetype);
+    if (!(await validateUploadMagicBytes(file.buffer))) {
+      res.status(400).json({ error: 'Invalid file type.' });
+      return;
+    }
     
     const candidateId = req.user!.candidateId;
     if (!candidateId) {
@@ -119,6 +124,10 @@ router.post('/documents', requireAuth, requireRole('CANDIDATE'), upload.array('d
     
     for (const file of files) {
       validateMime(file.mimetype);
+      if (!(await validateUploadMagicBytes(file.buffer))) {
+        res.status(400).json({ error: 'Invalid file type.' });
+        return;
+      }
     }
     
     const candidateId = req.user!.candidateId;
@@ -162,6 +171,10 @@ router.post('/document', requireAuth, requireRole('RECRUITER'), upload.single('d
     }
     
     validateMime(file.mimetype);
+    if (!(await validateUploadMagicBytes(file.buffer))) {
+      res.status(400).json({ error: 'Invalid file type.' });
+      return;
+    }
 
     const { hospitalId, type } = req.body;
     if (!hospitalId) {

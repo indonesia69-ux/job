@@ -1,5 +1,7 @@
 import jwt from 'jsonwebtoken';
 import prisma from './prisma';
+import { BILLING_CYCLE_DAYS } from '../config/plans';
+import type { UserJwtPayload } from '../middleware/auth';
 
 // ─── JSON helpers ────────────────────────────────────────────────────────────
 
@@ -53,7 +55,7 @@ export function getHospitalValidity(hospital: {
     if (!start) return { isLocked: true, daysRemaining: 0 };
 
     expirationDate = new Date(start);
-    expirationDate.setDate(expirationDate.getDate() + 30);
+    expirationDate.setDate(expirationDate.getDate() + BILLING_CYCLE_DAYS);
   }
 
   const now = new Date();
@@ -318,7 +320,9 @@ export function validateCustomFieldResponses(
       (typeof raw === 'string' && raw.trim() === '');
     if (field.type === 'checkbox') {
       const val = raw === true || raw === 'true' || raw === '1' || raw === 1;
-      if (field.required && !val) {
+      // 'false' means the candidate answered "No" — that IS a valid response.
+      // Only treat as unanswered when raw is completely absent (undefined/null).
+      if (field.required && (raw === undefined || raw === null)) {
         return { ok: false, error: `"${field.label}" is required` };
       }
       normalized[field.id] = val;
@@ -368,12 +372,19 @@ export function computeJobMatch(job: any, profile: any): number {
   return Math.min(98, Math.max(52, score));
 }
 
-export const formatJob = (job: any, profile?: any) => ({
+export const formatJob = (job: any, profile?: any, options?: { redactPosterEmail?: boolean }) => ({
   ...job,
   hospital: job.hospital?.name ?? job.hospital ?? 'Unknown Hospital',
   hospitalVerified: job.hospital?.verified ?? false,
   hospitalAbout: job.hospital?.about ?? '',
-  postedBy: job.postedBy ? { id: job.postedBy.id, name: job.postedBy.name, email: job.postedBy.email } : null,
+  postedBy: job.postedBy
+    ? {
+        id: job.postedBy.id,
+        name: job.postedBy.name,
+        ...(options?.redactPosterEmail ? {} : { email: job.postedBy.email }),
+      }
+    : null,
+  closedReason: job.closedReason,
   tags: safeJsonParse(job.tags, []),
   responsibilities: safeJsonParse(job.responsibilities, []),
   requirements: safeJsonParse(job.requirements, []),
@@ -391,12 +402,17 @@ export const formatApp = (app: any, options?: { redactCandidateContact?: boolean
         cvUrl: null,
         cvCloudinaryId: null,
         uploadedCvData: null,
+        interviewerEmail: null,
       }
     : {}),
-  customFieldResponses: safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
+  customFieldResponses: options?.redactCandidateContact
+    ? ({} as Record<string, unknown>)
+    : safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
   interviewHistory: safeJsonParse(app.interviewHistory, null),
   requestedDocumentList: safeJsonParse(app.requestedDocumentList, [] as string[]),
-  supportingDocuments: safeJsonParse(app.supportingDocuments, []),
+  supportingDocuments: options?.redactCandidateContact
+    ? []
+    : safeJsonParse(app.supportingDocuments, []),
   candidate: formatCandidate(app.candidate, { redactContact: options?.redactCandidateContact }),
   job: app.job
     ? {
@@ -407,50 +423,14 @@ export const formatApp = (app: any, options?: { redactCandidateContact?: boolean
     : app.job,
 });
 
-// ─── Plan limits ─────────────────────────────────────────────────────────────
-
-export const PLAN_RECRUITER_LIMITS: Record<string, number> = {
-  Basic:   3,
-  Pro:     10,
-  Premium: 20,
-};
-
-export const PLAN_JOB_LIMITS: Record<string, number> = {
-  Basic: 5,
-  Pro: 10,
-  Premium: 15,
-};
-
-export const PLAN_SEARCH_LIMITS: Record<string, number> = {
-  Basic: 30,
-  Pro: 50,
-  Premium: 100,
-};
-
-export function getRecruiterLimit(plan: string): number {
-  return PLAN_RECRUITER_LIMITS[plan] ?? 3;
-}
-
-export function getJobLimit(plan: string): number {
-  return PLAN_JOB_LIMITS[plan] ?? 5;
-}
-
-export function getSearchLimit(plan: string): number {
-  return PLAN_SEARCH_LIMITS[plan] ?? 30;
-}
-
-export function computeVisibilityEndsAt(plan: string): Date {
-  const now = new Date();
-  if (plan === 'Pro') {
-    now.setDate(now.getDate() + 21); // 3 weeks
-  } else if (plan === 'Premium') {
-    now.setDate(now.getDate() + 30); // 1 month
-  } else {
-    // Basic or fallback
-    now.setTime(now.getTime() + 17.5 * 24 * 60 * 60 * 1000); // 17.5 days
-  }
-  return now;
-}
+export {
+  BILLING_CYCLE_DAYS,
+  DEFAULT_PLAN_TIER,
+  computeVisibilityEndsAt,
+  getJobLimit,
+  getRecruiterLimit,
+  getSearchLimit,
+} from '../config/plans';
 
 export async function ensureUsageReset(prisma: any, user: any) {
   if (!user || user.role !== 'RECRUITER') return user;
@@ -474,14 +454,30 @@ export async function ensureUsageReset(prisma: any, user: any) {
 
 // ─── JWT helper (for candidateId lookup in public routes) ────────────────────
 
-export function extractCandidatePayload(
+export async function extractCandidatePayload(
   authHeader: string | undefined,
   secret: string,
-): { candidateId: string; role: string } | null {
+): Promise<{ candidateId: string; role: string } | null> {
   if (!authHeader?.startsWith('Bearer ')) return null;
   try {
-    const payload = jwt.verify(authHeader.slice(7), secret) as any;
+    const payload = jwt.verify(authHeader.slice(7), secret) as UserJwtPayload;
     if (payload.role !== 'CANDIDATE' || !payload.candidateId) return null;
+
+    // Same revocation/suspension checks as requireAuth — fail closed → treat as unauthenticated
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: {
+        tokenVersion: true,
+        isSuspended: true,
+        deletedAt: true,
+        hospital: { select: { isSuspended: true, deletedAt: true } },
+      },
+    });
+    if (!user) return null;
+    if (user.tokenVersion !== (payload.tokenVersion ?? 0)) return null;
+    if (user.isSuspended || user.deletedAt) return null;
+    if (user.hospital && (user.hospital.isSuspended || user.hospital.deletedAt)) return null;
+
     return { candidateId: payload.candidateId, role: payload.role };
   } catch {
     return null;

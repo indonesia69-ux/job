@@ -55,8 +55,9 @@ const prisma = basePrisma.$extends({
       },
       async createMany({ args, query }) {
         const result = await query(args);
+        // createMany does not return row ids — callers needing SSE dedup must use create() instead.
         const dataArray = Array.isArray(args.data) ? args.data : [args.data];
-        dataArray.forEach(data => {
+        dataArray.forEach((data) => {
           sseManager.broadcastToAdmins('notification', {
             title: data.title,
             message: data.message,

@@ -76,4 +76,6 @@ export function useAuth() {
   return ctx;
 }
 
-export const DEMO_CREDENTIALS = { email: "admin@apronhanger.in", password: "admin123" };
+export const DEMO_CREDENTIALS = import.meta.env.DEV
+  ? { email: "admin@apronhanger.in", password: "admin123" }
+  : { email: "", password: "" };

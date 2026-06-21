@@ -5,6 +5,7 @@ import { PageLoader } from "@/components/common/PageLoader";
 
 export const Route = createFileRoute("/_app/jobs/$jobId/edit")({
   loader: ({ params }) => loadJob(params.jobId).then((job) => ({ job })),
+  staleTime: 0,
   pendingComponent: PageLoader,
   head: () => ({
     meta: [

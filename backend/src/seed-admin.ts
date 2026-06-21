@@ -14,7 +14,7 @@
  * Required env vars (set in .env before running):
  *   ADMIN_NAME     — Display name for the admin account
  *   ADMIN_EMAIL    — Login email for the admin
- *   ADMIN_PASSWORD — Plain-text password (will be hashed with bcrypt, cost 12)
+ *   ADMIN_PASSWORD — Plain-text password (will be hashed with bcrypt, cost 10)
  */
 
 import dotenv from 'dotenv';
@@ -56,7 +56,7 @@ async function main() {
   console.log(`   Name:  ${name}`);
   console.log(`   Email: ${email}\n`);
 
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await bcrypt.hash(password, 10);
 
   const existing = await prisma.adminUser.findUnique({ where: { email } });
 

@@ -22,6 +22,16 @@ export const Route = createFileRoute("/recruiters_/$id")({
   component: RecruiterDetailsPage,
 });
 
+function getRecruiterPortalUrl(): string | null {
+  const configured = import.meta.env.VITE_RECRUITER_URL?.trim() || "";
+  if (configured) return configured;
+  if (import.meta.env.PROD) {
+    console.error("VITE_RECRUITER_URL is required for production impersonation links.");
+    return null;
+  }
+  return "http://localhost:8081";
+}
+
 function RecruiterDetailsPage() {
   const { id } = Route.useParams();
   const router = useRouter();
@@ -177,8 +187,11 @@ function RecruiterDetailsPage() {
                   return;
                 try {
                   const result = await store.impersonateUser(recruiter.id);
-                  const recruiterUrl =
-                    import.meta.env.VITE_RECRUITER_URL || "http://localhost:8081";
+                  const recruiterUrl = getRecruiterPortalUrl();
+                  if (!recruiterUrl) {
+                    toast.error("Recruiter URL not configured");
+                    return;
+                  }
                   const url = `${recruiterUrl}/impersonate?token=${encodeURIComponent(result.token)}`;
                   const popup = window.open(url, "_blank");
                   if (!popup) {

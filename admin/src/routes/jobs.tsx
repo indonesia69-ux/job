@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Eye, Trash2, Flag, Ban, CheckCircle, Search } from "lucide-react";
+import { Eye, Trash2, Flag, Ban, CheckCircle, Search, RefreshCw } from "lucide-react";
 import { useAdminStore } from "@/lib/admin-store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { AdminEmptyState as EmptyState } from "@/components/common/EmptyState";
 
@@ -15,6 +15,40 @@ function JobsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [flagAnimating, setFlagAnimating] = useState<Set<string>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
+
+  // A5: re-fetch fresh data every time the jobs page is mounted
+  useEffect(() => {
+    store.refreshAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // A5 Phase 1: refresh when admin returns to this tab/window (fallback if SSE is down)
+  useEffect(() => {
+    const refreshOnReturn = () => {
+      if (document.visibilityState === "visible") {
+        void store.refreshAll();
+      }
+    };
+    const onWindowFocus = () => {
+      void store.refreshAll();
+    };
+    document.addEventListener("visibilitychange", refreshOnReturn);
+    window.addEventListener("focus", onWindowFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+      window.removeEventListener("focus", onWindowFocus);
+    };
+  }, [store]);
+
+  // A5 Phase 2: live refresh when a recruiter publishes a job (admin SSE channel)
+  useEffect(() => {
+    const onJobCreated = () => {
+      void store.refreshAll();
+    };
+    window.addEventListener("sse_job_created", onJobCreated);
+    return () => window.removeEventListener("sse_job_created", onJobCreated);
+  }, [store]);
 
   const filteredJobs = store.jobs.filter((j) => {
     const hospital = store.hospitals.find((h) => h.id === j.hospitalId);
@@ -65,6 +99,25 @@ function JobsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={async () => {
+              setRefreshing(true);
+              try {
+                await store.refreshAll();
+                toast.success("Jobs refreshed");
+              } catch {
+                toast.error("Refresh failed");
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 rounded-lg border bg-card px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
+            title="Refresh jobs from server"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />

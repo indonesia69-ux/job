@@ -233,15 +233,26 @@ export function AppSidebar() {
             {/* Divider */}
             <div className="my-2.5 h-px bg-white/10" />
 
-            {/* Upgrade button */}
-            <Link
-              to="/settings"
-              search={{ tab: "plan" }}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[oklch(0.78_0.14_85_/_0.4)] bg-[oklch(0.78_0.14_85_/_0.12)] py-1.5 text-[10.5px] font-medium text-[oklch(0.88_0.12_85)] transition-colors hover:bg-[oklch(0.78_0.14_85_/_0.25)]"
-            >
-              <Sparkles className="h-3 w-3" />
-              Upgrade Plan
-            </Link>
+            {/* Upgrade/Renew button */}
+            {daysRemaining > 0 && daysRemaining <= 7 ? (
+              <Link
+                to="/settings"
+                search={{ tab: "plan" }}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 py-1.5 text-[10.5px] font-medium text-amber-200 transition-colors hover:bg-amber-500/20"
+              >
+                <Sparkles className="h-3 w-3" />
+                Renew Now
+              </Link>
+            ) : (
+              <Link
+                to="/settings"
+                search={{ tab: "plan" }}
+                className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-[oklch(0.78_0.14_85_/_0.4)] bg-[oklch(0.78_0.14_85_/_0.12)] py-1.5 text-[10.5px] font-medium text-[oklch(0.88_0.12_85)] transition-colors hover:bg-[oklch(0.78_0.14_85_/_0.25)]"
+              >
+                <Sparkles className="h-3 w-3" />
+                Upgrade Plan
+              </Link>
+            )}
           </div>
         )}
 

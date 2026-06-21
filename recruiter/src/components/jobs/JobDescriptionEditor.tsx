@@ -17,6 +17,18 @@ export function JobDescriptionEditor({
   const editorRef = useRef<HTMLDivElement>(null);
   const lastHtml = useRef(value);
 
+  // On initial mount, write the starting value into the contentEditable div.
+  // The editorRef div starts empty (no children), so we must seed it once.
+  // We cannot rely on the update effect below because lastHtml.current is
+  // initialized to `value`, making the guard `value !== lastHtml.current` false.
+  useEffect(() => {
+    if (editorRef.current && value) {
+      editorRef.current.innerHTML = value;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally runs only on mount
+
+  // Sync externally-changed value into the editor (e.g. form reset / re-open).
   useEffect(() => {
     if (editorRef.current && value !== lastHtml.current) {
       editorRef.current.innerHTML = value;

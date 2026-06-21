@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { updateApplicationStatus } from "@/lib/recruiterData";
 import { useRouter } from "@tanstack/react-router";
+import { usePlan } from "@/features/search/PlanContext";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type ApplicantStatus } from "@/lib/mock";
+import { displayToApiStatus, type DisplayApplicantStatus } from "@/lib/applicationStatus";
 import { statusPillClass } from "@/lib/applicationStatus";
 import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { CandidatePanel } from "./CandidatePanel";
@@ -46,9 +47,10 @@ export function ApplicantsPage() {
   } = Route.useLoaderData();
   const navigate = Route.useNavigate();
   const router = useRouter();
+  const { isPlanSuspended } = usePlan();
   const { jobId: jobIdFromUrl, q: searchQFromUrl } = Route.useSearch();
   const [selectedJobId, setSelectedJobId] = useState<string | null>(jobIdFromUrl ?? null);
-  const [statusFilter, setStatusFilter] = useState<ApplicantStatus | "All">("All");
+  const [statusFilter, setStatusFilter] = useState<DisplayApplicantStatus | "All">("All");
   const [view, setView] = useState<"table" | "cards">("table");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -129,7 +131,7 @@ export function ApplicantsPage() {
     [list, localPage],
   );
 
-  const bulkAction = async (targetStatus: ApplicantStatus) => {
+  const bulkAction = async (targetStatus: DisplayApplicantStatus) => {
     const targets = (list as any[]).filter((c) => selected.includes(c.id) && c.applicationId);
     const skipped = selected.length - targets.length;
     if (targets.length === 0) {
@@ -143,7 +145,9 @@ export function ApplicantsPage() {
     setBulkLoading(true);
     try {
       const results = await Promise.allSettled(
-        targets.map((c) => updateApplicationStatus(c.applicationId, targetStatus)),
+        targets.map((c) =>
+          updateApplicationStatus(c.applicationId, targetStatus, {}, displayToApiStatus(c.status)),
+        ),
       );
       const passed = results.filter((r) => r.status === "fulfilled").length;
       const failed = results.filter((r) => r.status === "rejected").length;
@@ -306,7 +310,7 @@ export function ApplicantsPage() {
           </div>
           <Select
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v as ApplicantStatus | "All")}
+            onValueChange={(v) => setStatusFilter(v as DisplayApplicantStatus | "All")}
           >
             <SelectTrigger className="h-9 w-36 text-[13px]">
               <SlidersHorizontal className="mr-1.5 h-3.5 w-3.5" />
@@ -371,7 +375,7 @@ export function ApplicantsPage() {
               size="sm"
               variant="outline"
               className="h-8"
-              disabled={bulkLoading}
+              disabled={bulkLoading || isPlanSuspended}
               onClick={() => bulkAction("Shortlisted")}
             >
               <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" /> Shortlist
@@ -380,7 +384,7 @@ export function ApplicantsPage() {
               size="sm"
               variant="outline"
               className="h-8 border-destructive/30 text-destructive hover:bg-destructive/5"
-              disabled={bulkLoading}
+              disabled={bulkLoading || isPlanSuspended}
               onClick={() => bulkAction("Rejected")}
             >
               <XCircle className="mr-1.5 h-3.5 w-3.5" /> Reject

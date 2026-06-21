@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../lib/prisma';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 import { getRecruiterLimit, ensureUsageReset, getHospitalValidity } from '../lib/helpers';
+import { BILLING_CYCLE_DAYS, DEFAULT_PLAN_TIER } from '../config/plans';
 import { sendOTP, verifyOTP, smartResendOTP } from '../lib/otp';
 import { generateResetToken, validateResetToken, deleteResetToken } from '../lib/resetTokenStore';
 import { generateSignupToken, validateSignupToken, deleteSignupToken } from '../lib/signupTokenStore';
@@ -49,14 +50,11 @@ router.post('/signup/send-otp', async (req: Request, res: Response) => {
       return;
     }
 
-    const existingMobile = await prisma.user.findFirst({ where: { mobile: String(mobile), role } });
-    if (existingMobile) {
-      res.status(409).json({ error: 'Mobile number is already registered for this role' });
-      return;
+    const existingMobile = await findUserByMobile(String(mobile), role);
+    if (!existingMobile?.mobile) {
+      await sendOTP(String(mobile), { templateType: 'verification' });
     }
-
-    await sendOTP(String(mobile), { templateType: 'verification' });
-    res.json({ message: 'OTP sent successfully' });
+    res.json({ message: 'If this number is eligible for signup, an OTP has been sent.' });
   } catch (err: any) {
     logger.error(`[auth/signup/send-otp] ${err.message}`);
     const status = err.statusCode || 500;
@@ -77,9 +75,9 @@ router.post('/signup/verify-otp', async (req: Request, res: Response) => {
       return;
     }
 
-    const existingMobile = await prisma.user.findFirst({ where: { mobile: String(mobile), role } });
-    if (existingMobile) {
-      res.status(409).json({ error: 'Mobile number is already registered for this role' });
+    const existingMobile = await findUserByMobile(String(mobile), role);
+    if (existingMobile?.mobile) {
+      res.status(400).json({ error: 'Invalid or expired OTP' });
       return;
     }
 
@@ -88,7 +86,7 @@ router.post('/signup/verify-otp', async (req: Request, res: Response) => {
     res.json({ message: 'OTP verified', signup_token });
   } catch (err: any) {
     const status = err.statusCode === 404 ? 400 : (err.statusCode || 400);
-    res.status(status).json({ error: err.message });
+    res.status(status).json({ error: 'Invalid or expired OTP' });
   }
 });
 
@@ -164,9 +162,9 @@ router.post('/register', async (req: Request, res: Response) => {
         return;
       }
 
-      // Enforce plan-based recruiter limit
+      // Enforce plan-based recruiter limit (excluding soft-deleted and plan-suspended)
       const recruiterCount = await prisma.user.count({
-        where: { hospitalId: hospital.id, role: 'RECRUITER' }
+        where: { hospitalId: hospital.id, role: 'RECRUITER', deletedAt: null, planSuspendedAt: null }
       });
       const limit = getRecruiterLimit(hospital.onboardingPlan);
 
@@ -201,7 +199,7 @@ router.post('/register', async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId, candidateId, tokenVersion: user.tokenVersion },
       SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '15d' }
     );
 
     res.status(201).json({
@@ -252,7 +250,7 @@ router.post('/login', async (req: Request, res: Response) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name, role: user.role, hospitalId: user.hospitalId, candidateId, tokenVersion: user.tokenVersion },
       SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '15d' }
     );
 
     res.json({
@@ -280,7 +278,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
     const finalUser = user.role === 'RECRUITER' ? await ensureUsageReset(prisma, user) : user;
     
     // Calculate dynamic validity
-    let jobValidityDays = 30;
+    let jobValidityDays = BILLING_CYCLE_DAYS;
     let isLocked = false;
     if (finalUser.role === 'RECRUITER' && finalUser.hospital) {
       const validity = getHospitalValidity(finalUser.hospital);
@@ -298,9 +296,10 @@ router.get('/me', requireAuth, async (req: AuthRequest, res: Response) => {
         candidateId: req.user!.candidateId,
         jobsPostedThisMonth: finalUser.jobsPostedThisMonth,
         premiumSearchesThisMonth: finalUser.premiumSearchesThisMonth,
-        plan: finalUser.hospital?.onboardingPlan || 'Basic',
+        plan: finalUser.hospital?.onboardingPlan || DEFAULT_PLAN_TIER,
         jobValidityDays,
         isLocked,
+        isPlanSuspended: !!finalUser.planSuspendedAt,
         // Notification preferences
         notifOnApply: finalUser.notifOnApply ?? true,
         notifWeekly: finalUser.notifWeekly ?? false,
@@ -354,7 +353,7 @@ router.patch('/me', requireAuth, async (req: AuthRequest, res: Response) => {
         tokenVersion: updated.tokenVersion
       },
       SECRET,
-      { expiresIn: '30d' }
+      { expiresIn: '15d' }
     );
 
     res.json({
@@ -390,14 +389,10 @@ router.post('/forgot-password', async (req: Request, res: Response) => {
     }
 
     const user = await findUserByMobile(mobile, role);
-    if (!user || !user.mobile) {
-      // Do not leak whether the mobile number exists.
-      res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
-      return;
+    if (user?.mobile) {
+      await sendOTP(user.mobile, { templateType: 'reset' });
     }
-
-    await sendOTP(user.mobile, { templateType: 'reset' });
-    res.json({ message: 'If an account exists for this mobile number, an OTP has been sent.' });
+    res.json({ message: 'If an account exists for this number, an OTP has been sent.' });
   } catch (err: any) {
     logger.error(`[auth/forgot-password] ${err.message}`);
     res.status(500).json({ error: 'Failed to send OTP. Please try again.' });
@@ -426,7 +421,19 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
     await verifyOTP(user.mobile, otp);
 
     const reset_token = await generateResetToken(user.mobile, role);
-    res.json({ message: 'OTP verified', reset_token });
+
+    // R12: mask the email so the user can verify which account is being reset
+    let maskedEmail = user.email;
+    if (maskedEmail.includes('@')) {
+      const [local, domain] = maskedEmail.split('@');
+      if (local.length > 2) {
+        maskedEmail = `${local[0]}***${local[local.length - 1]}@${domain}`;
+      } else {
+        maskedEmail = `${local}***@${domain}`;
+      }
+    }
+
+    res.json({ message: 'OTP verified', reset_token, maskedEmail });
   } catch (err: any) {
     const status = err.statusCode === 404 ? 400 : (err.statusCode || 400);
     res.status(status).json({ error: err.message });
@@ -466,6 +473,11 @@ router.post('/reset-password', async (req: Request, res: Response) => {
     });
     
     await deleteResetToken(reset_token);
+
+    const user = await findUserByMobile(mobile, role);
+    if (user) {
+      logger.info(`[auth/reset-password] accountId=${user.id} role=${role} method=phone timestamp=${new Date().toISOString()}`);
+    }
 
     res.json({ message: 'Password reset successfully' });
   } catch (err: any) {

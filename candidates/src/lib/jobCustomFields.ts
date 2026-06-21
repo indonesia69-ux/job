@@ -19,7 +19,9 @@ export function validateCustomResponses(
   for (const f of fields) {
     const raw = responses[f.id];
     if (f.type === "checkbox") {
-      if (f.required && !raw) return `"${f.label}" is required`;
+      // "No" stores boolean false — !false is truthy, so we must check for
+      // undefined specifically (field not answered at all), not just falsy.
+      if (f.required && raw === undefined) return `"${f.label}" is required`;
       continue;
     }
     const empty = raw === undefined || raw === null || String(raw).trim() === "";

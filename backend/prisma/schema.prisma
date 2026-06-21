@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
@@ -21,7 +22,7 @@ model User {
 
   // For recruiters: the hospital they manage
   hospitalId String?
-  hospital   Hospital? @relation(fields: [hospitalId], references: [id])
+  hospital   Hospital? @relation(fields: [hospitalId], references: [id]) // Intentional RESTRICT: users linked to a hospital block hospital hard-delete.
 
   // For candidates: their profile
   candidate Candidate?
@@ -39,9 +40,13 @@ model User {
   deletedAt    DateTime? // Soft-delete timestamp
   tokenVersion Int       @default(0) // Incremented on password reset to force logout
 
+  // ── Plan Suspension (NEW) ─────────────────────────────────────────────────
+  planSuspendedAt     DateTime? // Set when plan-suspended; null = not plan-suspended
+  planSuspendedReason String?   // e.g. "Downgrade to Basic: seats reduced from 5 to 2"
+
   // ── Notification Preferences ──────────────────────────────────────────────
-  notifOnApply  Boolean @default(true)  // Email when candidate applies
-  notifWeekly   Boolean @default(false) // Weekly hiring summary
+  notifOnApply   Boolean @default(true) // Email when candidate applies
+  notifWeekly    Boolean @default(false) // Weekly hiring summary
   notifHighMatch Boolean @default(true) // Notify on >90% match
 
   // ── Jobs Posted ───────────────────────────────────────────────────────────
@@ -49,6 +54,7 @@ model User {
 
   // Username is unique within a hospital (not globally)
   @@unique([hospitalId, username])
+  @@unique([mobile, role], name: "unique_mobile_per_role")
 }
 
 model Hospital {
@@ -88,7 +94,7 @@ model Hospital {
   pendingPlan      String? // Scheduled plan change at next renewal
   pendingPlanAt    DateTime? // When the pending plan was requested
   planBillingCycle String?   @default("monthly") // "monthly" (annual: future)
-  maxRecruiters    Int       @default(3) // Set from plan: Basic=3, Pro=10, Premium=unlimited(999)
+  maxRecruiters    Int       @default(2) // Set from plan: Basic=2, Pro=2, Premium=5 (see config/plans.ts)
   submittedBy      String? // Contact person name on onboarding form
   submittedEmail   String? // Hospital contact email (for onboarding verification)
   submittedPhone   String? // Hospital contact phone
@@ -161,6 +167,7 @@ model Job {
   type                    String
   shift                   String?
   status                  String    @default("Active")
+  closedReason            String?   // "plan_expired" | "admin_suspended" | null (manual close)
   postedDays              Int?
   postedOn                DateTime?
   createdAt               DateTime  @default(now())
@@ -176,10 +183,10 @@ model Job {
   customApplicationFields Json?
 
   hospitalId String
-  hospital   Hospital @relation(fields: [hospitalId], references: [id])
+  hospital   Hospital @relation(fields: [hospitalId], references: [id]) // Intentional RESTRICT: hospitals with jobs cannot be hard-deleted. Suspend via isSuspended instead.
 
   postedById String?
-  postedBy   User?    @relation("JobPostedBy", fields: [postedById], references: [id])
+  postedBy   User?   @relation("JobPostedBy", fields: [postedById], references: [id]) // Intentional RESTRICT: jobs retain postedBy reference; delete user only after reassigning jobs.
 
   applications Application[]
   savedBy      SavedJob[]
@@ -237,11 +244,11 @@ model Candidate {
   deletedAt   DateTime? // Soft-delete timestamp
 
   // ── Search Index ──────────────────────────────────────────────────────────
-  searchBlob  String?   @db.Text
+  searchBlob String? @db.Text
 
   // Link to auth user
   userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id]) // Intentional RESTRICT: candidate profile blocks user hard-delete while profile exists.
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -329,10 +336,10 @@ model Application {
   updatedAt            DateTime  @default(now()) @updatedAt
 
   jobId String
-  job   Job    @relation(fields: [jobId], references: [id])
+  job   Job    @relation(fields: [jobId], references: [id]) // Intentional RESTRICT: jobs with applications cannot be hard-deleted. Use status: 'Closed' instead.
 
   candidateId String
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  candidate   Candidate @relation(fields: [candidateId], references: [id]) // Intentional RESTRICT: candidates with applications cannot be hard-deleted.
 
   // ── Documents uploaded by candidate in response to a document request ─────
   applicationDocuments ApplicationDocument[]
@@ -360,7 +367,7 @@ model ApplicationDocument {
 model PlanChangeLog {
   id            String   @id @default(uuid())
   hospitalId    String
-  hospital      Hospital @relation(fields: [hospitalId], references: [id])
+  hospital      Hospital @relation(fields: [hospitalId], references: [id]) // Intentional RESTRICT: plan change audit log preserves hospital reference.
   fromPlan      String // "Basic" | "Pro" | "Premium"
   toPlan        String // "Basic" | "Pro" | "Premium"
   changeType    String // "immediate_upgrade" | "scheduled_upgrade" | "scheduled_downgrade" | "renewal"
@@ -378,6 +385,7 @@ model AdminUser {
   email        String    @unique
   passwordHash String
   name         String
+  tokenVersion Int       @default(0)
   createdAt    DateTime  @default(now())
   lastLoginAt  DateTime?
 }

@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Briefcase, Building2, Calendar, ChevronRight, Inbox } from "lucide-react";
@@ -124,7 +124,7 @@ const TABS = [
 type TabValue = (typeof TABS)[number];
 
 async function loadApplicationsData(): Promise<AppRow[]> {
-  const res = await fetch(`${apiBase()}/api/applications`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/applications`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to load applications");
   const data = await res.json();
   return sortApplications(data.map(mapApplication)) as unknown as AppRow[];

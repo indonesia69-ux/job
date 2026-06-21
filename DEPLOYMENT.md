@@ -14,8 +14,10 @@ npm ci && npx prisma generate && npm run build
 5. Use start command:
 
 ```bash
-npx prisma migrate deploy && npm start
+npm start
 ```
+
+(`npm start` already runs `npx prisma migrate deploy` before starting the server — do not prefix another migrate deploy.)
 
 6. Set all env vars from `backend/.env.example`.
 7. Set exact frontend origins using:

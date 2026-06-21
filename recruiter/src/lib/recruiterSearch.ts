@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
 
 export type RecruiterSearchJob = {
@@ -29,7 +29,7 @@ export type RecruiterSearchResults = {
 export async function searchRecruiter(query: string): Promise<RecruiterSearchResults> {
   const q = query.trim();
   if (!q) return { jobs: [], candidates: [] };
-  const res = await fetch(`${apiBase()}/api/search/recruiter?q=${encodeURIComponent(q)}`, {
+  const res = await apiFetch(`${apiBase()}/api/search/recruiter?q=${encodeURIComponent(q)}`, {
     headers: authHeader(),
   });
   if (!res.ok) throw new Error("Search failed");

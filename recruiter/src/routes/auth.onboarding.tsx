@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Check,
   Building2,
@@ -30,6 +30,12 @@ import {
 import { ChipInput } from "@/components/ui/chip-input";
 import { apiBase } from "@/lib/api";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
+import {
+  fetchPlanCatalog,
+  formatPlanPrice,
+  FALLBACK_PLAN_CATALOG,
+  type PlanTier,
+} from "@/lib/planCatalog";
 
 export const Route = createFileRoute("/auth/onboarding")({
   head: () => ({
@@ -54,32 +60,34 @@ const STEPS = [
   { label: "Review & Submit", icon: FileText },
 ] as const;
 
-const PLAN_OPTIONS = [
-  {
-    id: "Basic",
-    name: "Basic",
-    price: "Free",
-    recruiters: "Up to 3 recruiters",
-    description: "Perfect for small clinics and single-specialty centres.",
-    highlight: false,
-  },
-  {
-    id: "Pro",
-    name: "Pro",
-    price: "₹4,999/mo",
-    recruiters: "Up to 10 recruiters",
-    description: "Ideal for mid-size hospitals with multiple departments.",
-    highlight: true,
-  },
-  {
-    id: "Premium",
-    name: "Premium",
-    price: "₹14,999/mo",
-    recruiters: "Unlimited recruiters",
-    description: "For large hospital chains and multi-facility networks.",
-    highlight: false,
-  },
-];
+const PLAN_DESCRIPTIONS: Record<PlanTier, string> = {
+  Basic: "Perfect for small clinics and single-specialty centres.",
+  Pro: "Ideal for mid-size hospitals with multiple departments.",
+  Premium: "For large hospital chains and multi-facility networks.",
+};
+
+type PlanOption = {
+  id: PlanTier;
+  name: string;
+  price: string;
+  recruiters: string;
+  description: string;
+  highlight: boolean;
+};
+
+function planOptionsFromCatalog(plans: typeof FALLBACK_PLAN_CATALOG.plans): PlanOption[] {
+  return plans.map((p) => ({
+    id: p.id,
+    name: p.displayName,
+    price:
+      p.isLaunchOffer && p.priceInRupees === 0
+        ? "Free (launch offer)"
+        : formatPlanPrice(p.priceInRupees),
+    recruiters: `Up to ${p.recruiterAccountLimit} recruiters`,
+    description: PLAN_DESCRIPTIONS[p.id],
+    highlight: p.id === "Pro",
+  }));
+}
 
 type FormData = {
   // Step 1: Org Details
@@ -239,6 +247,17 @@ export function OnboardingPage() {
   const [applicationId, setApplicationId] = useState<string | null>(null);
   const [otp, setOtp] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [planOptions, setPlanOptions] = useState<PlanOption[]>(() =>
+    planOptionsFromCatalog(FALLBACK_PLAN_CATALOG.plans),
+  );
+
+  useEffect(() => {
+    void fetchPlanCatalog()
+      .then((catalog) => setPlanOptions(planOptionsFromCatalog(catalog.plans)))
+      .catch(() => {
+        // Keep fallback options on failure.
+      });
+  }, []);
 
   const set = <K extends keyof FormData>(k: K, v: FormData[K]) => {
     setForm((f) => ({ ...f, [k]: v }));
@@ -251,6 +270,13 @@ export function OnboardingPage() {
       if (!form.hospitalName.trim()) errs.hospitalName = "Organization Name is required.";
       if (!form.hospitalType) errs.hospitalType = "Organization Type is required.";
     }
+    if (s === 1) {
+      if (!form.registrationNumber.trim())
+        errs.registrationNumber = "Registration Number is required.";
+      if (!form.registrationAuthority.trim())
+        errs.registrationAuthority = "Registration Authority is required.";
+      if (!form.ownershipType) errs.ownershipType = "Ownership Type is required.";
+    }
     if (s === 2) {
       // Location
       if (!form.city.trim()) errs.city = "City is required.";
@@ -260,7 +286,15 @@ export function OnboardingPage() {
     if (s === 3) {
       // Contact & Billing
       if (!form.contactName.trim()) errs.contactName = "Primary Contact Name is required.";
-      if (!form.phone.trim()) errs.phone = "Mobile Number is required.";
+      if (!form.phone.trim()) {
+        errs.phone = "Mobile Number is required.";
+      } else {
+        // Strip optional +91 prefix and spaces, then validate 10-digit number
+        const digits = form.phone.replace(/^\+91/, "").replace(/\s+/g, "");
+        if (!/^\d{10}$/.test(digits)) {
+          errs.phone = "Enter a valid 10-digit mobile number.";
+        }
+      }
       if (!form.email.trim()) errs.email = "Official Email is required.";
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
         errs.email = "Enter a valid email address.";
@@ -277,6 +311,12 @@ export function OnboardingPage() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const handleSubmit = async () => {
+    for (const s of [0, 1, 2, 3]) {
+      if (!validateStep(s)) {
+        setStep(s);
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const res = await fetch(`${apiBase()}/api/onboarding/hospitals`, {
@@ -636,7 +676,9 @@ export function OnboardingPage() {
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="registrationNumber">Registration Number</Label>
+              <Label htmlFor="registrationNumber">
+                Registration Number <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="registrationNumber"
                 value={form.registrationNumber}
@@ -644,9 +686,12 @@ export function OnboardingPage() {
                 placeholder="e.g. MH/HOS/2024/1234"
                 className="h-11"
               />
+              <FieldError msg={errors.registrationNumber} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="registrationAuthority">Registration Authority</Label>
+              <Label htmlFor="registrationAuthority">
+                Registration Authority <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="registrationAuthority"
                 value={form.registrationAuthority}
@@ -654,6 +699,7 @@ export function OnboardingPage() {
                 placeholder="e.g. BMC, Directorate of Health Services"
                 className="h-11"
               />
+              <FieldError msg={errors.registrationAuthority} />
             </div>
           </div>
 
@@ -710,7 +756,9 @@ export function OnboardingPage() {
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="ownershipType">Ownership Type</Label>
+            <Label htmlFor="ownershipType">
+              Ownership Type <span className="text-destructive">*</span>
+            </Label>
             <Select value={form.ownershipType} onValueChange={(v) => set("ownershipType", v)}>
               <SelectTrigger id="ownershipType" className="h-11">
                 <SelectValue placeholder="Select ownership" />
@@ -726,6 +774,7 @@ export function OnboardingPage() {
                 <SelectItem value="Government">Government</SelectItem>
               </SelectContent>
             </Select>
+            <FieldError msg={errors.ownershipType} />
           </div>
         </div>
       )}
@@ -852,10 +901,15 @@ export function OnboardingPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => set("phone", e.target.value)}
-                  placeholder="+91 98765 43210"
+                  placeholder="98765 43210"
                   className="h-11"
                   aria-invalid={!!errors.phone}
+                  inputMode="numeric"
+                  maxLength={13}
                 />
+                <p className="text-[11px] text-muted-foreground">
+                  Enter 10-digit number (with or without +91)
+                </p>
                 <FieldError msg={errors.phone} />
               </div>
               <div className="space-y-1.5">
@@ -1100,7 +1154,7 @@ export function OnboardingPage() {
           <p className="text-[13px] text-muted-foreground">
             Choose a plan based on your hiring volume. You can upgrade anytime.
           </p>
-          {PLAN_OPTIONS.map((p) => (
+          {planOptions.map((p) => (
             <button
               key={p.id}
               type="button"

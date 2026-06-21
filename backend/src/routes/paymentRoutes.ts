@@ -3,8 +3,9 @@ import crypto from 'crypto';
 import prisma from '../lib/prisma';
 import logger from '../lib/logger';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
-import { PLAN_ORDER, isUpgrade, daysRemainingInCycle, computeUpgradeCost, addDays, PLAN_PRICES } from '../lib/planBilling';
-import { PLAN_RECRUITER_LIMITS } from '../lib/helpers';
+import { isUpgrade, daysRemainingInCycle, computeUpgradeCost, addDays, PLAN_PRICES, BILLING_CYCLE_DAYS } from '../lib/planBilling';
+import { getRecruiterLimit } from '../lib/helpers';
+import { isValidPlan } from '../config/plans';
 import Razorpay from 'razorpay';
 
 const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
@@ -27,7 +28,7 @@ const router = Router();
 router.post('/create-order', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
   const { newPlan } = req.body as { newPlan?: string };
 
-  if (!newPlan || !PLAN_ORDER.includes(newPlan)) {
+  if (!newPlan || !isValidPlan(newPlan)) {
     res.status(400).json({ error: 'Invalid plan. Must be Basic, Pro, or Premium.' });
     return;
   }
@@ -49,7 +50,7 @@ router.post('/create-order', requireAuth, requireRole('RECRUITER'), async (req: 
       const start = hospital.approvedAt || hospital.submittedAt;
       if (start) {
         activeExpiresAt = new Date(start);
-        activeExpiresAt.setDate(activeExpiresAt.getDate() + 30);
+        activeExpiresAt.setDate(activeExpiresAt.getDate() + BILLING_CYCLE_DAYS);
       }
     }
 
@@ -115,10 +116,10 @@ router.post('/verify', requireAuth, requireRole('RECRUITER'), async (req: AuthRe
   try {
     const order = await prisma.paymentOrder.findUnique({
       where: { razorpayOrderId: razorpay_order_id },
-      include: { hospital: true }
+      include: { hospital: true },
     });
 
-    if (!order || order.status !== 'CREATED') {
+    if (!order) {
       res.status(400).json({ error: 'Invalid or already processed order' });
       return;
     }
@@ -132,31 +133,63 @@ router.post('/verify', requireAuth, requireRole('RECRUITER'), async (req: AuthRe
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    // Strict signature validation
+    // Strict signature validation (pure computation — outside transaction)
     const expected = Buffer.from(generatedSignature);
     const received = Buffer.from(String(razorpay_signature));
     if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
-      await prisma.paymentOrder.update({
-        where: { id: order.id },
-        data: { status: 'FAILED' }
-      });
+      if (order.status === 'CREATED') {
+        await prisma.paymentOrder.update({
+          where: { id: order.id },
+          data: { status: 'FAILED' },
+        });
+      }
       res.status(400).json({ error: 'Invalid payment signature' });
       return;
     }
 
-    // Mark paid
-    await prisma.paymentOrder.update({
-      where: { id: order.id },
-      data: { status: 'PAID' }
-    });
+    // Idempotent retry: order already paid — do not re-run upgrade
+    if (order.status === 'PAID') {
+      res.json({ success: true, plan: order.hospital.onboardingPlan, amountPaid: order.amount });
+      return;
+    }
+
+    if (order.status !== 'CREATED') {
+      res.status(400).json({ error: 'Invalid or already processed order' });
+      return;
+    }
 
     const newPlan = order.planRequested;
     const currentPlan = order.hospital.onboardingPlan;
-    const newExpiresAt = addDays(30);
-    const newMaxRecruiters = PLAN_RECRUITER_LIMITS[newPlan] ?? 3;
+    const newExpiresAt = addDays(BILLING_CYCLE_DAYS);
+    const newMaxRecruiters = getRecruiterLimit(newPlan);
 
-    await prisma.$transaction([
-      prisma.hospital.update({
+    type TxResult =
+      | { kind: 'upgraded'; plan: string; amountPaid: number; fromPlan: string | null }
+      | { kind: 'already_processed'; plan: string; amountPaid: number }
+      | { kind: 'conflict' };
+
+    const txResult: TxResult = await prisma.$transaction(async (tx) => {
+      const flip = await tx.paymentOrder.updateMany({
+        where: { id: order.id, status: 'CREATED' },
+        data: { status: 'PAID' },
+      });
+
+      if (flip.count === 0) {
+        const current = await tx.paymentOrder.findUnique({
+          where: { id: order.id },
+          include: { hospital: true },
+        });
+        if (current?.status === 'PAID') {
+          return {
+            kind: 'already_processed',
+            plan: current.hospital.onboardingPlan,
+            amountPaid: current.amount,
+          };
+        }
+        return { kind: 'conflict' };
+      }
+
+      await tx.hospital.update({
         where: { id: order.hospital.id },
         data: {
           onboardingPlan: newPlan,
@@ -165,8 +198,8 @@ router.post('/verify', requireAuth, requireRole('RECRUITER'), async (req: AuthRe
           pendingPlan: null,
           pendingPlanAt: null,
         },
-      }),
-      prisma.planChangeLog.create({
+      });
+      await tx.planChangeLog.create({
         data: {
           hospitalId: order.hospital.id,
           fromPlan: currentPlan,
@@ -178,21 +211,34 @@ router.post('/verify', requireAuth, requireRole('RECRUITER'), async (req: AuthRe
           paymentRef: razorpay_payment_id,
           note: `Immediate upgrade. Cost: ₹${order.amount}.`,
         },
-      }),
-    ]);
+      });
 
-    await prisma.activityLog.create({
-      data: {
-        entityType: 'hospital',
-        entityId: order.hospital.id,
-        action: 'plan_upgraded',
-        actorId: req.user!.id,
-        actorRole: 'RECRUITER',
-        meta: JSON.stringify({ from: currentPlan, to: newPlan, amountPaid: order.amount }),
-      },
+      return { kind: 'upgraded', plan: newPlan, amountPaid: order.amount, fromPlan: currentPlan };
     });
 
-    res.json({ success: true, plan: newPlan, amountPaid: order.amount });
+    if (txResult.kind === 'conflict') {
+      res.status(400).json({ error: 'Invalid or already processed order' });
+      return;
+    }
+
+    if (txResult.kind === 'upgraded') {
+      await prisma.activityLog.create({
+        data: {
+          entityType: 'hospital',
+          entityId: order.hospital.id,
+          action: 'plan_upgraded',
+          actorId: req.user!.id,
+          actorRole: 'RECRUITER',
+          meta: JSON.stringify({ from: txResult.fromPlan, to: newPlan, amountPaid: order.amount }),
+        },
+      });
+    }
+
+    const suspendedRecruiterCount = await prisma.user.count({
+      where: { hospitalId: order.hospital.id, role: 'RECRUITER', planSuspendedAt: { not: null } }
+    });
+
+    res.json({ success: true, plan: txResult.plan, amountPaid: txResult.amountPaid, suspendedRecruiterCount });
   } catch (err) {
     logger.error(err);
     res.status(500).json({ error: 'Failed to verify payment' });

@@ -13,11 +13,13 @@ import { toast } from "sonner";
 
 export function OfferLetterModal({
   applicationId,
+  currentStatus,
   isOpen,
   onClose,
   onSuccess,
 }: {
   applicationId: string;
+  currentStatus: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -36,10 +38,15 @@ export function OfferLetterModal({
       const { url, publicId } = await uploadOfferLetter(applicationId, file);
 
       // 2. Transition status to OfferSent with payload
-      await updateApplicationStatus(applicationId, "OfferSent", {
-        offerLetterUrl: url,
-        offerLetterCloudinaryId: publicId,
-      });
+      await updateApplicationStatus(
+        applicationId,
+        "OfferSent",
+        {
+          offerLetterUrl: url,
+          offerLetterCloudinaryId: publicId,
+        },
+        currentStatus,
+      );
 
       onSuccess();
       onClose();

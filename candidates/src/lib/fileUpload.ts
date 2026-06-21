@@ -9,13 +9,7 @@ export const CV_ACCEPT =
 
 export const CV_MAX_BYTES = 5 * 1024 * 1024;
 
-function backendBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE || "";
-  if (import.meta.env.PROD && !configured) {
-    throw new Error("VITE_API_BASE is required for production uploads.");
-  }
-  return configured || "http://127.0.0.1:3000";
-}
+import { apiBase, apiFetch } from "./api";
 
 export type UploadedFile = {
   file?: File;
@@ -64,9 +58,9 @@ export async function uploadCvToBackend(
   const formData = new FormData();
   formData.append("cv", file);
 
-  const backendUrl = backendBaseUrl();
+  const backendUrl = apiBase();
 
-  const res = await fetch(`${backendUrl}/api/upload/cv`, {
+  const res = await apiFetch(`${backendUrl}/api/upload/cv`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,
@@ -90,9 +84,9 @@ export async function uploadDocumentsToBackend(
     formData.append("documents", file);
   }
 
-  const backendUrl = backendBaseUrl();
+  const backendUrl = apiBase();
 
-  const res = await fetch(`${backendUrl}/api/upload/documents`, {
+  const res = await apiFetch(`${backendUrl}/api/upload/documents`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: formData,

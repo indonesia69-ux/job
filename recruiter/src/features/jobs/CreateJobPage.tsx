@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
 import { loadHospitalProfile } from "@/lib/recruiterData";
 import { validateCreateJob, type CreateJobFieldErrors } from "@/lib/createJobValidation";
@@ -9,8 +9,9 @@ import { JobCustomFormBuilder } from "@/components/jobs/JobCustomFormBuilder";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { type JobCustomField, validateCustomFieldsForPost } from "@/lib/jobCustomFields";
 import { sanitizeJobDescriptionHtml } from "@/lib/sanitizeHtml";
-import { Save } from "lucide-react";
+import { Save, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { usePlan } from "@/features/search/PlanContext";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,6 +121,8 @@ export function CreateJobPage() {
   const [subSpecialty, setSubSpecialty] = useState("");
   const [openings, setOpenings] = useState("");
 
+  const { isPlanSuspended } = usePlan();
+
   useEffect(() => {
     loadHospitalProfile().then((h) => {
       if (!h) return;
@@ -159,7 +162,7 @@ export function CreateJobPage() {
         subSpecialty: subSpecialty.trim() || undefined,
         customApplicationFields: [],
       };
-      const res = await fetch(`${apiBase()}/api/jobs`, {
+      const res = await apiFetch(`${apiBase()}/api/jobs`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeader() },
         body: JSON.stringify(body),
@@ -207,6 +210,15 @@ export function CreateJobPage() {
             Settings
           </Link>{" "}
           before you can post a job.
+        </div>
+      )}
+      {isPlanSuspended && (
+        <div className="mx-auto mb-4 max-w-[1100px] rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-3 text-[13px] text-destructive flex items-start gap-2">
+          <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+          <span>
+            Your account is currently suspended (read-only mode). You cannot post new jobs until you
+            renew your plan.
+          </span>
         </div>
       )}
       <form
@@ -286,7 +298,7 @@ export function CreateJobPage() {
                   }))
                 : [],
             };
-            const res = await fetch(`${apiBase()}/api/jobs`, {
+            const res = await apiFetch(`${apiBase()}/api/jobs`, {
               method: "POST",
               headers: { "Content-Type": "application/json", ...authHeader() },
               body: JSON.stringify(body),
@@ -689,12 +701,16 @@ export function CreateJobPage() {
                 variant="outline"
                 className="h-10"
                 onClick={saveDraft}
-                disabled={savingDraft || posting}
+                disabled={savingDraft || posting || isPlanSuspended}
               >
                 <Save className="mr-1.5 h-4 w-4" />
                 {savingDraft ? "Saving…" : "Save as draft"}
               </Button>
-              <Button type="submit" className="h-10 px-6" disabled={posting || savingDraft}>
+              <Button
+                type="submit"
+                className="h-10 px-6"
+                disabled={posting || savingDraft || isPlanSuspended}
+              >
                 {posting && (
                   <LottiePlayer src="/loading_state.json" loop className="mr-1.5 h-7 w-7" />
                 )}

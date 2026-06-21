@@ -1,8 +1,6 @@
 import winston from 'winston';
 import fs from 'fs';
 
-fs.mkdirSync('logs', { recursive: true });
-
 const { combine, timestamp, printf, colorize, errors, splat } = winston.format;
 
 const logFormat = printf(({ level, message, timestamp, stack }) => {
@@ -18,9 +16,7 @@ export const logger = winston.createLogger({
     logFormat
   ),
   transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' }),
-    // ALWAYS log to console. Modern cloud providers (like Render, Heroku, AWS) 
+    // ALWAYS log to console. Modern cloud providers (like Render, Heroku, AWS)
     // strictly require logs to go to stdout to appear in their dashboards.
     new winston.transports.Console({
       format: combine(
@@ -29,8 +25,14 @@ export const logger = winston.createLogger({
         splat(),
         logFormat
       ),
-    })
+    }),
   ],
 });
+
+if (process.env.NODE_ENV !== 'production') {
+  fs.mkdirSync('logs', { recursive: true });
+  logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
+  logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
+}
 
 export default logger;

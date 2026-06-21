@@ -4,7 +4,10 @@ import crypto from 'crypto';
 import prisma from '../../lib/prisma';
 import { requireAdmin, AdminAuthRequest } from '../../middleware/auth';
 import { sendApprovalEmail, sendRejectionEmail, sendRequestMoreDocsEmail } from '../../lib/email';
-import { PLAN_RECRUITER_LIMITS } from '../../lib/helpers';
+import { getRecruiterLimit } from '../../lib/helpers';
+import { isDowngrade } from '../../lib/planBilling';
+import { BILLING_CYCLE_DAYS, DEFAULT_PLAN_TIER, getJobLimit } from '../../config/plans';
+import { suspendHospitalRecruitersAndCloseJobs, closeExcessActiveJobs } from '../../lib/hospitalSuspend';
 
 const router = Router();
 
@@ -75,7 +78,7 @@ router.patch('/hospitals/:id/approve', requireAdmin, async (req: AdminAuthReques
 
     const now = new Date();
     const expiresAt = new Date(now);
-    expiresAt.setDate(expiresAt.getDate() + 30);
+    expiresAt.setDate(expiresAt.getDate() + BILLING_CYCLE_DAYS);
 
     const [updated] = await prisma.$transaction([
       prisma.hospital.update({
@@ -95,7 +98,7 @@ router.patch('/hospitals/:id/approve', requireAdmin, async (req: AdminAuthReques
         data: {
           hospitalId: req.params.id as string,
           fromPlan: 'None',
-          toPlan: hospital.onboardingPlan || 'Basic',
+          toPlan: hospital.onboardingPlan || DEFAULT_PLAN_TIER,
           changeType: 'renewal',
           amountPaid: 0,
           effectiveAt: now,
@@ -303,8 +306,14 @@ router.patch('/hospitals/:id/plan', requireAdmin, async (req: AdminAuthRequest, 
 
     const expiresAt = planExpiresAt ? new Date(planExpiresAt) : hospital.planExpiresAt;
 
+    // Reject past expiry dates — must be today or in the future
+    if (planExpiresAt && expiresAt && expiresAt < new Date()) {
+      res.status(400).json({ error: 'Expiry date must be today or a future date.' });
+      return;
+    }
+
     // Determine new max recruiters based on plan (use canonical limits from helpers)
-    const newMaxRecruiters = PLAN_RECRUITER_LIMITS[onboardingPlan] ?? 3;
+    const newMaxRecruiters = getRecruiterLimit(onboardingPlan);
 
     const [updated] = await prisma.$transaction([
       prisma.hospital.update({
@@ -341,6 +350,10 @@ router.patch('/hospitals/:id/plan', requireAdmin, async (req: AdminAuthRequest, 
         meta: JSON.stringify({ onboardingPlan, planExpiresAt: expiresAt?.toISOString() })
       }
     });
+
+    if (isDowngrade(hospital.onboardingPlan, String(onboardingPlan))) {
+      await closeExcessActiveJobs(id, getJobLimit(String(onboardingPlan)));
+    }
 
     res.json(updated);
   } catch (error) {
@@ -397,11 +410,7 @@ router.patch('/hospitals/:id/suspend', requireAdmin, async (req: AdminAuthReques
       data: { isSuspended: true }
     });
 
-    // Also suspend all recruiters under this hospital to prevent login
-    await prisma.user.updateMany({
-      where: { hospitalId: id, role: 'RECRUITER' },
-      data: { isSuspended: true }
-    });
+    await suspendHospitalRecruitersAndCloseJobs(id);
 
     await prisma.activityLog.create({
       data: {

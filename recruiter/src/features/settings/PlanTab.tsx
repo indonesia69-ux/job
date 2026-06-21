@@ -30,13 +30,15 @@ import {
 } from "@/components/ui/dialog";
 
 import { usePlan } from "@/features/search/PlanContext";
+import { buildPlanFeatures, getPlanFromCatalog, type PlanTier } from "@/lib/planCatalog";
 import {
   createPaymentOrder,
   verifyPayment,
   scheduleRenewalChange,
   cancelRenewalChange,
   fetchPlanHistory,
-  type PlanTier,
+  getDowngradePreview,
+  reactivateSuspended,
   type PlanChangeEntry,
 } from "@/lib/recruiterData";
 
@@ -65,40 +67,6 @@ declare global {
 }
 
 // ─── Plan definitions ─────────────────────────────────────────────────────────
-
-type PlanFeature = { label: string; included: boolean };
-
-const PLAN_FEATURES: Record<PlanTier, PlanFeature[]> = {
-  Basic: [
-    { label: "Up to 5 job posts / month", included: true },
-    { label: "30 premium candidate searches / month", included: true },
-    { label: "Up to 3 recruiters", included: true },
-    { label: "Standard job visibility (17.5 days)", included: true },
-    { label: "Priority candidate matching", included: false },
-    { label: "Extended job visibility (30 days)", included: false },
-    { label: "Unlimited recruiters", included: false },
-  ],
-  Pro: [
-    { label: "Up to 10 job posts / month", included: true },
-    { label: "50 premium candidate searches / month", included: true },
-    { label: "Up to 10 recruiters", included: true },
-    { label: "Extended job visibility (21 days)", included: true },
-    { label: "Priority candidate matching", included: true },
-    { label: "Extended job visibility (30 days)", included: false },
-    { label: "Unlimited recruiters", included: false },
-  ],
-  Premium: [
-    { label: "Up to 15 job posts / month", included: true },
-    { label: "100 premium candidate searches / month", included: true },
-    { label: "Unlimited recruiters", included: true },
-    { label: "Extended job visibility (30 days)", included: true },
-    { label: "Priority candidate matching", included: true },
-    { label: "Dedicated support", included: true },
-    { label: "Advanced analytics", included: true },
-  ],
-};
-
-const PLAN_ORDER: PlanTier[] = ["Basic", "Pro", "Premium"];
 
 const PLAN_COLORS: Record<PlanTier, string> = {
   Basic: "from-slate-800 to-slate-900",
@@ -180,6 +148,7 @@ function PaymentModal({
   daysRemaining,
   cost,
   planPrices,
+  billingCycleDays,
   onSuccess,
 }: {
   open: boolean;
@@ -189,6 +158,7 @@ function PaymentModal({
   daysRemaining: number;
   cost: number;
   planPrices: Record<string, number>;
+  billingCycleDays: number;
   onSuccess: () => void;
 }) {
   const [loading, setLoading] = useState(false);
@@ -239,6 +209,21 @@ function PaymentModal({
           ? `Upgraded to ${targetPlan}! New features are now active.`
           : `Plan renewed at ${targetPlan}! New features are now active.`,
       );
+
+      // Post-upgrade reactivation check
+      if (
+        window.confirm(
+          "Your plan has been upgraded. Would you like to reactivate your suspended recruiter seats now?",
+        )
+      ) {
+        try {
+          await reactivateSuspended();
+          toast.success("Any suspended recruiter seats have been successfully reactivated.");
+        } catch (e) {
+          toast.error("Failed to reactivate recruiters. Please contact support or retry later.");
+        }
+      }
+
       onSuccess();
       onClose();
     } catch (e) {
@@ -259,7 +244,7 @@ function PaymentModal({
           <DialogDescription className="text-[13px]">
             {daysRemaining > 0
               ? "Your plan upgrades immediately. Features unlock right away."
-              : "Your account is renewed immediately for a fresh 30-day cycle."}
+              : `Your account is renewed immediately for a fresh ${billingCycleDays}-day cycle.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -281,7 +266,7 @@ function PaymentModal({
               </div>
               <div className="h-px bg-border" />
               <div className="rounded-lg bg-primary/5 px-3 py-2 font-mono text-[12px] text-muted-foreground">
-                {formatCurrency(priceDiff)} × ({daysRemaining} / 30) ={" "}
+                {formatCurrency(priceDiff)} × ({daysRemaining} / {billingCycleDays}) ={" "}
                 <span className="font-semibold text-foreground">{formatCurrency(cost)}</span>
               </div>
             </>
@@ -419,6 +404,80 @@ function RenewalDialog({
   );
 }
 
+// ─── Downgrade Preview Dialog ─────────────────────────────────────────────────
+
+function DowngradePreviewDialog({
+  open,
+  onClose,
+  targetPlan,
+  onConfirm,
+}: {
+  open: boolean;
+  onClose: () => void;
+  targetPlan: PlanTier;
+  onConfirm: () => void;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<{
+    jobsToClose: number;
+    recruitersToSuspend: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (open && targetPlan) {
+      setLoading(true);
+      getDowngradePreview(targetPlan)
+        .then(setPreview)
+        .catch(() => toast.error("Failed to load downgrade preview"))
+        .finally(() => setLoading(false));
+    } else {
+      setPreview(null);
+    }
+  }, [open, targetPlan]);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="sm:max-w-[440px]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 font-display text-[17px] text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            Downgrade Warning
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-3 rounded-xl border border-destructive/20 bg-destructive/10 p-4 text-[13px] text-destructive">
+          {loading ? (
+            <p>Loading impact preview...</p>
+          ) : preview ? (
+            <p>
+              Downgrading to {targetPlan} will close{" "}
+              <strong>{preview.jobsToClose} active jobs</strong> and suspend{" "}
+              <strong>{preview.recruitersToSuspend} recruiter seats</strong>.
+            </p>
+          ) : null}
+          <p>This action cannot be undone once applied.</p>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm();
+              onClose();
+            }}
+            disabled={loading}
+            variant="destructive"
+          >
+            Proceed with Downgrade
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main PlanTab ─────────────────────────────────────────────────────────────
 
 export function PlanTab() {
@@ -431,10 +490,14 @@ export function PlanTab() {
     planPrices,
     upgradeCostPreview,
     refreshPlan,
+    planCatalog,
+    billingCycleDays,
   } = usePlan();
 
   const [upgradeTarget, setUpgradeTarget] = useState<PlanTier | null>(null);
   const [renewalTarget, setRenewalTarget] = useState<PlanTier | null>(null);
+  const [downgradePreviewTarget, setDowngradePreviewTarget] = useState<PlanTier | null>(null);
+  const [downgradeAction, setDowngradeAction] = useState<"immediate" | "scheduled" | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [history, setHistory] = useState<PlanChangeEntry[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -476,7 +539,8 @@ export function PlanTab() {
     void loadHistory();
   };
 
-  const isUpgrade = (target: PlanTier) => PLAN_ORDER.indexOf(target) > PLAN_ORDER.indexOf(plan);
+  const isUpgrade = (target: PlanTier) =>
+    planCatalog.planOrder.indexOf(target) > planCatalog.planOrder.indexOf(plan);
   const isCurrentPlan = (target: PlanTier) => target === plan;
 
   return (
@@ -565,10 +629,13 @@ export function PlanTab() {
       <div>
         <h2 className="mb-3 font-display text-[16px] font-semibold">Choose a plan</h2>
         <div className="grid gap-4 md:grid-cols-3">
-          {PLAN_ORDER.map((tier) => {
+          {planCatalog.planOrder.map((tier) => {
             const isCurrent = isCurrentPlan(tier);
             const isUp = isUpgrade(tier);
-            const isDown = PLAN_ORDER.indexOf(tier) < PLAN_ORDER.indexOf(plan);
+            const isDown =
+              planCatalog.planOrder.indexOf(tier) < planCatalog.planOrder.indexOf(plan);
+            const tierPlan = getPlanFromCatalog(planCatalog, tier);
+            const tierFeatures = buildPlanFeatures(tierPlan, tier);
             const upCost = upgradeCostPreview[tier];
             const hasPending = !!pendingPlan;
 
@@ -607,7 +674,7 @@ export function PlanTab() {
                 <CardContent className="flex flex-1 flex-col gap-4">
                   {/* Features */}
                   <ul className="flex-1 space-y-1.5">
-                    {PLAN_FEATURES[tier].map((f) => (
+                    {tierFeatures.map((f) => (
                       <li key={f.label} className="flex items-start gap-2 text-[12.5px]">
                         <CheckCircle2
                           className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${
@@ -666,17 +733,11 @@ export function PlanTab() {
                           )}
                         </Button>
                       )}
-                      {/* Upgrade at renewal */}
-                      {!hasPending && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-1.5 text-[12px]"
-                          onClick={() => setRenewalTarget(tier)}
-                        >
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          Upgrade at Renewal
-                        </Button>
+                      {/* Paid upgrades require checkout — immediate upgrade only */}
+                      {!hasPending && (planPrices[tier] ?? 0) > 0 && (
+                        <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-center text-[11px] text-muted-foreground">
+                          Paid upgrades require checkout. Use Upgrade Now above.
+                        </p>
                       )}
                     </div>
                   ) : isDown ? (
@@ -695,7 +756,10 @@ export function PlanTab() {
                         <Button
                           className="w-full gap-1.5"
                           size="sm"
-                          onClick={() => setUpgradeTarget(tier)}
+                          onClick={() => {
+                            setDowngradeAction("immediate");
+                            setDowngradePreviewTarget(tier);
+                          }}
                         >
                           <Sparkles className="h-3.5 w-3.5" />
                           Renew & Downgrade ({formatCurrency(planPrices[tier] ?? 0)})
@@ -705,7 +769,10 @@ export function PlanTab() {
                           variant="outline"
                           size="sm"
                           className="w-full gap-1.5 text-[12px] text-muted-foreground"
-                          onClick={() => setRenewalTarget(tier)}
+                          onClick={() => {
+                            setDowngradeAction("scheduled");
+                            setDowngradePreviewTarget(tier);
+                          }}
                         >
                           <TrendingDown className="h-3.5 w-3.5" />
                           Downgrade at Renewal
@@ -821,6 +888,7 @@ export function PlanTab() {
               : (upgradeCostPreview[upgradeTarget] ?? 0)
           }
           planPrices={planPrices}
+          billingCycleDays={billingCycleDays}
           onSuccess={handleUpgradeSuccess}
         />
       )}
@@ -832,11 +900,28 @@ export function PlanTab() {
           targetPlan={renewalTarget}
           currentPlan={plan}
           planExpiresAt={planExpiresAt}
-          isDowngrade={PLAN_ORDER.indexOf(renewalTarget) < PLAN_ORDER.indexOf(plan)}
+          isDowngrade={
+            planCatalog.planOrder.indexOf(renewalTarget) < planCatalog.planOrder.indexOf(plan)
+          }
           planPrices={planPrices}
           onSuccess={() => {
             refreshPlan();
             setRenewalTarget(null);
+          }}
+        />
+      )}
+
+      {downgradePreviewTarget && downgradeAction && (
+        <DowngradePreviewDialog
+          open={!!downgradePreviewTarget}
+          onClose={() => setDowngradePreviewTarget(null)}
+          targetPlan={downgradePreviewTarget}
+          onConfirm={() => {
+            if (downgradeAction === "immediate") {
+              setUpgradeTarget(downgradePreviewTarget);
+            } else {
+              setRenewalTarget(downgradePreviewTarget);
+            }
           }}
         />
       )}

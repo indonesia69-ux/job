@@ -35,7 +35,7 @@ export function CandidatePanel({
       return;
     }
     try {
-      await updateApplicationStatus(candidate.applicationId, display);
+      await updateApplicationStatus(candidate.applicationId, display, {}, apiStatus);
       toast.success(message);
       await router.invalidate();
     } catch (e) {
@@ -90,6 +90,26 @@ export function CandidatePanel({
                 <Meta icon={<Briefcase className="h-3.5 w-3.5" />}>
                   {candidate.experienceYears} yrs
                 </Meta>
+                {/*
+                 * R5: Contact info is redacted server-side for all recruiter requests.
+                 * We render visually-blurred placeholder text so the layout doesn't collapse.
+                 */}
+                <Meta icon={<span className="h-3.5 w-3.5 text-[10px]">📞</span>}>
+                  <span
+                    className="select-none blur-md"
+                    title="Contact details are hidden to protect candidate privacy"
+                  >
+                    +91 98XXX XXXXX
+                  </span>
+                </Meta>
+                <Meta icon={<span className="h-3.5 w-3.5 text-[10px]">✉</span>}>
+                  <span
+                    className="select-none blur-md"
+                    title="Contact details are hidden to protect candidate privacy"
+                  >
+                    cand•••@email.com
+                  </span>
+                </Meta>
               </div>
 
               <WorkflowActions
@@ -143,7 +163,11 @@ export function CandidatePanel({
                             <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
                               Date
                             </span>
-                            {new Date(candidate.interviewDate).toLocaleString()}
+                            {new Date(candidate.interviewDate).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
                           </div>
                           <div>
                             <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
@@ -181,6 +205,16 @@ export function CandidatePanel({
                             {candidate.interviewRound}
                           </div>
                         </div>
+                        {candidate.candidateResponseNote && (
+                          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2.5 dark:border-amber-700/40 dark:bg-amber-900/20">
+                            <span className="block text-[11px] font-medium uppercase tracking-wider text-amber-700 dark:text-amber-400">
+                              Candidate's Reschedule Message
+                            </span>
+                            <p className="mt-1 text-[13px] italic text-foreground/80">
+                              "{candidate.candidateResponseNote}"
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-[13px] text-muted-foreground">

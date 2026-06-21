@@ -1,6 +1,13 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect } from "react";
 import { X, CheckCircle2, Building2 } from "lucide-react";
 import { useAdminStore, PlanTier } from "@/lib/admin-store";
+import {
+  fetchPlanCatalog,
+  formatPlanPrice,
+  getPlanFromCatalog,
+  FALLBACK_PLAN_CATALOG,
+  type PlanCatalogResponse,
+} from "@/lib/planCatalog";
 
 interface JoinUsDialogProps {
   open: boolean;
@@ -15,30 +22,48 @@ const HOSPITAL_TYPES = [
   "Nursing Home",
 ];
 
-const PLANS: { id: PlanTier; price: string; tagline: string; features: string[] }[] = [
-  {
-    id: "Basic",
-    price: "Free",
-    tagline: "Get started",
-    features: ["5 job posts/mo", "Basic analytics", "Email support"],
-  },
-  {
-    id: "Pro",
-    price: "₹4,999/mo",
-    tagline: "Most popular",
-    features: ["50 job posts/mo", "Candidate insights", "Priority support"],
-  },
-  {
-    id: "Premium",
-    price: "₹14,999/mo",
-    tagline: "Enterprise",
-    features: ["Unlimited posts", "Verified badge", "Dedicated manager"],
-  },
-];
+const PLAN_TAGLINES: Record<PlanTier, string> = {
+  Basic: "Get started",
+  Pro: "Most popular",
+  Premium: "Enterprise",
+};
+
+const PLAN_EXTRAS: Record<PlanTier, string[]> = {
+  Basic: ["Basic analytics", "Email support"],
+  Pro: ["Candidate insights", "Priority support"],
+  Premium: ["Verified badge", "Dedicated manager"],
+};
+
+type PlanOption = {
+  id: PlanTier;
+  price: string;
+  tagline: string;
+  features: string[];
+};
+
+function buildPlanOptions(catalog: PlanCatalogResponse): PlanOption[] {
+  return catalog.planOrder.map((id) => {
+    const plan = getPlanFromCatalog(catalog, id);
+    const jobLabel =
+      plan.activeJobLimit === 1 ? "1 job post/mo" : `${plan.activeJobLimit} job posts/mo`;
+    const price =
+      plan.isLaunchOffer && plan.priceInRupees === 0 ? "Free" : formatPlanPrice(plan.priceInRupees);
+
+    return {
+      id,
+      price,
+      tagline: PLAN_TAGLINES[id],
+      features: [jobLabel, ...PLAN_EXTRAS[id]],
+    };
+  });
+}
 
 export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
   const { submitRecruiterApplication } = useAdminStore();
   const [submitted, setSubmitted] = useState(false);
+  const [planOptions, setPlanOptions] = useState<PlanOption[]>(() =>
+    buildPlanOptions(FALLBACK_PLAN_CATALOG),
+  );
   const [form, setForm] = useState({
     hospitalName: "",
     hospitalType: HOSPITAL_TYPES[0],
@@ -52,6 +77,14 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
     email: "",
     plan: "Pro" as PlanTier,
   });
+
+  useEffect(() => {
+    void fetchPlanCatalog()
+      .then((catalog) => setPlanOptions(buildPlanOptions(catalog)))
+      .catch(() => {
+        // Keep FALLBACK_PLAN_CATALOG values on failure.
+      });
+  }, []);
 
   if (!open) return null;
 
@@ -233,7 +266,7 @@ export function JoinUsDialog({ open, onClose }: JoinUsDialogProps) {
             <div>
               <label className="text-xs font-medium text-muted-foreground">Choose Plan</label>
               <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {PLANS.map((p) => {
+                {planOptions.map((p) => {
                   const active = form.plan === p.id;
                   return (
                     <button

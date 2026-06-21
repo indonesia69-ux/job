@@ -23,8 +23,8 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { login, isAuthenticated, isReady } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(DEMO_CREDENTIALS.email);
-  const [password, setPassword] = useState(DEMO_CREDENTIALS.password);
+  const [email, setEmail] = useState(import.meta.env.DEV ? DEMO_CREDENTIALS.email : "");
+  const [password, setPassword] = useState(import.meta.env.DEV ? DEMO_CREDENTIALS.password : "");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -185,16 +185,18 @@ function LoginPage() {
               )}
             </form>
 
-            <div className="mt-5 rounded-lg bg-muted/60 border p-3 text-xs">
-              <p className="font-medium text-foreground mb-1">Demo Credentials</p>
-              <p className="text-muted-foreground">
-                Email: <span className="font-mono text-foreground">{DEMO_CREDENTIALS.email}</span>
-              </p>
-              <p className="text-muted-foreground">
-                Password:{" "}
-                <span className="font-mono text-foreground">{DEMO_CREDENTIALS.password}</span>
-              </p>
-            </div>
+            {import.meta.env.DEV && (
+              <div className="mt-5 rounded-lg bg-muted/60 border p-3 text-xs">
+                <p className="font-medium text-foreground mb-1">Demo Credentials</p>
+                <p className="text-muted-foreground">
+                  Email: <span className="font-mono text-foreground">{DEMO_CREDENTIALS.email}</span>
+                </p>
+                <p className="text-muted-foreground">
+                  Password:{" "}
+                  <span className="font-mono text-foreground">{DEMO_CREDENTIALS.password}</span>
+                </p>
+              </div>
+            )}
           </div>
 
           <p className="lg:hidden mt-6 text-center text-xs text-muted-foreground leading-relaxed px-4">

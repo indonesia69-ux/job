@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import type { Profile } from "@/data/profile";
 import { authHeader, isAuthenticated } from "@/store/authStore";
 import { setProfile } from "@/store/profileStore";
@@ -23,7 +23,7 @@ export async function hydrateProfileFromApi(): Promise<Profile | null> {
 
 async function hydrateProfileFromApiInner(): Promise<Profile | null> {
   try {
-    const res = await fetch(`${apiBase()}/api/candidates/me`, { headers: authHeader() });
+    const res = await apiFetch(`${apiBase()}/api/candidates/me`, { headers: authHeader() });
     if (!res.ok) return null;
     const data = await res.json();
     if (data.profile && data.cvSource !== "upload") {

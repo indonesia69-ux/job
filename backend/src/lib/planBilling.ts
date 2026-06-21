@@ -4,26 +4,23 @@
  * No database calls — safe to import anywhere.
  */
 
-// ─── Plan catalogue ──────────────────────────────────────────────────────────
+import {
+  BILLING_CYCLE_DAYS,
+  PLAN_ORDER,
+  PLAN_PRICES,
+  type PlanTier,
+} from '../config/plans';
 
-/** Monthly price in INR for each plan tier. */
-export const PLAN_PRICES: Record<string, number> = {
-  Basic:   5_000,
-  Pro:     7_500,
-  Premium: 10_000,
-};
-
-/** Canonical order — index increases with tier. */
-export const PLAN_ORDER: string[] = ['Basic', 'Pro', 'Premium'];
+export { BILLING_CYCLE_DAYS, PLAN_ORDER, PLAN_PRICES };
 
 // ─── Direction helpers ────────────────────────────────────────────────────────
 
 export function isUpgrade(fromPlan: string, toPlan: string): boolean {
-  return PLAN_ORDER.indexOf(toPlan) > PLAN_ORDER.indexOf(fromPlan);
+  return PLAN_ORDER.indexOf(toPlan as PlanTier) > PLAN_ORDER.indexOf(fromPlan as PlanTier);
 }
 
 export function isDowngrade(fromPlan: string, toPlan: string): boolean {
-  return PLAN_ORDER.indexOf(toPlan) < PLAN_ORDER.indexOf(fromPlan);
+  return PLAN_ORDER.indexOf(toPlan as PlanTier) < PLAN_ORDER.indexOf(fromPlan as PlanTier);
 }
 
 export function isSamePlan(fromPlan: string, toPlan: string): boolean {
@@ -54,9 +51,10 @@ export function computeUpgradeCost(
   currentPlan: string,
   newPlan: string,
   daysRemaining: number,
-  cycleDays = 30,
+  cycleDays = BILLING_CYCLE_DAYS,
 ): number {
-  const priceDiff = (PLAN_PRICES[newPlan] ?? 0) - (PLAN_PRICES[currentPlan] ?? 0);
+  const priceDiff =
+    (PLAN_PRICES[newPlan as PlanTier] ?? 0) - (PLAN_PRICES[currentPlan as PlanTier] ?? 0);
   if (priceDiff <= 0) return 0;
   return Math.round((priceDiff * daysRemaining) / cycleDays);
 }

@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import type { Profile } from "@/data/profile";
 import { authHeader } from "@/store/authStore";
 import type { CustomFieldResponses } from "@/lib/jobCustomFields";
@@ -13,7 +13,7 @@ export class ApplicationError extends Error {
 }
 
 export async function fetchAppliedJobIds(): Promise<Set<string>> {
-  const res = await fetch(`${apiBase()}/api/applications`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/applications`, { headers: authHeader() });
   if (!res.ok) return new Set();
   const data = await res.json();
   return new Set(data.map((a: { jobId: string }) => a.jobId));
@@ -57,7 +57,7 @@ export async function syncCandidateProfile(
   } catch {
     throw new ApplicationError("Could not serialize profile data. Please try again.");
   }
-  const res = await fetch(`${apiBase()}/api/candidates/me`, {
+  const res = await apiFetch(`${apiBase()}/api/candidates/me`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: serialized,
@@ -75,7 +75,7 @@ async function postApplication(body: Record<string, unknown>): Promise<void> {
   } catch {
     throw new ApplicationError("Could not prepare application data. Please try again.");
   }
-  const res = await fetch(`${apiBase()}/api/applications`, {
+  const res = await apiFetch(`${apiBase()}/api/applications`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: serialized,
@@ -175,7 +175,7 @@ export type ApiApplication = {
 };
 
 export async function fetchMyApplications(): Promise<ApiApplication[]> {
-  const res = await fetch(`${apiBase()}/api/applications`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/applications`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to load applications");
   return res.json();
 }

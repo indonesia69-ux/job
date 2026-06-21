@@ -3,20 +3,38 @@ import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
 import {
-  PLAN_ORDER,
   isUpgrade,
   isDowngrade,
   daysRemainingInCycle,
   computeUpgradeCost,
   computeUpgradeCostPreview,
   addDays,
-  PLAN_PRICES,
 } from '../lib/planBilling';
-import { PLAN_RECRUITER_LIMITS } from '../lib/helpers';
+import { computeRecruiterActivationPlan, applyRecruiterActivationPlan } from '../lib/recruiterPlan';
+import { getRecruiterLimit } from '../lib/helpers';
+import {
+  isValidPlan,
+  PLAN_ORDER,
+  PLANS,
+  PLAN_PRICES,
+  BILLING_CYCLE_DAYS,
+  getPlanPrice,
+} from '../config/plans';
 
 const router = Router();
 
-// All plan routes require a logged-in recruiter
+// ─── GET /api/plan/catalog ───────────────────────────────────────────────────
+// Public plan catalogue — limits and prices from config/plans.ts (no auth).
+router.get('/catalog', (_req, res) => {
+  res.json({
+    billingCycleDays: BILLING_CYCLE_DAYS,
+    planOrder: PLAN_ORDER,
+    plans: PLAN_ORDER.map((id) => PLANS[id]),
+    planPrices: PLAN_PRICES,
+  });
+});
+
+// All other plan routes require a logged-in recruiter
 router.use(requireAuth, requireRole('RECRUITER'));
 
 // ─── GET /api/plan/current ────────────────────────────────────────────────────
@@ -37,7 +55,7 @@ router.get('/current', async (req: AuthRequest, res: Response) => {
       const start = hospital.approvedAt || hospital.submittedAt;
       if (start) {
         activeExpiresAt = new Date(start);
-        activeExpiresAt.setDate(activeExpiresAt.getDate() + 30);
+        activeExpiresAt.setDate(activeExpiresAt.getDate() + BILLING_CYCLE_DAYS);
       }
     }
 
@@ -64,7 +82,7 @@ router.get('/current', async (req: AuthRequest, res: Response) => {
 router.post('/upgrade/immediate', async (req: AuthRequest, res: Response) => {
   const { newPlan, paymentRef } = req.body as { newPlan?: string; paymentRef?: string };
 
-  if (!newPlan || !PLAN_ORDER.includes(newPlan)) {
+  if (!newPlan || !isValidPlan(newPlan)) {
     res.status(400).json({ error: 'Invalid plan. Must be Basic, Pro, or Premium.' });
     return;
   }
@@ -86,7 +104,7 @@ router.post('/upgrade/immediate', async (req: AuthRequest, res: Response) => {
       const start = hospital.approvedAt || hospital.submittedAt;
       if (start) {
         activeExpiresAt = new Date(start);
-        activeExpiresAt.setDate(activeExpiresAt.getDate() + 30);
+        activeExpiresAt.setDate(activeExpiresAt.getDate() + BILLING_CYCLE_DAYS);
       }
     }
 
@@ -103,19 +121,11 @@ router.post('/upgrade/immediate', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Block if a scheduled change already exists (Q5: not allowed, contact admin)
-    if (hospital.pendingPlan) {
-      res.status(409).json({
-        error:
-          'A plan change is already scheduled for your next renewal. Please contact admin to modify it.',
-        pendingPlan: hospital.pendingPlan,
-      });
-      return;
-    }
+    // Immediate upgrade overwrites any pending plan (which is cleared in the transaction below).
 
     // Cost logic: if expired, pay full price. If active, pay pro-rated difference.
     const amountPaid = isExpired 
-      ? (PLAN_PRICES[newPlan] ?? 0) 
+      ? (PLAN_PRICES[newPlan] ?? 0)
       : computeUpgradeCost(currentPlan, newPlan, daysRemaining);
 
     // Verify payment was actually completed
@@ -141,8 +151,8 @@ router.post('/upgrade/immediate', async (req: AuthRequest, res: Response) => {
     }
 
     // Apply immediately: update plan, extend cycle, update recruiter cap
-    const newExpiresAt = addDays(30);
-    const newMaxRecruiters = PLAN_RECRUITER_LIMITS[newPlan] ?? 3;
+    const newExpiresAt = addDays(BILLING_CYCLE_DAYS);
+    const newMaxRecruiters = getRecruiterLimit(newPlan);
 
     const [updatedHospital] = await prisma.$transaction([
       prisma.hospital.update({
@@ -216,7 +226,7 @@ router.post('/upgrade/immediate', async (req: AuthRequest, res: Response) => {
 router.post('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
   const { newPlan } = req.body as { newPlan?: string };
 
-  if (!newPlan || !PLAN_ORDER.includes(newPlan)) {
+  if (!newPlan || !isValidPlan(newPlan)) {
     res.status(400).json({ error: 'Invalid plan. Must be Basic, Pro, or Premium.' });
     return;
   }
@@ -235,12 +245,12 @@ router.post('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    // Q5: Block if a scheduled change already exists — contact admin
-    if (hospital.pendingPlan) {
-      res.status(409).json({
+    // Renewal change overwrites any existing pending plan.
+
+    if (isUpgrade(hospital.onboardingPlan, newPlan) && getPlanPrice(newPlan) > 0) {
+      res.status(400).json({
         error:
-          'A plan change is already scheduled for your next renewal. Please contact admin to modify it.',
-        pendingPlan: hospital.pendingPlan,
+          'Scheduling a paid plan upgrade for renewal is not supported yet. Use Upgrade Now to pay and activate immediately.',
       });
       return;
     }
@@ -251,7 +261,7 @@ router.post('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
       const start = hospital.approvedAt || hospital.submittedAt;
       if (start) {
         activeExpiresAt = new Date(start);
-        activeExpiresAt.setDate(activeExpiresAt.getDate() + 30);
+        activeExpiresAt.setDate(activeExpiresAt.getDate() + BILLING_CYCLE_DAYS);
       }
     }
 
@@ -259,7 +269,7 @@ router.post('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
       ? 'scheduled_downgrade'
       : 'scheduled_upgrade';
 
-    const effectiveAt = activeExpiresAt ?? addDays(30);
+    const effectiveAt = activeExpiresAt ?? addDays(BILLING_CYCLE_DAYS);
 
     await prisma.$transaction([
       prisma.hospital.update({
@@ -276,10 +286,10 @@ router.post('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
           fromPlan:      hospital.onboardingPlan,
           toPlan:        newPlan,
           changeType,
-          amountPaid:    0,
+          amountPaid:    null,
           effectiveAt,
           paymentStatus: 'Pending',
-          note:          `Scheduled ${changeType.replace('_', ' ')} at renewal on ${effectiveAt.toISOString().slice(0, 10)}.`,
+          note:          `Scheduled ${changeType.replace(/_/g, ' ')} at renewal on ${effectiveAt.toISOString().slice(0, 10)}.`,
         },
       }),
     ]);
@@ -356,7 +366,7 @@ router.delete('/upgrade/renewal', async (req: AuthRequest, res: Response) => {
       const start = hospital.approvedAt || hospital.submittedAt;
       if (start) {
         activeExpiresAt = new Date(start);
-        activeExpiresAt.setDate(activeExpiresAt.getDate() + 30);
+        activeExpiresAt.setDate(activeExpiresAt.getDate() + BILLING_CYCLE_DAYS);
       }
     }
 
@@ -385,6 +395,69 @@ router.get('/history', async (req: AuthRequest, res: Response) => {
   } catch (err) {
     logger.error(err);
     res.status(500).json({ error: 'Failed to fetch plan history' });
+  }
+});
+
+// ─── GET /api/plan/downgrade-preview ────────────────────────────────────────
+// Preview which recruiters will be suspended/activated if a plan is changed.
+router.get('/downgrade-preview', async (req: AuthRequest, res: Response) => {
+  const targetPlan = req.query.targetPlan as string;
+  if (!targetPlan || !isValidPlan(targetPlan)) {
+    res.status(400).json({ error: 'Invalid target plan.' });
+    return;
+  }
+
+  try {
+    const limit = getRecruiterLimit(targetPlan);
+    const plan = await computeRecruiterActivationPlan(req.user!.hospitalId!, limit);
+    
+    const activeJobsCount = await prisma.job.count({
+      where: { hospitalId: req.user!.hospitalId!, status: 'Active' },
+    });
+
+    res.json({
+      targetPlan,
+      accountsToSuspend: plan.toSuspend.map(u => ({ id: u.id, name: u.name, email: u.email })),
+      accountsToKeepActive: plan.toActivate.concat(plan.remainingActive).map(u => ({ id: u.id, name: u.name, email: u.email })),
+      willSuspend: plan.toSuspend.length,
+      jobsToClose: activeJobsCount,
+    });
+  } catch (err) {
+    logger.error(err);
+    res.status(500).json({ error: 'Failed to preview downgrade' });
+  }
+});
+
+// ─── POST /api/plan/reactivate-suspended ────────────────────────────────────
+// Explicitly reactivates suspended accounts up to the current plan limit.
+router.post('/reactivate-suspended', async (req: AuthRequest, res: Response) => {
+  try {
+    const hospital = await prisma.hospital.findUnique({
+      where: { id: req.user!.hospitalId! },
+    });
+    if (!hospital) {
+      res.status(404).json({ error: 'Hospital not found' });
+      return;
+    }
+
+    const limit = getRecruiterLimit(hospital.onboardingPlan);
+    const plan = await computeRecruiterActivationPlan(hospital.id, limit);
+    
+    if (plan.toActivate.length === 0) {
+      res.json({ message: 'No accounts to reactivate or limit already reached.', reactivatedCount: 0 });
+      return;
+    }
+
+    await applyRecruiterActivationPlan(plan, 'Reactivated after plan upgrade');
+    
+    res.json({
+      message: `Reactivated ${plan.toActivate.length} accounts.`,
+      reactivatedCount: plan.toActivate.length,
+      reactivatedAccounts: plan.toActivate.map(u => ({ id: u.id, name: u.name, email: u.email })),
+    });
+  } catch (err) {
+    logger.error(err);
+    res.status(500).json({ error: 'Failed to reactivate accounts' });
   }
 });
 

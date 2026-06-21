@@ -1,4 +1,4 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader, getUser } from "@/store/authStore";
 import { createFileRoute } from "@tanstack/react-router";
 import { JobsPage } from "@/features/jobs/JobsPage";
@@ -8,7 +8,7 @@ async function loadPostedJobs() {
   const user = getUser();
   const headers = authHeader();
   const hospitalParam = user?.hospitalId ? `?hospitalId=${user.hospitalId}` : "";
-  const res = await fetch(`${apiBase()}/api/jobs${hospitalParam}`, { headers });
+  const res = await apiFetch(`${apiBase()}/api/jobs${hospitalParam}`, { headers });
   if (!res.ok) throw new Error("Failed to fetch jobs");
   return { jobs: await res.json() };
 }

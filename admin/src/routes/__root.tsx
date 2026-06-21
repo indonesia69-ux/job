@@ -12,7 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { AdminStoreProvider } from "@/lib/admin-store";
-import { apiBase, apiFetch } from "@/lib/api";
+import { setUnauthorizedHandler } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPageLoader } from "@/components/common/PageLoader";
@@ -146,7 +146,15 @@ function AppShell() {
   const navigate = useNavigate();
   const isLoginRoute = pathname === "/login";
 
-  useSSE(); // Enable real-time SSE notifications
+  useSSE(isReady && isAuthenticated && !isLoginRoute);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      if (!isLoginRoute) {
+        navigate({ to: "/login" });
+      }
+    });
+  }, [navigate, isLoginRoute]);
 
   useEffect(() => {
     if (isReady && !isAuthenticated && !isLoginRoute) {

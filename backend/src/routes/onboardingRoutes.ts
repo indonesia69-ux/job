@@ -2,7 +2,9 @@ import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
 import { getRecruiterLimit } from '../lib/helpers';
+import { isValidPlan } from '../config/plans';
 import { sendOTP } from '../lib/otp';
+import { notifyAdminHospitalOnboarding } from '../lib/notifyAdmin';
 
 const router = Router();
 
@@ -59,7 +61,20 @@ router.post('/hospitals', async (req: Request, res: Response) => {
       return;
     }
 
-    if (!['Basic', 'Pro', 'Premium'].includes(plan)) {
+    if (!registrationNumber || !registrationAuthority || !ownershipType) {
+      res.status(400).json({
+        error: 'Registration number, registration authority, and ownership type are required.',
+      });
+      return;
+    }
+
+    const phoneDigits = String(phone).replace(/^\+91/, '').replace(/\s+/g, '');
+    if (!/^\d{10}$/.test(phoneDigits)) {
+      res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
+      return;
+    }
+
+    if (!isValidPlan(String(plan))) {
       res.status(400).json({ error: 'Plan must be Basic, Pro, or Premium.' });
       return;
     }
@@ -131,6 +146,8 @@ router.post('/hospitals', async (req: Request, res: Response) => {
       }
     });
 
+    void notifyAdminHospitalOnboarding(hospital);
+
     let otpSent = false;
     if (phone) {
       try {
@@ -189,9 +206,9 @@ router.get('/verify-code/:code', async (req: Request, res: Response) => {
       return;
     }
 
-    // Count only RECRUITER users for limit check
+    // Count only active RECRUITER users for limit check (exclude deleted and plan-suspended)
     const recruiterCount = await prisma.user.count({
-      where: { hospitalId: hospital.id, role: 'RECRUITER' }
+      where: { hospitalId: hospital.id, role: 'RECRUITER', deletedAt: null, planSuspendedAt: null }
     });
 
     const limit = getRecruiterLimit(hospital.onboardingPlan);

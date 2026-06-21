@@ -40,43 +40,53 @@ router.get('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, 
     const eightWeeksAgo = new Date();
     eightWeeksAgo.setUTCDate(eightWeeksAgo.getUTCDate() - 56);
 
-    const jobs = await prisma.job.findMany({
-      where: { hospitalId },
-      include: {
-        applications: {
-          where: { appliedOn: { gte: eightWeeksAgo } },
+    const [
+      activeJobs,
+      totalApplicants,
+      newApplicants,
+      shortlisted,
+      recentApplications,
+      recentJobs,
+    ] = await Promise.all([
+      prisma.job.count({ where: { hospitalId, status: 'Active' } }),
+      prisma.application.count({
+        where: { job: { hospitalId }, appliedOn: { gte: eightWeeksAgo } },
+      }),
+      prisma.application.count({
+        where: { job: { hospitalId }, appliedOn: { gte: eightWeeksAgo }, status: 'New' },
+      }),
+      prisma.application.count({
+        where: { job: { hospitalId }, appliedOn: { gte: eightWeeksAgo }, status: 'Shortlisted' },
+      }),
+      prisma.application.findMany({
+        where: { job: { hospitalId }, appliedOn: { gte: eightWeeksAgo } },
+        select: { appliedOn: true },
+      }),
+      prisma.job.findMany({
+        where: {
+          hospitalId,
+          OR: [{ postedOn: { gte: eightWeeksAgo } }, { createdAt: { gte: eightWeeksAgo } }],
         },
-      },
-    });
-
-    const activeJobs = jobs.filter((j) => j.status === 'Active').length;
-    let totalApplicants = 0;
-    let newApplicants = 0;
-    let shortlisted = 0;
+        select: { postedOn: true, createdAt: true },
+      }),
+    ]);
 
     // Initialise per-week counters
     const jobsPerWeek: Record<string, number> = {};
     const appsPerWeek: Record<string, number> = {};
     weeks.forEach((w) => { jobsPerWeek[w] = 0; appsPerWeek[w] = 0; });
 
-    jobs.forEach((j) => {
-      // Count job in its posted week
-      if (j.postedOn && j.postedOn >= eightWeeksAgo) {
-        const idx = weekIndex(j.postedOn);
-        if (idx !== -1) jobsPerWeek[weeks[idx]]++;
-      } else if (j.createdAt >= eightWeeksAgo) {
-        const idx = weekIndex(j.createdAt);
+    recentJobs.forEach((j) => {
+      const date = j.postedOn && j.postedOn >= eightWeeksAgo ? j.postedOn : j.createdAt;
+      if (date >= eightWeeksAgo) {
+        const idx = weekIndex(date);
         if (idx !== -1) jobsPerWeek[weeks[idx]]++;
       }
+    });
 
-      j.applications.forEach((a) => {
-        totalApplicants++;
-        if (a.status === 'New') newApplicants++;
-        if (a.status === 'Shortlisted') shortlisted++;
-
-        const idx = weekIndex(a.appliedOn);
-        if (idx !== -1) appsPerWeek[weeks[idx]]++;
-      });
+    recentApplications.forEach((a) => {
+      const idx = weekIndex(a.appliedOn);
+      if (idx !== -1) appsPerWeek[weeks[idx]]++;
     });
 
     const chart = weeks.map((w) => ({

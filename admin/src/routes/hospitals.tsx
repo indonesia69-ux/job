@@ -22,6 +22,16 @@ export const Route = createFileRoute("/hospitals")({
   component: HospitalsPage,
 });
 
+function getRecruiterPortalUrl(): string | null {
+  const configured = import.meta.env.VITE_RECRUITER_URL?.trim() || "";
+  if (configured) return configured;
+  if (import.meta.env.PROD) {
+    console.error("VITE_RECRUITER_URL is required for production impersonation links.");
+    return null;
+  }
+  return "http://localhost:8081";
+}
+
 type Level = "hospitals" | "recruiters" | "jobs" | "applicants";
 
 function HospitalsPage() {
@@ -395,10 +405,13 @@ function RecruitersList({
                           onClick={async () => {
                             if (!confirm(`Login as ${r.name}? This opens a 1-hour session.`))
                               return;
+                            const recruiterUrl = getRecruiterPortalUrl();
+                            if (!recruiterUrl) {
+                              toast.error("Recruiter URL not configured");
+                              return;
+                            }
                             try {
                               const result = await store.impersonateUser(r.id);
-                              const recruiterUrl =
-                                import.meta.env.VITE_RECRUITER_URL || "http://localhost:8081";
                               const url = `${recruiterUrl}/impersonate?token=${encodeURIComponent(result.token)}`;
                               const popup = window.open(url, "_blank");
                               if (!popup) {
@@ -416,8 +429,13 @@ function RecruitersList({
                               toast.error(err?.message || "Failed to impersonate");
                             }
                           }}
-                          className="rounded p-1.5 hover:bg-accent text-primary"
-                          title="Login as recruiter"
+                          className="rounded p-1.5 hover:bg-accent text-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={
+                            getRecruiterPortalUrl()
+                              ? "Login as recruiter"
+                              : "Recruiter URL not configured"
+                          }
+                          disabled={!getRecruiterPortalUrl()}
                         >
                           <LogIn className="h-3.5 w-3.5" />
                         </button>

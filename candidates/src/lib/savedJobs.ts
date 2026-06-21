@@ -1,17 +1,17 @@
-import { apiBase } from "@/lib/api";
+import { apiBase, apiFetch } from "@/lib/api";
 import { authHeader } from "@/store/authStore";
 import type { Job } from "@/data/jobs";
 
 export async function fetchSavedJobIds(): Promise<string[]> {
   // Backend GET /api/saved-jobs returns [{savedAt, job}] — extract job IDs from it
-  const res = await fetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
   if (!res.ok) return [];
   const data = (await res.json()) as { savedAt: string; job: Job }[];
   return (data ?? []).map((item) => item.job?.id).filter(Boolean) as string[];
 }
 
 export async function fetchSavedJobs(): Promise<Job[]> {
-  const res = await fetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
+  const res = await apiFetch(`${apiBase()}/api/saved-jobs`, { headers: authHeader() });
   if (!res.ok) throw new Error("Failed to load saved jobs");
   // Backend returns [{savedAt, job}] — extract the job objects
   const data = (await res.json()) as { savedAt: string; job: Job }[];
@@ -19,7 +19,7 @@ export async function fetchSavedJobs(): Promise<Job[]> {
 }
 
 export async function saveJob(jobId: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/saved-jobs`, {
+  const res = await apiFetch(`${apiBase()}/api/saved-jobs`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
     body: JSON.stringify({ jobId }),
@@ -31,7 +31,7 @@ export async function saveJob(jobId: string): Promise<void> {
 }
 
 export async function unsaveJob(jobId: string): Promise<void> {
-  const res = await fetch(`${apiBase()}/api/saved-jobs/${jobId}`, {
+  const res = await apiFetch(`${apiBase()}/api/saved-jobs/${jobId}`, {
     method: "DELETE",
     headers: authHeader(),
   });

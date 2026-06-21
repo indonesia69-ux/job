@@ -2,6 +2,7 @@ import logger from '../../lib/logger';
 import { Router, Response } from 'express';
 import prisma from '../../lib/prisma';
 import { requireAdmin, AdminAuthRequest } from '../../middleware/auth';
+import { TERMINAL_APP_STATUSES } from '../../lib/applicationStatuses';
 
 const router = Router();
 
@@ -53,14 +54,10 @@ router.patch('/jobs/:id/status', requireAdmin, async (req: AdminAuthRequest, res
     const { status } = req.body;
 
     if (status === 'Closed') {
-      const TERMINAL_APP_STATUSES = [
-        'Onboarded', 'Dropped', 'OfferRejected', 'DocumentsRejected',
-        'Rejected', 'InterviewDeclined', 'JobClosed',
-      ];
       await prisma.application.updateMany({
         where: {
           jobId: id,
-          status: { notIn: TERMINAL_APP_STATUSES },
+          status: { notIn: [...TERMINAL_APP_STATUSES] },
         },
         data: { status: 'JobClosed' },
       });

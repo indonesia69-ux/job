@@ -3,6 +3,8 @@ import { Router, Response } from 'express';
 import prisma from '../lib/prisma';
 import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
 import { formatCandidate, formatLockedCandidate, ensureUsageReset, getSearchLimit, syncFormProfile } from '../lib/helpers';
+import { DEFAULT_PLAN_TIER } from '../config/plans';
+import { validateCandidateOwnsCv } from '../lib/validateCandidateCvOwnership';
 
 const router = Router();
 
@@ -55,21 +57,42 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
       res.status(400).json({ error: 'No hospital linked to your account' });
       return;
     }
-    const updatedUser = await ensureUsageReset(prisma, user);
 
     if (type === 'premium') {
-      const limit = getSearchLimit(user.hospital.onboardingPlan || 'Basic');
-      if (updatedUser.premiumSearchesThisMonth >= limit) {
-        res.status(403).json({ error: `You have reached your limit of ${limit} premium searches this month.`, code: 'PLAN_QUOTA_EXCEEDED' });
-        return;
-      }
-      // Increment search usage only for the first page
+      const limit = getSearchLimit(user.hospital.onboardingPlan || DEFAULT_PLAN_TIER);
+
       if (skip === 0) {
-        await prisma.user.update({
-          where: { id: updatedUser.id },
-          data: { premiumSearchesThisMonth: updatedUser.premiumSearchesThisMonth + 1 }
+        const allowed = await prisma.$transaction(async (tx) => {
+          const txUser = await tx.user.findUnique({ where: { id: req.user!.id }, include: { hospital: true } });
+          const updatedUser = await ensureUsageReset(tx, txUser);
+          const incrementResult = await tx.user.updateMany({
+            where: {
+              id: updatedUser.id,
+              premiumSearchesThisMonth: { lt: limit },
+            },
+            data: { premiumSearchesThisMonth: { increment: 1 } },
+          });
+          return incrementResult.count > 0;
         });
+        if (!allowed) {
+          res.status(403).json({
+            error: `You have reached your limit of ${limit} premium searches this month.`,
+            code: 'PLAN_QUOTA_EXCEEDED',
+          });
+          return;
+        }
+      } else {
+        const updatedUser = await ensureUsageReset(prisma, user);
+        if (updatedUser.premiumSearchesThisMonth >= limit) {
+          res.status(403).json({
+            error: `You have reached your limit of ${limit} premium searches this month.`,
+            code: 'PLAN_QUOTA_EXCEEDED',
+          });
+          return;
+        }
       }
+    } else {
+      await ensureUsageReset(prisma, user);
     }
 
     // Scalar filter conditions
@@ -204,7 +227,7 @@ router.get('/', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, 
       return;
     }
     
-    if (user.hospital.onboardingPlan === 'Basic') {
+    if (user.hospital.onboardingPlan === DEFAULT_PLAN_TIER) {
       res.status(403).json({ error: 'Upgrade to Pro or Premium to browse all candidates.', code: 'PLAN_UPGRADE_REQUIRED' });
       return;
     }
@@ -274,7 +297,15 @@ router.put('/me', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest
     }
     
     const { profile, profileJson, cvUrl, cvCloudinaryId, cvName, cvMime, supportingDocuments, ...rest } = req.body;
-    
+
+    if (cvUrl || cvCloudinaryId) {
+      const cvCheck = validateCandidateOwnsCv(candidateId, cvUrl, cvCloudinaryId);
+      if (!cvCheck.ok) {
+        res.status(400).json({ error: cvCheck.error });
+        return;
+      }
+    }
+
     // If the frontend form sent `profile`, sync it fully
     if (profile) {
       await syncFormProfile(

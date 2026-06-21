@@ -26,14 +26,19 @@ export function authHeader(): Record<string, string> {
 export async function apiFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   const res = await fetch(input, init);
   if (res.status === 401) {
-    if (typeof input === "string" && !input.includes("/auth/login")) {
+    const url = typeof input === "string" ? input : input instanceof URL ? input.href : "";
+    if (url && !url.includes("/auth/login")) {
       if (typeof window !== "undefined") {
         localStorage.removeItem("apronhanger.admin.session");
-        if (window.location.pathname !== "/auth") {
-          window.location.href = "/auth";
-        }
+        unauthorizedHandler?.();
       }
     }
   }
   return res;
+}
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void) {
+  unauthorizedHandler = handler;
 }
