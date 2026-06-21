@@ -12,7 +12,7 @@ import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { AdminStoreProvider } from "@/lib/admin-store";
-import { setUnauthorizedHandler } from "@/lib/api";
+import { setUnauthorizedHandler, apiFetch, apiBase } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPageLoader } from "@/components/common/PageLoader";

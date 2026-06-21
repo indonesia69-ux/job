@@ -126,7 +126,7 @@ function RootComponent() {
   useEffect(() => {
     setUnauthorizedHandler(() => {
       if (!pathname.startsWith("/auth")) {
-        navigate({ to: "/auth" });
+        navigate({ to: "/auth", search: { redirect: pathname } });
       }
     });
   }, [navigate, pathname]);
