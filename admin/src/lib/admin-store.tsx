@@ -13,6 +13,7 @@ export interface Hospital {
   status: EntityStatus;
   joined: string;
   inviteCode?: string;
+  plan?: PlanTier;
 }
 
 export interface Recruiter {
