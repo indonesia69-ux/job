@@ -405,14 +405,10 @@ export const formatApp = (app: any, options?: { redactCandidateContact?: boolean
         interviewerEmail: null,
       }
     : {}),
-  customFieldResponses: options?.redactCandidateContact
-    ? ({} as Record<string, unknown>)
-    : safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
+  customFieldResponses: safeJsonParse(app.customFieldResponses, {} as Record<string, unknown>),
   interviewHistory: safeJsonParse(app.interviewHistory, null),
   requestedDocumentList: safeJsonParse(app.requestedDocumentList, [] as string[]),
-  supportingDocuments: options?.redactCandidateContact
-    ? []
-    : safeJsonParse(app.supportingDocuments, []),
+  supportingDocuments: safeJsonParse(app.supportingDocuments, []),
   candidate: formatCandidate(app.candidate, { redactContact: options?.redactCandidateContact }),
   job: app.job
     ? {

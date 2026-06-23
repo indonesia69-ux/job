@@ -207,7 +207,7 @@ function ApplicationsPage() {
                     <div className="flex items-center gap-1">
                       {/* View CV */}
                       <button
-                        className="rounded p-1.5 hover:bg-accent"
+                        className="btn-icon rounded p-1.5 hover:bg-accent"
                         title="View CV"
                         onClick={() => openCv(a)}
                       >
@@ -242,7 +242,7 @@ function ApplicationsPage() {
                       <button
                         onClick={() => handleFlagToggle(a.id)}
                         title={a.isFlagged ? "Remove flag" : "Flag this application"}
-                        className={`rounded p-1.5 hover:bg-accent transition-all duration-200 ${
+                        className={`btn-icon rounded p-1.5 hover:bg-accent transition-all duration-200 ${
                           flagAnimating.has(a.id) ? "animate-bounce" : ""
                         } ${
                           a.isFlagged

@@ -131,11 +131,16 @@ function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Platform Activity — Jobs vs Applications</h3>
+          {monthlyTrend.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No data yet — stats will appear once jobs and applications are posted.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={monthlyTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
-                dataKey="month"
+                dataKey="name"
                 tick={{ fontSize: 12 }}
                 stroke="var(--color-muted-foreground)"
               />
@@ -149,7 +154,7 @@ function DashboardPage() {
               />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar
-                dataKey="jobsPosted"
+                dataKey="jobs"
                 name="Jobs Posted"
                 fill="var(--color-primary)"
                 radius={[4, 4, 0, 0]}
@@ -162,15 +167,21 @@ function DashboardPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <h3 className="text-sm font-semibold mb-4">User Growth — Recruiters vs Candidates</h3>
+          <h3 className="text-sm font-semibold mb-4">User Growth — Hospitals vs Candidates</h3>
+          {userGrowth.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No data yet — growth trends will appear here.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={userGrowth}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
-                dataKey="month"
+                dataKey="name"
                 tick={{ fontSize: 12 }}
                 stroke="var(--color-muted-foreground)"
               />
@@ -185,8 +196,8 @@ function DashboardPage() {
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Line
                 type="monotone"
-                dataKey="recruiters"
-                name="Recruiters"
+                dataKey="hospitals"
+                name="Hospitals Onboarded"
                 stroke="var(--color-primary)"
                 strokeWidth={2}
                 dot={{ r: 3 }}
@@ -194,13 +205,14 @@ function DashboardPage() {
               <Line
                 type="monotone"
                 dataKey="candidates"
-                name="Candidates"
+                name="Candidates Registered"
                 stroke="var(--color-chart-3)"
                 strokeWidth={2}
                 dot={{ r: 3 }}
               />
             </LineChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
 
@@ -208,6 +220,11 @@ function DashboardPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Recent Activity</h3>
+          {activityFeed.length === 0 ? (
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+              No recent activity logged yet.
+            </div>
+          ) : (
           <div className="space-y-3">
             {activityFeed.map((item: any) => (
               <div key={item.id} className="flex items-start gap-3 rounded-lg border p-3">
@@ -223,12 +240,15 @@ function DashboardPage() {
                   }`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm">{item.text}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.time}</p>
+                  <p className="text-sm capitalize">{item.text}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {item.time ? new Date(item.time).toLocaleString() : ""}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
+          )}
         </div>
 
         <div className="rounded-xl border bg-card p-5 shadow-sm">

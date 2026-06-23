@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { updateApplicationStatus } from "@/lib/recruiterData";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, Link } from "@tanstack/react-router";
 import { usePlan } from "@/features/search/PlanContext";
 
 import { Button } from "@/components/ui/button";
@@ -281,7 +281,13 @@ export function ApplicantsPage() {
             <ArrowLeft className="mr-1.5 h-4 w-4" /> All job posts
           </Button>
           <h1 className="font-display text-[28px] font-semibold tracking-tight">
-            {selectedJob?.role}
+            <Link
+              to="/jobs/$jobId"
+              params={{ jobId: selectedJob?.id || "" }}
+              className="hover:text-primary transition-colors"
+            >
+              {selectedJob?.role}
+            </Link>
           </h1>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-[14px] text-muted-foreground">
             <span>

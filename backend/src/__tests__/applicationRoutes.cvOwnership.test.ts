@@ -9,6 +9,7 @@ const mockApplicationCreate = vi.fn();
 const mockJobFindUnique = vi.fn();
 const mockUserFindUnique = vi.fn();
 const mockCandidateUpdate = vi.fn();
+const mockCandidateFindUnique = vi.fn();
 
 vi.mock('../lib/prisma', () => ({
   default: {
@@ -22,7 +23,10 @@ vi.mock('../lib/prisma', () => ({
       findMany: vi.fn().mockResolvedValue([]),
       updateMany: vi.fn(),
     },
-    candidate: { update: (...args: unknown[]) => mockCandidateUpdate(...args) },
+    candidate: {
+      findUnique: (...args: unknown[]) => mockCandidateFindUnique(...args),
+      update: (...args: unknown[]) => mockCandidateUpdate(...args),
+    },
   },
 }));
 
@@ -107,6 +111,7 @@ describe('application CV ownership', () => {
     });
     mockJobFindUnique.mockResolvedValue(openJob);
     mockApplicationFindUnique.mockResolvedValue(null);
+    mockCandidateFindUnique.mockResolvedValue({ id: 'cand-aaa', profileJson: { name: 'Test' } });
   });
 
   it('accepts own legitimately uploaded CV URL on application create', async () => {
@@ -155,6 +160,30 @@ describe('application CV ownership', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/does not belong/i);
+    expect(mockApplicationCreate).not.toHaveBeenCalled();
+  });
+
+  it('rejects CV upload application when candidate has not filled form', async () => {
+    const candidateId = 'cand-aaa';
+    const publicId = `candidates/cv/${candidateId}_1710000000000`;
+    const cvUrl = `https://res.cloudinary.com/demo/raw/upload/v1/${publicId}.pdf`;
+
+    mockCandidateFindUnique.mockResolvedValue({ id: candidateId, profileJson: null });
+
+    const res = await request(createApp())
+      .post('/api/applications')
+      .set('Authorization', `Bearer ${candidateToken(candidateId)}`)
+      .send({
+        jobId: 'job-1',
+        cvSource: 'upload',
+        cvUrl,
+        cvCloudinaryId: publicId,
+        cvName: 'cv.pdf',
+        cvMime: 'application/pdf',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/You must fill up the structured form/i);
     expect(mockApplicationCreate).not.toHaveBeenCalled();
   });
 

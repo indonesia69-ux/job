@@ -13,25 +13,12 @@ import { authHeader } from "@/store/authStore";
 import { useProfile } from "@/store/profileStore";
 import { PageLoader } from "@/components/common/PageLoader";
 import { EmptyState } from "@/components/common/EmptyState";
-import { clientLoaderWithHydrate } from "@/lib/clientLoader";
-
-async function loadOpportunities() {
-  const res = await apiFetch(`${apiBase()}/api/jobs`, { headers: authHeader() });
-  if (!res.ok) throw new Error("Failed to fetch jobs");
-  return { jobs: await res.json() };
-}
-
-const opportunitiesClientLoader = clientLoaderWithHydrate(loadOpportunities);
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>) => ({
     q: typeof search.q === "string" ? search.q : "",
     city: typeof search.city === "string" ? search.city : "",
   }),
-  staleTime: 0,
-  loader: loadOpportunities,
-  clientLoader: opportunitiesClientLoader,
-  pendingComponent: PageLoader,
   head: () => ({
     meta: [
       { title: "Opportunities — ApronHanger" },
@@ -47,7 +34,6 @@ export const Route = createFileRoute("/")({
 
 function Opportunities() {
   const navigate = useNavigate();
-  const { jobs: JOBS } = Route.useLoaderData() as any;
   const { q: urlQ, city: urlCity } = Route.useSearch() as any;
   const profile = useProfile();
   const [query, setQuery] = useState(urlQ);
@@ -56,7 +42,27 @@ function Opportunities() {
   const [specialty, setSpecialty] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [JOBS, setJOBS] = useState<any[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(true);
   const showBuildBanner = !profile && !bannerDismissed;
+
+  // Fetch jobs client-side on every mount so auth headers are always sent from the browser
+  useEffect(() => {
+    let cancelled = false;
+    setJobsLoading(true);
+    apiFetch(`${apiBase()}/api/jobs`, { headers: authHeader() })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) {
+          setJOBS(Array.isArray(data) ? data : (data.jobs ?? []));
+          setJobsLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setJobsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     void hydrateSavedJobIds();
@@ -102,7 +108,9 @@ function Opportunities() {
     else list.sort((a: any, b: any) => a.postedDays - b.postedDays);
 
     return list;
-  }, [query, city, category, specialty, filters]);
+  }, [JOBS, query, city, category, specialty, filters]);
+
+  if (jobsLoading) return <PageLoader />;
 
   return (
     <div>

@@ -474,6 +474,31 @@ export function CandidatePanel({
                     </Section>
                   )}
 
+                  {/* Requested Documents (Workflow) */}
+                  {candidate.applicationDocuments && candidate.applicationDocuments.length > 0 && (
+                    <Section title="Requested Documents">
+                      <div className="space-y-1.5">
+                        {candidate.applicationDocuments.map((doc: any, i: number) => (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5"
+                          >
+                            <span className="truncate text-[13px] text-foreground">
+                              {doc.name}
+                            </span>
+                            <button
+                              type="button"
+                              className="ml-2 shrink-0 text-primary hover:underline text-[12px] font-medium flex items-center gap-1"
+                              onClick={() => window.open(doc.url, "_blank")}
+                            >
+                              <Download className="h-3.5 w-3.5" /> Open
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </Section>
+                  )}
+
                   {/* Document checklist from step 15 */}
                   <Section title="Verification Documents Ready">
                     {candidate.formProfile?.documentChecklist &&

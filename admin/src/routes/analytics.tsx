@@ -59,6 +59,11 @@ function AnalyticsPage() {
         {/* Jobs vs Applications */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Jobs vs Applications Trend</h3>
+          {monthlyTrend.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No trend data yet — data populates after jobs and applications are created.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={monthlyTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -85,11 +90,17 @@ function AnalyticsPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Role Distribution */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Role / Category Distribution</h3>
+          {roleDistribution.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No jobs posted yet — categories will appear here once jobs are created.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -118,11 +129,17 @@ function AnalyticsPage() {
               />
             </PieChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Top Hiring Hospitals */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Top Hiring Hospitals</h3>
+          {topHospitals.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No hospitals with active jobs yet.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={topHospitals} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -149,11 +166,17 @@ function AnalyticsPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
 
         {/* Most Active Candidates */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Most Active Candidates</h3>
+          {topCandidates.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No applications yet — candidate activity will appear here.
+            </div>
+          ) : (
           <div className="space-y-3">
             {topCandidates.map((c, i) => (
               <div key={i} className="flex items-center justify-between rounded-lg border p-3">
@@ -170,6 +193,7 @@ function AnalyticsPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
       </div>
 
@@ -177,6 +201,11 @@ function AnalyticsPage() {
         {/* Revenue Trend */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
           <h3 className="text-sm font-semibold mb-4">Revenue Trend</h3>
+          {revenueTrend.length === 0 ? (
+            <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
+              No revenue data yet — revenue will appear once subscriptions are paid.
+            </div>
+          ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={revenueTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -202,6 +231,7 @@ function AnalyticsPage() {
               />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
     </div>

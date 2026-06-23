@@ -585,7 +585,10 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
         method: "PATCH",
         headers: authHeader(),
       });
-      if (!res.ok) throw new Error("Failed to approve hospital");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Failed to approve hospital");
+      }
       refreshAll();
     },
 
