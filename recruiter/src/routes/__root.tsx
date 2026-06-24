@@ -1,17 +1,8 @@
-import {
-  Outlet,
-  Link,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-  redirect,
-} from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, redirect } from "@tanstack/react-router";
 import { isAuthenticated } from "@/store/authStore";
 import { useEffect } from "react";
 import { apiBase, setUnauthorizedHandler } from "@/lib/api";
 import { toast, Toaster } from "sonner";
-
-import appCss from "../styles.css?url";
 
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
@@ -57,36 +48,6 @@ function GlobalErrorComponent({ error, reset }: { error: Error; reset: () => voi
 }
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ApronHanger — Recruiter Dashboard" },
-      {
-        name: "description",
-        content:
-          "ApronHanger Recruiter Dashboard — post healthcare jobs and manage clinician applicants.",
-      },
-      { name: "author", content: "ApronHanger" },
-      { property: "og:title", content: "ApronHanger — Recruiter Dashboard" },
-      {
-        property: "og:description",
-        content: "Premium hiring platform for hospitals and clinics in India.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-    links: [
-      { rel: "preload", as: "fetch", href: "/loading_state.json", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap",
-      },
-    ],
-  }),
   beforeLoad: ({ location }) => {
     // Skip on SSR — localStorage is only available in the browser
     if (typeof window === "undefined") return;
@@ -95,25 +56,10 @@ export const Route = createRootRoute({
       throw redirect({ to: "/auth/login" });
     }
   },
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: GlobalErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 import { useSSE } from "@/hooks/useSSE";
 import { useNavigate, useRouterState } from "@tanstack/react-router";

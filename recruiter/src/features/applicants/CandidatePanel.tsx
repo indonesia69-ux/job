@@ -483,9 +483,7 @@ export function CandidatePanel({
                             key={i}
                             className="flex items-center justify-between rounded-lg border border-border bg-muted/20 px-3 py-2.5"
                           >
-                            <span className="truncate text-[13px] text-foreground">
-                              {doc.name}
-                            </span>
+                            <span className="truncate text-[13px] text-foreground">{doc.name}</span>
                             <button
                               type="button"
                               className="ml-2 shrink-0 text-primary hover:underline text-[12px] font-medium flex items-center gap-1"

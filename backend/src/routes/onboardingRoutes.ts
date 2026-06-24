@@ -1,8 +1,7 @@
 import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { getRecruiterLimit } from '../lib/helpers';
-import { isValidPlan } from '../config/plans';
+import { getRecruiterLimit, isValidPlan, PLAN_PRICES, type PlanTier } from '../config/plans';
 import { sendOTP } from '../lib/otp';
 import { notifyAdminHospitalOnboarding } from '../lib/notifyAdmin';
 import Razorpay from 'razorpay';
@@ -277,11 +276,11 @@ router.post('/create-payment-order', async (req: Request, res: Response) => {
       return;
     }
     const plan = hospital.onboardingPlan;
-    if (plan !== 'Pro' && plan !== 'Premium') {
+    const amount = PLAN_PRICES[plan as PlanTier] ?? 0;
+    if (amount <= 0) {
       res.status(400).json({ error: 'Selected plan does not require payment.' });
       return;
     }
-    const amount = plan === 'Pro' ? 799 : 2499;
 
     const rzpOrder = await razorpay.orders.create({
       amount: Math.round(amount * 100), // amount in paisa
@@ -353,33 +352,41 @@ router.post('/verify-payment', async (req: Request, res: Response) => {
       return;
     }
 
-    await prisma.$transaction([
-      prisma.paymentOrder.update({
-        where: { id: order.id },
-        data: { status: 'PAID' },
-      }),
-      prisma.hospital.update({
-        where: { id: order.hospital.id },
-        data: {
-          onboardingStatus: 'Pending',
-        },
-      }),
-      prisma.planChangeLog.create({
-        data: {
-          hospitalId: order.hospital.id,
-          fromPlan: 'None',
-          toPlan: order.planRequested,
-          changeType: 'onboarding_activation',
-          amountPaid: order.amount,
-          effectiveAt: new Date(),
-          paymentStatus: 'Paid',
-          paymentRef: razorpay_payment_id,
-          note: `Onboarding subscription payment. Plan: ${order.planRequested}.`,
-        },
-      })
-    ]);
+    // Optimistic lock: only flip CREATED → PAID.
+    // If a concurrent request (or webhook) already flipped it, count===0 → skip.
+    let alreadyProcessed = false;
+    await prisma.$transaction(async (tx) => {
+      const flip = await tx.paymentOrder.updateMany({
+        where: { id: order.id, status: 'CREATED' },
+        data:  { status: 'PAID' },
+      });
 
-    res.json({ success: true, plan: order.planRequested });
+      if (flip.count === 0) {
+        alreadyProcessed = true;
+        return;
+      }
+
+      await tx.hospital.update({
+        where: { id: order.hospital.id },
+        data: { onboardingStatus: 'Pending' },
+      });
+
+      await tx.planChangeLog.create({
+        data: {
+          hospitalId:    order.hospital.id,
+          fromPlan:      'None',
+          toPlan:        order.planRequested,
+          changeType:    'onboarding_activation',
+          amountPaid:    order.amount,
+          effectiveAt:   new Date(),
+          paymentStatus: 'Paid',
+          paymentRef:    razorpay_payment_id,
+          note:          `Onboarding subscription payment. Plan: ${order.planRequested}.`,
+        },
+      });
+    });
+
+    res.json({ success: true, plan: order.planRequested, alreadyProcessed });
   } catch (err: any) {
     logger.error('[onboarding/verify-payment]', err);
     res.status(500).json({ error: 'Failed to verify payment' });

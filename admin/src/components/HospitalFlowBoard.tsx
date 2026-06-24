@@ -30,12 +30,26 @@ import {
   Sparkles,
   Download,
   Activity,
-  UserCheck
+  UserCheck,
 } from "lucide-react";
 import { useAdminStore, Hospital, Recruiter, Job, Candidate, Application } from "@/lib/admin-store";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 // Card Dimensions & Spacing Settings
 const CARD_WIDTH = 290;
@@ -67,7 +81,7 @@ const getPathData = (from: Coordinates, to: Coordinates) => {
 const getConnectionColors = (fromId: string, toId: string, isHighlighted: boolean, store: any) => {
   const fromType = fromId.split("-")[0];
   const toType = toId.split("-")[0];
-  
+
   if (fromType === "admin" && toType === "hospital") {
     const hospitalId = toId.split("-")[1];
     const hosp = store.hospitals.find((h: any) => h.id === hospitalId);
@@ -80,22 +94,32 @@ const getConnectionColors = (fromId: string, toId: string, isHighlighted: boolea
     // Basic (Bronze)
     return isHighlighted ? "#cd7f32" : "rgba(205, 127, 50, 0.25)"; // Bronze
   }
-  
+
   if (isHighlighted) {
     switch (fromType) {
-      case "admin": return "var(--color-primary)";
-      case "hospital": return "#6366f1"; // Indigo
-      case "recruiter": return "#10b981"; // Emerald
-      case "job": return "#8b5cf6"; // Violet
-      default: return "var(--color-primary)";
+      case "admin":
+        return "var(--color-primary)";
+      case "hospital":
+        return "#6366f1"; // Indigo
+      case "recruiter":
+        return "#10b981"; // Emerald
+      case "job":
+        return "#8b5cf6"; // Violet
+      default:
+        return "var(--color-primary)";
     }
   } else {
     switch (fromType) {
-      case "admin": return "var(--color-border)";
-      case "hospital": return "rgba(99, 102, 241, 0.25)";
-      case "recruiter": return "rgba(16, 185, 129, 0.25)";
-      case "job": return "rgba(139, 92, 246, 0.25)";
-      default: return "var(--color-border)";
+      case "admin":
+        return "var(--color-border)";
+      case "hospital":
+        return "rgba(99, 102, 241, 0.25)";
+      case "recruiter":
+        return "rgba(16, 185, 129, 0.25)";
+      case "job":
+        return "rgba(139, 92, 246, 0.25)";
+      default:
+        return "var(--color-border)";
     }
   }
 };
@@ -105,7 +129,7 @@ const getMarkerId = (fromId: string, toId: string, isHighlighted: boolean, store
   if (!isHighlighted) return "arrow-muted";
   const fromType = fromId.split("-")[0];
   const toType = toId.split("-")[0];
-  
+
   if (fromType === "admin" && toType === "hospital") {
     const hospitalId = toId.split("-")[1];
     const hosp = store.hospitals.find((h: any) => h.id === hospitalId);
@@ -113,36 +137,41 @@ const getMarkerId = (fromId: string, toId: string, isHighlighted: boolean, store
     if (hosp?.plan === "Pro") return "arrow-pro";
     return "arrow-basic";
   }
-  
+
   switch (fromType) {
-    case "admin": return "arrow-admin";
-    case "hospital": return "arrow-hospital";
-    case "recruiter": return "arrow-recruiter";
-    case "job": return "arrow-job";
-    default: return "arrow-muted";
+    case "admin":
+      return "arrow-admin";
+    case "hospital":
+      return "arrow-hospital";
+    case "recruiter":
+      return "arrow-recruiter";
+    case "job":
+      return "arrow-job";
+    default:
+      return "arrow-muted";
   }
 };
 
 export function HospitalFlowBoard() {
   const store = useAdminStore();
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Canvas Viewport State (Zoom & Pan)
   const [scale, setScale] = useState(0.85);
   const [pan, setPan] = useState({ x: 150, y: 30 });
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
+
   // Expand/Collapse States
   const [expandedHospitals, setExpandedHospitals] = useState<Set<string>>(new Set());
   const [expandedRecruiters, setExpandedRecruiters] = useState<Set<string>>(new Set());
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
-  
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  
+
   // Selected Card for Drawer Details
   const [selectedEntity, setSelectedEntity] = useState<{
     id: string;
@@ -187,7 +216,7 @@ export function HospitalFlowBoard() {
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       const zoomIntensity = 0.05;
-      
+
       // Calculate cursor position relative to the container
       const rect = el.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
@@ -196,7 +225,7 @@ export function HospitalFlowBoard() {
       setScale((prevScale) => {
         const delta = -e.deltaY * zoomIntensity * 0.01;
         const newScale = Math.min(Math.max(prevScale + delta, 0.25), 1.8);
-        
+
         // Adjust pan so the zoom is centered on the cursor
         setPan((prevPan) => {
           const xs = (mouseX - prevPan.x) / prevScale;
@@ -206,7 +235,7 @@ export function HospitalFlowBoard() {
             y: mouseY - ys * newScale,
           };
         });
-        
+
         return newScale;
       });
     };
@@ -218,7 +247,10 @@ export function HospitalFlowBoard() {
   // Panning Drag Handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     // Only pan if clicking on the background (svg / dot grid)
-    if ((e.target as HTMLElement).closest(".flow-card-node") || (e.target as HTMLElement).closest(".floating-toolbar")) {
+    if (
+      (e.target as HTMLElement).closest(".flow-card-node") ||
+      (e.target as HTMLElement).closest(".floating-toolbar")
+    ) {
       return;
     }
     setIsPanning(true);
@@ -289,7 +321,12 @@ export function HospitalFlowBoard() {
   // Core visual tree node generator & coordinate layouts
   const { nodes, connections } = useMemo(() => {
     const computedNodes: NodeLayout[] = [];
-    const computedConnections: { from: string; to: string; fromCoord: Coordinates; toCoord: Coordinates }[] = [];
+    const computedConnections: {
+      from: string;
+      to: string;
+      fromCoord: Coordinates;
+      toCoord: Coordinates;
+    }[] = [];
     const subtreeWidths: Record<string, number> = {};
 
     // 1. Helper to retrieve active children under a node
@@ -322,12 +359,12 @@ export function HospitalFlowBoard() {
     const computeWidth = (id: string, type: string): number => {
       const key = `${type}-${id}`;
       const children = getChildren(id, type);
-      
+
       if (children.length === 0) {
         subtreeWidths[key] = CARD_WIDTH + HORIZONTAL_GAP;
         return CARD_WIDTH + HORIZONTAL_GAP;
       }
-      
+
       let width = 0;
       for (const child of children) {
         width += computeWidth(child.id, child.type);
@@ -340,26 +377,32 @@ export function HospitalFlowBoard() {
     computeWidth("root", "admin");
 
     // 3. Second Pass: Calculate positions top-down
-    const assignPositions = (id: string, type: string, parentX: number, level: number, parentId?: string) => {
+    const assignPositions = (
+      id: string,
+      type: string,
+      parentX: number,
+      level: number,
+      parentId?: string,
+    ) => {
       const key = `${type}-${id}`;
       const y = LEVEL_HEIGHTS[level];
       const children = getChildren(id, type);
-      
+
       // Determine actual data payload
       let data: any = null;
       if (type === "hospital") data = store.hospitals.find((h) => h.id === id);
       else if (type === "recruiter") data = store.recruiters.find((r) => r.id === id);
       else if (type === "job") data = store.jobs.find((j) => j.id === id);
       else if (type === "applicant") data = store.applications.find((a) => a.id === id);
-      
+
       computedNodes.push({
         id: key,
         type: type as any,
         x: parentX,
         y,
-        width: subtreeWidths[key] || (CARD_WIDTH + HORIZONTAL_GAP),
+        width: subtreeWidths[key] || CARD_WIDTH + HORIZONTAL_GAP,
         data,
-        parentId
+        parentId,
       });
 
       if (children.length === 0) return;
@@ -371,15 +414,15 @@ export function HospitalFlowBoard() {
         const childKey = `${child.type}-${child.id}`;
         const childWidth = subtreeWidths[childKey];
         const childX = currentX + childWidth / 2;
-        
+
         assignPositions(child.id, child.type, childX, level + 1, key);
-        
+
         // Add connection
         computedConnections.push({
           from: key,
           to: childKey,
           fromCoord: { x: parentX, y: y + (type === "admin" ? 40 : CARD_HEIGHT / 2) },
-          toCoord: { x: childX, y: LEVEL_HEIGHTS[level + 1] - CARD_HEIGHT / 2 }
+          toCoord: { x: childX, y: LEVEL_HEIGHTS[level + 1] - CARD_HEIGHT / 2 },
         });
 
         currentX += childWidth;
@@ -397,13 +440,13 @@ export function HospitalFlowBoard() {
     store.applications,
     expandedHospitals,
     expandedRecruiters,
-    expandedJobs
+    expandedJobs,
   ]);
 
   // Center/Pan and glow focus on a node from search
   const handleFocusNode = (node: NodeLayout) => {
     if (!containerRef.current) return;
-    
+
     // Auto expand parent nodes if they are collapsed
     const parts = node.id.split("-");
     const nodeType = parts[0];
@@ -414,21 +457,21 @@ export function HospitalFlowBoard() {
       if (app) {
         const job = store.jobs.find((j) => j.id === app.jobId);
         if (job) {
-          setExpandedHospitals(prev => new Set([...prev, job.hospitalId]));
-          setExpandedRecruiters(prev => new Set([...prev, job.recruiterId]));
-          setExpandedJobs(prev => new Set([...prev, job.id]));
+          setExpandedHospitals((prev) => new Set([...prev, job.hospitalId]));
+          setExpandedRecruiters((prev) => new Set([...prev, job.recruiterId]));
+          setExpandedJobs((prev) => new Set([...prev, job.id]));
         }
       }
     } else if (nodeType === "job") {
       const job = store.jobs.find((j) => j.id === nodeId);
       if (job) {
-        setExpandedHospitals(prev => new Set([...prev, job.hospitalId]));
-        setExpandedRecruiters(prev => new Set([...prev, job.recruiterId]));
+        setExpandedHospitals((prev) => new Set([...prev, job.hospitalId]));
+        setExpandedRecruiters((prev) => new Set([...prev, job.recruiterId]));
       }
     } else if (nodeType === "recruiter") {
       const rec = store.recruiters.find((r) => r.id === nodeId);
       if (rec) {
-        setExpandedHospitals(prev => new Set([...prev, rec.hospitalId]));
+        setExpandedHospitals((prev) => new Set([...prev, rec.hospitalId]));
       }
     }
 
@@ -437,11 +480,11 @@ export function HospitalFlowBoard() {
       setHighlightedNodeId(node.id);
       const width = containerRef.current?.clientWidth || 800;
       const height = containerRef.current?.clientHeight || 600;
-      
+
       setScale(1.0);
       setPan({
         x: width / 2 - node.x,
-        y: height / 2 - node.y
+        y: height / 2 - node.y,
       });
     }, 100);
 
@@ -462,7 +505,11 @@ export function HospitalFlowBoard() {
           label: h.name,
           sub: `Hospital · ${h.location}`,
           type: "hospital",
-          node: nodes.find((n) => n.id === `hospital-${h.id}`) || { id: `hospital-${h.id}`, x: 0, y: LEVEL_HEIGHTS[1] }
+          node: nodes.find((n) => n.id === `hospital-${h.id}`) || {
+            id: `hospital-${h.id}`,
+            x: 0,
+            y: LEVEL_HEIGHTS[1],
+          },
         });
       }
     });
@@ -474,7 +521,11 @@ export function HospitalFlowBoard() {
           label: r.name,
           sub: `Recruiter · ${r.email}`,
           type: "recruiter",
-          node: nodes.find((n) => n.id === `recruiter-${r.id}`) || { id: `recruiter-${r.id}`, x: 0, y: LEVEL_HEIGHTS[2] }
+          node: nodes.find((n) => n.id === `recruiter-${r.id}`) || {
+            id: `recruiter-${r.id}`,
+            x: 0,
+            y: LEVEL_HEIGHTS[2],
+          },
         });
       }
     });
@@ -486,7 +537,11 @@ export function HospitalFlowBoard() {
           label: j.title,
           sub: `Job Post · ${j.location}`,
           type: "job",
-          node: nodes.find((n) => n.id === `job-${j.id}`) || { id: `job-${j.id}`, x: 0, y: LEVEL_HEIGHTS[3] }
+          node: nodes.find((n) => n.id === `job-${j.id}`) || {
+            id: `job-${j.id}`,
+            x: 0,
+            y: LEVEL_HEIGHTS[3],
+          },
         });
       }
     });
@@ -499,7 +554,11 @@ export function HospitalFlowBoard() {
           label: candidateName,
           sub: `Applicant · Status: ${a.status}`,
           type: "applicant",
-          node: nodes.find((n) => n.id === `applicant-${a.id}`) || { id: `applicant-${a.id}`, x: 0, y: LEVEL_HEIGHTS[4] }
+          node: nodes.find((n) => n.id === `applicant-${a.id}`) || {
+            id: `applicant-${a.id}`,
+            x: 0,
+            y: LEVEL_HEIGHTS[4],
+          },
         });
       }
     });
@@ -733,15 +792,16 @@ export function HospitalFlowBoard() {
             <AnimatePresence>
               {connections.map((conn) => {
                 const { fromCoord, toCoord } = conn;
-                
+
                 // End the path slightly early so the arrowhead has room to point to the port circle
                 const endPt = {
                   x: toCoord.x,
-                  y: toCoord.y - 6
+                  y: toCoord.y - 6,
                 };
-                
+
                 const pathData = getPathData(fromCoord, endPt);
-                const isHighlighted = highlightedNodeId === conn.to || highlightedNodeId === conn.from;
+                const isHighlighted =
+                  highlightedNodeId === conn.to || highlightedNodeId === conn.from;
                 const lineColor = getConnectionColors(conn.from, conn.to, isHighlighted, store);
                 const markerId = getMarkerId(conn.from, conn.to, isHighlighted, store);
                 const key = `${conn.from}-${conn.to}`;
@@ -787,28 +847,38 @@ export function HospitalFlowBoard() {
             <AnimatePresence>
               {nodes.map((node) => {
                 const cardHalfHeight = node.type === "admin" ? 40 : CARD_HEIGHT / 2;
-                
-                const inputPort = node.type !== "admin" ? { x: node.x, y: node.y - cardHalfHeight } : null;
-                const outputPort = node.type !== "applicant" ? { x: node.x, y: node.y + cardHalfHeight } : null;
-                
+
+                const inputPort =
+                  node.type !== "admin" ? { x: node.x, y: node.y - cardHalfHeight } : null;
+                const outputPort =
+                  node.type !== "applicant" ? { x: node.x, y: node.y + cardHalfHeight } : null;
+
                 let colorClass = "fill-indigo-500 stroke-indigo-200 dark:stroke-indigo-950";
                 if (node.type === "hospital") {
                   if (node.data?.plan === "Premium") {
-                    colorClass = "fill-[#d4af37] stroke-[#d4af37]/35 dark:stroke-[#d4af37]/50 shadow-[0_0_8px_rgba(212,175,55,0.4)]";
+                    colorClass =
+                      "fill-[#d4af37] stroke-[#d4af37]/35 dark:stroke-[#d4af37]/50 shadow-[0_0_8px_rgba(212,175,55,0.4)]";
                   } else if (node.data?.plan === "Pro") {
-                    colorClass = "fill-teal-500 stroke-teal-200 dark:stroke-teal-950 shadow-[0_0_8px_rgba(20,184,166,0.3)]";
+                    colorClass =
+                      "fill-teal-500 stroke-teal-200 dark:stroke-teal-950 shadow-[0_0_8px_rgba(20,184,166,0.3)]";
                   } else {
                     colorClass = "fill-[#cd7f32] stroke-[#cd7f32]/20 dark:stroke-[#cd7f32]/45";
                   }
-                }
-                else if (node.type === "recruiter") colorClass = "fill-emerald-500 stroke-emerald-200 dark:stroke-emerald-950";
-                else if (node.type === "job") colorClass = "fill-violet-500 stroke-violet-200 dark:stroke-violet-950";
-                else if (node.type === "applicant") colorClass = "fill-sky-500 stroke-sky-200 dark:stroke-sky-950";
+                } else if (node.type === "recruiter")
+                  colorClass = "fill-emerald-500 stroke-emerald-200 dark:stroke-emerald-950";
+                else if (node.type === "job")
+                  colorClass = "fill-violet-500 stroke-violet-200 dark:stroke-violet-950";
+                else if (node.type === "applicant")
+                  colorClass = "fill-sky-500 stroke-sky-200 dark:stroke-sky-950";
 
                 const parentNode = node.parentId ? nodes.find((n) => n.id === node.parentId) : null;
-                const parentHalfHeight = parentNode ? (parentNode.type === "admin" ? 40 : CARD_HEIGHT / 2) : CARD_HEIGHT / 2;
+                const parentHalfHeight = parentNode
+                  ? parentNode.type === "admin"
+                    ? 40
+                    : CARD_HEIGHT / 2
+                  : CARD_HEIGHT / 2;
                 const startCX = parentNode ? parentNode.x : node.x;
-                const startCY = parentNode ? (parentNode.y + parentHalfHeight) : node.y;
+                const startCY = parentNode ? parentNode.y + parentHalfHeight : node.y;
 
                 return (
                   <motion.g
@@ -872,15 +942,19 @@ export function HospitalFlowBoard() {
           <AnimatePresence>
             {nodes.map((node) => {
               const isHighlighted = highlightedNodeId === node.id;
-              
+
               const cardHalfHeight = node.type === "admin" ? 40 : CARD_HEIGHT / 2;
               const targetX = node.x - CARD_WIDTH / 2;
               const targetY = node.y - cardHalfHeight;
-              
+
               const parentNode = node.parentId ? nodes.find((n) => n.id === node.parentId) : null;
-              const parentHalfHeight = parentNode ? (parentNode.type === "admin" ? 40 : CARD_HEIGHT / 2) : CARD_HEIGHT / 2;
-              const startX = parentNode ? (parentNode.x - CARD_WIDTH / 2) : targetX;
-              const startY = parentNode ? (parentNode.y - parentHalfHeight) : targetY;
+              const parentHalfHeight = parentNode
+                ? parentNode.type === "admin"
+                  ? 40
+                  : CARD_HEIGHT / 2
+                : CARD_HEIGHT / 2;
+              const startX = parentNode ? parentNode.x - CARD_WIDTH / 2 : targetX;
+              const startY = parentNode ? parentNode.y - parentHalfHeight : targetY;
 
               return (
                 <motion.div
@@ -909,7 +983,7 @@ export function HospitalFlowBoard() {
                     left: 0,
                     top: 0,
                     width: CARD_WIDTH,
-                    zIndex: isHighlighted ? 10 : 1
+                    zIndex: isHighlighted ? 10 : 1,
                   }}
                 >
                   {node.type === "admin" && (
@@ -927,11 +1001,15 @@ export function HospitalFlowBoard() {
                       isExpanded={expandedHospitals.has(node.data.id)}
                       isHighlighted={isHighlighted}
                       onToggleExpand={() => toggleHospital(node.data.id)}
-                      onOpenDrawer={() => setSelectedEntity({ id: node.data.id, type: "hospital", data: node.data })}
+                      onOpenDrawer={() =>
+                        setSelectedEntity({ id: node.data.id, type: "hospital", data: node.data })
+                      }
                       onActivateToggle={async () => {
                         try {
                           await store.toggleHospitalBlock(node.data.id);
-                          toast.success(`Hospital ${node.data.status === "Active" ? "Suspended" : "Reactivated"}`);
+                          toast.success(
+                            `Hospital ${node.data.status === "Active" ? "Suspended" : "Reactivated"}`,
+                          );
                         } catch (err: any) {
                           toast.error(err?.message || "Action failed.");
                         }
@@ -957,11 +1035,15 @@ export function HospitalFlowBoard() {
                       isExpanded={expandedRecruiters.has(node.data.id)}
                       isHighlighted={isHighlighted}
                       onToggleExpand={() => toggleRecruiter(node.data.id)}
-                      onOpenDrawer={() => setSelectedEntity({ id: node.data.id, type: "recruiter", data: node.data })}
+                      onOpenDrawer={() =>
+                        setSelectedEntity({ id: node.data.id, type: "recruiter", data: node.data })
+                      }
                       onBlockToggle={async () => {
                         try {
                           await store.toggleRecruiterBlock(node.data.id);
-                          toast.success(`Recruiter ${node.data.status === "Active" ? "Suspended/Blocked" : "Reactivated"}`);
+                          toast.success(
+                            `Recruiter ${node.data.status === "Active" ? "Suspended/Blocked" : "Reactivated"}`,
+                          );
                         } catch (err: any) {
                           toast.error(err?.message || "Action failed.");
                         }
@@ -974,7 +1056,9 @@ export function HospitalFlowBoard() {
                       isExpanded={expandedJobs.has(node.data.id)}
                       isHighlighted={isHighlighted}
                       onToggleExpand={() => toggleJob(node.data.id)}
-                      onOpenDrawer={() => setSelectedEntity({ id: node.data.id, type: "job", data: node.data })}
+                      onOpenDrawer={() =>
+                        setSelectedEntity({ id: node.data.id, type: "job", data: node.data })
+                      }
                       onStatusChange={async (newStatus: "Active" | "Closed") => {
                         try {
                           await store.updateJobStatus(node.data.id, newStatus);
@@ -990,7 +1074,9 @@ export function HospitalFlowBoard() {
                       application={node.data}
                       candidate={getCandidateData(node.data.id)}
                       isHighlighted={isHighlighted}
-                      onOpenDrawer={() => setSelectedEntity({ id: node.data.id, type: "applicant", data: node.data })}
+                      onOpenDrawer={() =>
+                        setSelectedEntity({ id: node.data.id, type: "applicant", data: node.data })
+                      }
                       onUpdateStatus={async (newStatus: string) => {
                         try {
                           await store.updateApplicationStatus(node.data.id, newStatus);
@@ -1042,7 +1128,9 @@ export function HospitalFlowBoard() {
       <div className="absolute bottom-5 right-5 z-20 bg-card/85 border border-border/80 backdrop-blur-md px-4 py-3.5 rounded-xl shadow-lg hidden lg:block select-none pointer-events-none min-w-[280px]">
         <div className="grid grid-cols-2 gap-x-6 gap-y-3.5">
           <div>
-            <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Workflow Hierarchy</h4>
+            <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Workflow Hierarchy
+            </h4>
             <div className="space-y-1.5 text-xs text-foreground">
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded bg-indigo-500" />
@@ -1063,7 +1151,9 @@ export function HospitalFlowBoard() {
             </div>
           </div>
           <div>
-            <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">Hospital Plans</h4>
+            <h4 className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+              Hospital Plans
+            </h4>
             <div className="space-y-1.5 text-xs text-foreground">
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded bg-[#fdf5ed] dark:bg-[#1c130d] border border-[#cd7f32] shadow-sm" />
@@ -1075,7 +1165,9 @@ export function HospitalFlowBoard() {
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded bg-[#ebf2fe] dark:bg-[#081229] border border-[#d4af37] shadow-[0_0_4.5px_rgba(212,175,55,0.4)]" />
-                <span className="font-semibold text-muted-foreground">Premium (Deep Blue & Gold)</span>
+                <span className="font-semibold text-muted-foreground">
+                  Premium (Deep Blue & Gold)
+                </span>
               </div>
             </div>
           </div>
@@ -1083,7 +1175,10 @@ export function HospitalFlowBoard() {
       </div>
 
       {/* INLINE DETAILS SIDE DRAWER SHEET */}
-      <Sheet open={selectedEntity !== null} onOpenChange={(open) => !open && setSelectedEntity(null)}>
+      <Sheet
+        open={selectedEntity !== null}
+        onOpenChange={(open) => !open && setSelectedEntity(null)}
+      >
         <SheetContent className="sm:max-w-md md:max-w-lg w-full bg-card/95 border-l border-border backdrop-blur-lg flex flex-col p-0 shadow-2xl z-[100]">
           {selectedEntity && (
             <EntityDetailsDrawer
@@ -1121,7 +1216,9 @@ function AdminNode({ isHighlighted, onClick }: { isHighlighted: boolean; onClick
     <motion.div
       onClick={onClick}
       className={`rounded-2xl bg-sidebar-bg border text-sidebar-active-foreground p-4 text-center cursor-pointer shadow-xl transition-all duration-300 select-none flex flex-col justify-center items-center h-[80px] ${
-        isHighlighted ? "border-indigo-400 ring-2 ring-indigo-400/40 scale-105" : "border-sidebar-border hover:bg-sidebar-hover"
+        isHighlighted
+          ? "border-indigo-400 ring-2 ring-indigo-400/40 scale-105"
+          : "border-sidebar-border hover:bg-sidebar-hover"
       }`}
       whileHover={{ y: -3, scale: 1.02 }}
     >
@@ -1154,7 +1251,7 @@ function HospitalCard({
   onToggleExpand,
   onOpenDrawer,
   onActivateToggle,
-  onVerifyToggle
+  onVerifyToggle,
 }: HospitalCardProps) {
   const store = useAdminStore();
   const recCount = store.recruiters.filter((r) => r.hospitalId === hospital.id).length;
@@ -1163,7 +1260,7 @@ function HospitalCard({
   // Clean any plan labels like (Premium), [Pro], - Basic from name to ensure the full name displays clearly
   const cleanName = useMemo(() => {
     return hospital.name
-      .replace(/\s*[\(\[](Premium|Pro|Basic)[\)\]]\s*/gi, "")
+      .replace(/\s*[([\]](Premium|Pro|Basic)[)\]]\s*/gi, "")
       .replace(/\s*-\s*(Premium|Pro|Basic)\s*$/gi, "");
   }, [hospital.name]);
 
@@ -1175,26 +1272,31 @@ function HospitalCard({
           cardClass: isHighlighted
             ? "border-[#d4af37] ring-2 ring-[#d4af37]/30 bg-gradient-to-br from-[#ebf2fe] via-[#f2f7ff] to-[#ebf2fe] dark:from-[#081229] dark:via-[#0d1f48] dark:to-[#081229] scale-[1.02] shadow-[0_0_20px_rgba(212,175,55,0.2)] text-slate-900 dark:text-slate-100"
             : "border-[#d4af37]/45 hover:border-[#d4af37] bg-gradient-to-br from-[#f3f7fe] via-[#f7faff] to-[#f3f7fe] dark:from-[#081229] dark:via-[#0b1a3c] dark:to-[#081229] shadow-md hover:shadow-lg hover:shadow-[#d4af37]/5 text-slate-800 dark:text-slate-200",
-          iconClass: "bg-[#d4af37]/15 dark:bg-[#d4af37]/10 text-amber-600 dark:text-amber-400 border border-[#d4af37]/30 dark:border-[#d4af37]/25",
+          iconClass:
+            "bg-[#d4af37]/15 dark:bg-[#d4af37]/10 text-amber-600 dark:text-amber-400 border border-[#d4af37]/30 dark:border-[#d4af37]/25",
           textColor: "text-[#a87c00] dark:text-[#d4af37] hover:text-amber-600 font-extrabold",
           subtextColor: "text-slate-500 dark:text-slate-400",
           dividerColor: "border-amber-200 dark:border-[#d4af37]/15",
-          expandBtnClass: "text-amber-700 border-amber-300/60 bg-amber-50/50 hover:bg-amber-100/60 dark:text-[#d4af37] dark:border-[#d4af37]/35 dark:bg-[#081229] dark:hover:bg-[#d4af37]/10 dark:hover:border-[#d4af37]",
-          eyeBtnClass: "text-slate-500 hover:text-slate-700 border-amber-200 dark:text-slate-400 dark:hover:text-slate-200 dark:bg-[#081229] dark:hover:bg-[#d4af37]/10 dark:border-[#d4af37]/20"
+          expandBtnClass:
+            "text-amber-700 border-amber-300/60 bg-amber-50/50 hover:bg-amber-100/60 dark:text-[#d4af37] dark:border-[#d4af37]/35 dark:bg-[#081229] dark:hover:bg-[#d4af37]/10 dark:hover:border-[#d4af37]",
+          eyeBtnClass:
+            "text-slate-500 hover:text-slate-700 border-amber-200 dark:text-slate-400 dark:hover:text-slate-200 dark:bg-[#081229] dark:hover:bg-[#d4af37]/10 dark:border-[#d4af37]/20",
         };
       case "Pro":
         return {
           cardClass: isHighlighted
             ? "border-teal-500 ring-2 ring-teal-500/30 bg-gradient-to-br from-[#e6fbf7] via-[#f0fdfb] to-[#e6fbf7] dark:from-[#091b1f] dark:via-[#0f2d34] dark:to-[#091b1f] scale-[1.02] shadow-[0_0_20px_rgba(20,184,166,0.18)] text-teal-950 dark:text-teal-50"
             : "border-teal-500/35 hover:border-teal-500 bg-gradient-to-br from-[#f0fdfa] via-[#f6fdfd] to-[#f0fdfa] dark:from-[#091b1f] dark:via-[#0b242a] dark:to-[#091b1f] shadow-md hover:shadow-lg hover:shadow-teal-500/5 text-slate-800 dark:text-teal-100",
-          iconClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 dark:border-teal-500/25",
+          iconClass:
+            "bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20 dark:border-teal-500/25",
           textColor: "text-teal-600 dark:text-teal-400 hover:text-teal-500 font-extrabold",
           subtextColor: "text-slate-500 dark:text-slate-400",
           dividerColor: "border-teal-100 dark:border-teal-500/15",
           expandBtnClass: isExpanded
             ? "text-teal-700 border-teal-300 bg-teal-50/60 hover:bg-teal-100/60 dark:text-teal-450 dark:border-teal-500/35 dark:bg-teal-950/30 dark:hover:bg-teal-500/10"
             : "text-muted-foreground hover:text-teal-600 hover:bg-teal-50/50 hover:border-teal-500/20 border-border",
-          eyeBtnClass: "text-muted-foreground hover:text-teal-600 hover:bg-teal-50/50 border-border"
+          eyeBtnClass:
+            "text-muted-foreground hover:text-teal-600 hover:bg-teal-50/50 border-border",
         };
       case "Basic":
       default:
@@ -1202,14 +1304,16 @@ function HospitalCard({
           cardClass: isHighlighted
             ? "border-[#cd7f32] ring-2 ring-[#cd7f32]/30 bg-gradient-to-br from-[#fdf5ed] via-[#fdfaf5] to-[#fdf5ed] dark:from-[#1c130d] dark:via-[#2d1e15] dark:to-[#1c130d] scale-[1.02] shadow-[0_0_20px_rgba(205,127,50,0.15)] text-orange-950 dark:text-orange-100"
             : "border-[#cd7f32]/35 hover:border-[#cd7f32] bg-gradient-to-br from-[#fdfaf6] via-[#fdfcfb] to-[#fdfaf6] dark:from-[#1c130d] dark:via-[#241810] dark:to-[#1c130d] shadow-md hover:shadow-lg text-slate-800 dark:text-orange-200/95",
-          iconClass: "bg-[#cd7f32]/10 text-[#a05a18] dark:text-orange-400 border border-[#cd7f32]/20 dark:border-[#cd7f32]/25",
+          iconClass:
+            "bg-[#cd7f32]/10 text-[#a05a18] dark:text-orange-400 border border-[#cd7f32]/20 dark:border-[#cd7f32]/25",
           textColor: "text-[#a05a18] dark:text-[#cd7f32] hover:text-[#cd7f32] font-extrabold",
           subtextColor: "text-slate-500 dark:text-slate-400",
           dividerColor: "border-orange-100 dark:border-[#cd7f32]/15",
           expandBtnClass: isExpanded
             ? "text-[#a05a18] border-[#cd7f32]/35 bg-orange-50/30 hover:bg-orange-100/40 dark:text-[#cd7f32] dark:border-[#cd7f32]/35 dark:bg-[#2d1e15] dark:hover:bg-[#cd7f32]/10"
             : "text-muted-foreground hover:text-[#cd7f32] hover:bg-[#cd7f32]/5 hover:border-[#cd7f32]/20 border-border",
-          eyeBtnClass: "text-muted-foreground hover:text-[#cd7f32] hover:bg-[#cd7f32]/5 border-border"
+          eyeBtnClass:
+            "text-muted-foreground hover:text-[#cd7f32] hover:bg-[#cd7f32]/5 border-border",
         };
     }
   }, [hospital.plan, isHighlighted, isExpanded]);
@@ -1221,23 +1325,31 @@ function HospitalCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0 w-full">
-          <div className={`h-9 w-9 shrink-0 items-center justify-center rounded-lg font-bold flex shadow-inner ${planStyle.iconClass}`}>
+          <div
+            className={`h-9 w-9 shrink-0 items-center justify-center rounded-lg font-bold flex shadow-inner ${planStyle.iconClass}`}
+          >
             {hospital.name[0]}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 min-w-0">
-              <h4 className={`text-xs.5 font-bold transition-colors cursor-pointer leading-tight ${planStyle.textColor}`} onClick={onOpenDrawer}>
+              <h4
+                className={`text-xs.5 font-bold transition-colors cursor-pointer leading-tight ${planStyle.textColor}`}
+                onClick={onOpenDrawer}
+              >
                 {cleanName}
               </h4>
             </div>
             <p className={`text-[10px] truncate ${planStyle.subtextColor}`}>{hospital.location}</p>
           </div>
         </div>
-        
+
         {/* Indicators */}
         <div className="flex items-center gap-1">
           {hospital.verified && (
-            <span className="p-0.5 rounded bg-emerald-500/10 text-emerald-450 border border-emerald-500/20" title="Verified Hospital">
+            <span
+              className="p-0.5 rounded bg-emerald-500/10 text-emerald-450 border border-emerald-500/20"
+              title="Verified Hospital"
+            >
               <ShieldCheck className="h-3 w-3" />
             </span>
           )}
@@ -1250,12 +1362,14 @@ function HospitalCard({
         </div>
       </div>
 
-      <div className={`flex items-center justify-between text-[10px] border-t pt-2.5 ${planStyle.dividerColor}`}>
+      <div
+        className={`flex items-center justify-between text-[10px] border-t pt-2.5 ${planStyle.dividerColor}`}
+      >
         <div className={`flex gap-3 font-semibold ${planStyle.subtextColor}`}>
           <span>{recCount} Recs</span>
           <span>{jobCount} Jobs</span>
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           {/* Action triggers */}
           <button
@@ -1310,7 +1424,7 @@ function RecruiterCard({
   isHighlighted,
   onToggleExpand,
   onOpenDrawer,
-  onBlockToggle
+  onBlockToggle,
 }: RecruiterCardProps) {
   const store = useAdminStore();
   const jobCount = store.jobs.filter((j) => j.recruiterId === recruiter.id).length;
@@ -1330,13 +1444,16 @@ function RecruiterCard({
             {recruiter.name[0]}
           </div>
           <div className="min-w-0">
-            <h4 className="text-xs.5 font-bold truncate text-foreground hover:text-emerald-500 transition-colors cursor-pointer" onClick={onOpenDrawer}>
+            <h4
+              className="text-xs.5 font-bold truncate text-foreground hover:text-emerald-500 transition-colors cursor-pointer"
+              onClick={onOpenDrawer}
+            >
               {recruiter.name}
             </h4>
             <p className="text-[10px] text-muted-foreground truncate">{recruiter.email}</p>
           </div>
         </div>
-        
+
         {/* Status indicator */}
         <span
           className={`h-1.5 w-1.5 rounded-full ${
@@ -1350,7 +1467,7 @@ function RecruiterCard({
         <div className="flex gap-2 text-muted-foreground font-semibold">
           <span>{jobCount} Active Job Posts</span>
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           <button
             onClick={onOpenDrawer}
@@ -1408,7 +1525,7 @@ function JobCard({
   isHighlighted,
   onToggleExpand,
   onOpenDrawer,
-  onStatusChange
+  onStatusChange,
 }: JobCardProps) {
   const store = useAdminStore();
   const applicantCount = store.applications.filter((a) => a.jobId === job.id).length;
@@ -1428,17 +1545,24 @@ function JobCard({
             <Briefcase className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0">
-            <h4 className="text-xs.5 font-bold truncate text-foreground hover:text-violet-500 transition-colors cursor-pointer" onClick={onOpenDrawer}>
+            <h4
+              className="text-xs.5 font-bold truncate text-foreground hover:text-violet-500 transition-colors cursor-pointer"
+              onClick={onOpenDrawer}
+            >
               {job.title}
             </h4>
             <p className="text-[10px] text-muted-foreground truncate">{job.location}</p>
           </div>
         </div>
-        
+
         {/* Status dot */}
         <span
           className={`h-1.5 w-1.5 rounded-full ${
-            job.status === "Active" ? "bg-emerald-500" : job.status === "Closed" ? "bg-muted-foreground" : "bg-amber-500"
+            job.status === "Active"
+              ? "bg-emerald-500"
+              : job.status === "Closed"
+                ? "bg-muted-foreground"
+                : "bg-amber-500"
           }`}
           title={`Status: ${job.status}`}
         />
@@ -1448,7 +1572,7 @@ function JobCard({
         <div className="flex gap-2 text-muted-foreground font-semibold">
           <span>{applicantCount} Candidates Applied</span>
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           <button
             onClick={onOpenDrawer}
@@ -1504,9 +1628,8 @@ function ApplicantCard({
   candidate,
   isHighlighted,
   onOpenDrawer,
-  onUpdateStatus
+  onUpdateStatus,
 }: ApplicantCardProps) {
-  
   // Status styling colors
   const statusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -1537,7 +1660,10 @@ function ApplicantCard({
             <User className="h-4.5 w-4.5" />
           </div>
           <div className="min-w-0">
-            <h4 className="text-xs.5 font-bold truncate text-foreground hover:text-sky-500 transition-colors cursor-pointer" onClick={onOpenDrawer}>
+            <h4
+              className="text-xs.5 font-bold truncate text-foreground hover:text-sky-500 transition-colors cursor-pointer"
+              onClick={onOpenDrawer}
+            >
               {application.candidate || "Applicant"}
             </h4>
             <p className="text-[10px] text-muted-foreground truncate">
@@ -1545,7 +1671,7 @@ function ApplicantCard({
             </p>
           </div>
         </div>
-        
+
         {/* View/Action icons */}
         <button
           onClick={onOpenDrawer}
@@ -1557,7 +1683,9 @@ function ApplicantCard({
       </div>
 
       <div className="flex items-center justify-between text-[10px] border-t pt-2.5 border-border">
-        <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-semibold border ${statusColor(application.status)}`}>
+        <span
+          className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-semibold border ${statusColor(application.status)}`}
+        >
           {application.status}
         </span>
 
@@ -1611,20 +1739,22 @@ function EntityDetailsDrawer({
   data,
   store,
   getCandidateData,
-  onClose
+  onClose,
 }: EntityDetailsDrawerProps) {
-  
   // Local active tab: 'profile' | 'audit' | 'analytics' | 'resume'
-  const [activeTab, setActiveTab] = useState<"profile" | "audit" | "analytics" | "resume">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "audit" | "analytics" | "resume">(
+    "profile",
+  );
 
   // Fetch audit logs related to this entity
   const filteredLogs = useMemo(() => {
     const logs = store.logs || [];
     const query = data.name || data.title || data.candidate || "";
     if (!query) return [];
-    return logs.filter((log: any) => 
-      log.user?.toLowerCase().includes(query.toLowerCase()) ||
-      log.action?.toLowerCase().includes(query.toLowerCase())
+    return logs.filter(
+      (log: any) =>
+        log.user?.toLowerCase().includes(query.toLowerCase()) ||
+        log.action?.toLowerCase().includes(query.toLowerCase()),
     );
   }, [store.logs, data]);
 
@@ -1653,11 +1783,17 @@ function EntityDetailsDrawer({
       {/* Drawer Header */}
       <div className="px-6 py-5 border-b border-border bg-card/50 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-primary-foreground font-bold shadow-md ${
-            entityType === "hospital" ? "bg-indigo-500" :
-            entityType === "recruiter" ? "bg-emerald-500" :
-            entityType === "job" ? "bg-violet-500" : "bg-sky-500"
-          }`}>
+          <div
+            className={`h-10 w-10 rounded-xl flex items-center justify-center text-primary-foreground font-bold shadow-md ${
+              entityType === "hospital"
+                ? "bg-indigo-500"
+                : entityType === "recruiter"
+                  ? "bg-emerald-500"
+                  : entityType === "job"
+                    ? "bg-violet-500"
+                    : "bg-sky-500"
+            }`}
+          >
             {entityType === "hospital" && <Building2 className="h-5.5 w-5.5" />}
             {entityType === "recruiter" && <User className="h-5.5 w-5.5" />}
             {entityType === "job" && <Briefcase className="h-5.5 w-5.5" />}
@@ -1672,7 +1808,7 @@ function EntityDetailsDrawer({
             </p>
           </div>
         </div>
-        
+
         <button
           onClick={onClose}
           className="rounded-lg p-2 hover:bg-muted text-muted-foreground hover:text-foreground transition-all border border-muted-foreground/15"
@@ -1687,7 +1823,9 @@ function EntityDetailsDrawer({
           <button
             onClick={() => setActiveTab("resume")}
             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              activeTab === "resume" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              activeTab === "resume"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             CV / Resume
@@ -1696,7 +1834,9 @@ function EntityDetailsDrawer({
         <button
           onClick={() => setActiveTab("profile")}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "profile" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            activeTab === "profile"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Details
@@ -1704,7 +1844,9 @@ function EntityDetailsDrawer({
         <button
           onClick={() => setActiveTab("analytics")}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "analytics" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            activeTab === "analytics"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Analytics
@@ -1712,7 +1854,9 @@ function EntityDetailsDrawer({
         <button
           onClick={() => setActiveTab("audit")}
           className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-            activeTab === "audit" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            activeTab === "audit"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
           }`}
         >
           Audit Logs ({filteredLogs.length})
@@ -1729,13 +1873,18 @@ function EntityDetailsDrawer({
                 <div className="grid grid-cols-2 gap-4">
                   <DetailField label="Location" value={data.location} />
                   <DetailField label="Joined Date" value={data.joined} />
-                  <DetailField label="Verification Status" value={data.verified ? "Verified ✅" : "Unverified ❌"} />
+                  <DetailField
+                    label="Verification Status"
+                    value={data.verified ? "Verified ✅" : "Unverified ❌"}
+                  />
                   <DetailField label="Account Status" value={data.status} />
                   {data.inviteCode && <DetailField label="Invite Code" value={data.inviteCode} />}
                 </div>
-                
+
                 <div className="border-t pt-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Quick Admin Controls</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Quick Admin Controls
+                  </h4>
                   <div className="flex flex-wrap gap-2.5">
                     <button
                       onClick={async () => {
@@ -1776,9 +1925,11 @@ function EntityDetailsDrawer({
                   <DetailField label="Joined Date" value={data.joined} />
                   <DetailField label="Status" value={data.status} />
                 </div>
-                
+
                 <div className="border-t pt-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Recruiter Actions</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Recruiter Actions
+                  </h4>
                   <div className="flex flex-wrap gap-2.5">
                     <button
                       onClick={async () => {
@@ -1803,9 +1954,11 @@ function EntityDetailsDrawer({
                   <DetailField label="Job Status" value={data.status} />
                   <DetailField label="Posted Date" value={data.posted} />
                 </div>
-                
+
                 <div className="border-t pt-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Position Management</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Position Management
+                  </h4>
                   <div className="flex flex-wrap gap-2.5">
                     {data.status === "Active" ? (
                       <button
@@ -1857,9 +2010,11 @@ function EntityDetailsDrawer({
                   <DetailField label="Application Status" value={data.status} />
                   <DetailField label="Hospital Entity" value={data.hospital || "Apollo"} />
                 </div>
-                
+
                 <div className="border-t pt-5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hiring Decision actions</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    Hiring Decision actions
+                  </h4>
                   <div className="flex flex-wrap gap-2.5">
                     <button
                       onClick={async () => {
@@ -1912,23 +2067,49 @@ function EntityDetailsDrawer({
                         <stop offset="95%" stopColor="var(--color-primary)" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
-                    <XAxis dataKey="name" stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="var(--color-border)"
+                    />
+                    <XAxis
+                      dataKey="name"
+                      stroke="var(--color-muted-foreground)"
+                      fontSize={10}
+                      tickLine={false}
+                    />
                     <YAxis stroke="var(--color-muted-foreground)" fontSize={10} tickLine={false} />
-                    <RechartsTooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", fontSize: 11 }} />
-                    <Area type="monotone" dataKey="count" stroke="var(--color-primary)" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                    <RechartsTooltip
+                      contentStyle={{
+                        background: "var(--color-card)",
+                        border: "1px solid var(--color-border)",
+                        fontSize: 11,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="count"
+                      stroke="var(--color-primary)"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorCount)"
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="border p-4 rounded-xl text-center">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Conversion Rate</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Conversion Rate
+                </p>
                 <p className="text-2xl font-extrabold text-foreground">78.5%</p>
               </div>
               <div className="border p-4 rounded-xl text-center">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Avg. Hiring Speed</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                  Avg. Hiring Speed
+                </p>
                 <p className="text-2xl font-extrabold text-foreground">12 Days</p>
               </div>
             </div>
@@ -1938,11 +2119,15 @@ function EntityDetailsDrawer({
         {/* AUDIT TIMELINE TAB */}
         {activeTab === "audit" && (
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Audit Trail Actions</h4>
+            <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Audit Trail Actions
+            </h4>
             {filteredLogs.length === 0 ? (
               <div className="text-center py-10 border border-dashed rounded-2xl p-4">
                 <Activity className="h-8 w-8 text-muted-foreground/45 mx-auto mb-2" />
-                <p className="text-xs font-semibold text-muted-foreground">No recent audit trails for this node.</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  No recent audit trails for this node.
+                </p>
               </div>
             ) : (
               <div className="relative border-l pl-4.5 border-border space-y-5 ml-2.5">
@@ -1954,7 +2139,8 @@ function EntityDetailsDrawer({
                     <div className="space-y-1">
                       <p className="text-xs font-bold text-foreground">{log.action}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        Triggered by <span className="font-semibold">{log.user}</span> · {log.timestamp}
+                        Triggered by <span className="font-semibold">{log.user}</span> ·{" "}
+                        {log.timestamp}
                       </p>
                     </div>
                   </div>
@@ -1979,7 +2165,9 @@ function EntityDetailsDrawer({
 function DetailField({ label, value }: { label: string; value: string }) {
   return (
     <div className="border p-3.5 rounded-xl bg-card">
-      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
+        {label}
+      </p>
       <p className="text-xs font-bold text-foreground truncate">{value}</p>
     </div>
   );
@@ -1999,19 +2187,41 @@ function ApplicantResumeViewer({ candidate }: { candidate?: Candidate }) {
   }
 
   // Simulated professional resume details based on candidate
-  const summaryText = candidate.role === "Doctor"
-    ? `Dedicated Specialist in ${candidate.specialty} with over ${candidate.experience} of clinical experience in high-volume tertiary care centers. Skilled in diagnostic clinical reasoning, surgical procedures, and compassionate patient care. Expert in coordinating interdisciplinary teams to optimize healthcare delivery.`
-    : `Registered Nurse specialized in ${candidate.specialty} patient care. Proactive clinical skills in emergency responsiveness, treatment execution, and patient documentation. Committed to providing premium clinical support and maintaining standard safety workflows in critical settings.`;
+  const summaryText =
+    candidate.role === "Doctor"
+      ? `Dedicated Specialist in ${candidate.specialty} with over ${candidate.experience} of clinical experience in high-volume tertiary care centers. Skilled in diagnostic clinical reasoning, surgical procedures, and compassionate patient care. Expert in coordinating interdisciplinary teams to optimize healthcare delivery.`
+      : `Registered Nurse specialized in ${candidate.specialty} patient care. Proactive clinical skills in emergency responsiveness, treatment execution, and patient documentation. Committed to providing premium clinical support and maintaining standard safety workflows in critical settings.`;
 
-  const workExpList = candidate.role === "Doctor"
-    ? [
-        { role: `Senior consultant - ${candidate.specialty}`, facility: "Metro Cardiac Center", period: "2021 - Present", desc: "Supervised healthcare teams, handled emergency diagnostics, and led medical interventions." },
-        { role: `Junior Consultant`, facility: "General Medical Care Hospital", period: "2017 - 2021", desc: "Coordinated inpatient ward reviews, outpatient clinics, and treatment plans." }
-      ]
-    : [
-        { role: `Staff Nurse (ICU/Pediatrics)`, facility: "St. Jude Children Hospital", period: "2022 - Present", desc: "Maintained safety protocols, monitored intensive support lines, and administered doctor-prescribed medications." },
-        { role: `Ward Assistant`, facility: "City Clinic Healthcare", period: "2019 - 2022", desc: "Supported primary nursing care, vitals tracking, and patient records keeping." }
-      ];
+  const workExpList =
+    candidate.role === "Doctor"
+      ? [
+          {
+            role: `Senior consultant - ${candidate.specialty}`,
+            facility: "Metro Cardiac Center",
+            period: "2021 - Present",
+            desc: "Supervised healthcare teams, handled emergency diagnostics, and led medical interventions.",
+          },
+          {
+            role: `Junior Consultant`,
+            facility: "General Medical Care Hospital",
+            period: "2017 - 2021",
+            desc: "Coordinated inpatient ward reviews, outpatient clinics, and treatment plans.",
+          },
+        ]
+      : [
+          {
+            role: `Staff Nurse (ICU/Pediatrics)`,
+            facility: "St. Jude Children Hospital",
+            period: "2022 - Present",
+            desc: "Maintained safety protocols, monitored intensive support lines, and administered doctor-prescribed medications.",
+          },
+          {
+            role: `Ward Assistant`,
+            facility: "City Clinic Healthcare",
+            period: "2019 - 2022",
+            desc: "Supported primary nursing care, vitals tracking, and patient records keeping.",
+          },
+        ];
 
   const handleDownload = () => {
     // Generate text/plain CV download for demonstration
@@ -2028,7 +2238,7 @@ SUMMARY:
 ${summaryText}
 
 WORK HISTORY:
-${workExpList.map(exp => `- ${exp.role} at ${exp.facility} (${exp.period})\n  ${exp.desc}`).join("\n")}
+${workExpList.map((exp) => `- ${exp.role} at ${exp.facility} (${exp.period})\n  ${exp.desc}`).join("\n")}
     `;
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -2062,9 +2272,15 @@ ${workExpList.map(exp => `- ${exp.role} at ${exp.facility} (${exp.period})\n  ${
         {/* CV Header */}
         <div className="flex items-start justify-between border-b pb-4">
           <div>
-            <h3 className="text-base font-extrabold tracking-tight text-foreground">{candidate.name}</h3>
-            <p className="text-xs font-semibold text-primary">{candidate.role} · {candidate.specialty}</p>
-            <p className="text-[10px] text-muted-foreground mt-1">Experience: {candidate.experience}</p>
+            <h3 className="text-base font-extrabold tracking-tight text-foreground">
+              {candidate.name}
+            </h3>
+            <p className="text-xs font-semibold text-primary">
+              {candidate.role} · {candidate.specialty}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Experience: {candidate.experience}
+            </p>
           </div>
           <div className="h-10 w-10 bg-primary/5 rounded-full flex items-center justify-center text-primary border border-primary/20">
             <UserCheck className="h-5 w-5" />
@@ -2073,13 +2289,19 @@ ${workExpList.map(exp => `- ${exp.role} at ${exp.facility} (${exp.period})\n  ${
 
         {/* Summary section */}
         <div className="space-y-1.5">
-          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Professional Summary</h4>
-          <p className="text-xs text-muted-foreground leading-relaxed text-justify">{summaryText}</p>
+          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Professional Summary
+          </h4>
+          <p className="text-xs text-muted-foreground leading-relaxed text-justify">
+            {summaryText}
+          </p>
         </div>
 
         {/* Work experience */}
         <div className="space-y-3">
-          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Work Experience</h4>
+          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Work Experience
+          </h4>
           <div className="space-y-3">
             {workExpList.map((exp, i) => (
               <div key={i} className="space-y-1">
@@ -2096,7 +2318,9 @@ ${workExpList.map(exp => `- ${exp.role} at ${exp.facility} (${exp.period})\n  ${
 
         {/* Skills */}
         <div className="space-y-2">
-          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Education & Credentials</h4>
+          <h4 className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            Education & Credentials
+          </h4>
           <div className="grid grid-cols-2 gap-2 text-[10px] text-muted-foreground">
             <div className="p-2 border rounded-lg bg-muted/20">
               <p className="font-bold text-foreground">Clinical Degree</p>

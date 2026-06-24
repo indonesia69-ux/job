@@ -67,7 +67,8 @@ function UploadApplyPage() {
         </div>
         <h1 className="text-xl font-semibold">Structured Form Required</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          To maintain quality profiles for recruiters, candidates are not allowed to apply by CV upload without first completing the structured form.
+          To maintain quality profiles for recruiters, candidates are not allowed to apply by CV
+          upload without first completing the structured form.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Button asChild variant="outline">

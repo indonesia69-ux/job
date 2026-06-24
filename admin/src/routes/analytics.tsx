@@ -64,32 +64,32 @@ function AnalyticsPage() {
               No trend data yet — data populates after jobs and applications are created.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 12 }}
-                stroke="var(--color-muted-foreground)"
-              />
-              <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="jobs" name="Jobs" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-              <Bar
-                dataKey="applications"
-                name="Applications"
-                fill="var(--color-chart-2)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar dataKey="jobs" name="Jobs" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                <Bar
+                  dataKey="applications"
+                  name="Applications"
+                  fill="var(--color-chart-2)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -101,34 +101,34 @@ function AnalyticsPage() {
               No jobs posted yet — categories will appear here once jobs are created.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={roleDistribution}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={({ name, percent }: Record<string, any>) =>
-                  `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                }
-                labelLine={false}
-                fontSize={11}
-              >
-                {roleDistribution.map((_: any, i: number) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={roleDistribution}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  label={({ name, percent }: Record<string, any>) =>
+                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                  }
+                  labelLine={false}
+                  fontSize={11}
+                >
+                  {roleDistribution.map((_: any, i: number) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -140,32 +140,36 @@ function AnalyticsPage() {
               No hospitals with active jobs yet.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={topHospitals} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis type="number" tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-              <YAxis
-                type="category"
-                dataKey="name"
-                tick={{ fontSize: 11 }}
-                width={140}
-                stroke="var(--color-muted-foreground)"
-              />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-              <Bar
-                dataKey="jobs"
-                name="Jobs Posted"
-                fill="var(--color-chart-1)"
-                radius={[0, 4, 4, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={topHospitals} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 11 }}
+                  width={140}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+                <Bar
+                  dataKey="jobs"
+                  name="Jobs Posted"
+                  fill="var(--color-chart-1)"
+                  radius={[0, 4, 4, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -177,22 +181,22 @@ function AnalyticsPage() {
               No applications yet — candidate activity will appear here.
             </div>
           ) : (
-          <div className="space-y-3">
-            {topCandidates.map((c, i) => (
-              <div key={i} className="flex items-center justify-between rounded-lg border p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-50 text-xs font-bold text-primary">
-                    {i + 1}
+            <div className="space-y-3">
+              {topCandidates.map((c, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg border p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-navy-50 text-xs font-bold text-primary">
+                      {i + 1}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{c.name}</p>
+                      <p className="text-xs text-muted-foreground">{c.role}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.role}</p>
-                  </div>
+                  <span className="text-sm font-semibold">{c.apps} apps</span>
                 </div>
-                <span className="text-sm font-semibold">{c.apps} apps</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -206,31 +210,31 @@ function AnalyticsPage() {
               No revenue data yet — revenue will appear once subscriptions are paid.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={revenueTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 12 }}
-                stroke="var(--color-muted-foreground)"
-              />
-              <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar
-                dataKey="revenue"
-                name="Revenue (₹)"
-                fill="var(--color-success)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={revenueTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar
+                  dataKey="revenue"
+                  name="Revenue (₹)"
+                  fill="var(--color-success)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>

@@ -187,7 +187,9 @@ function ChoiceCard({
     <div
       className={
         "relative flex flex-col rounded-2xl border bg-card p-5 shadow-soft transition-all " +
-        (highlight && !disabled ? "ring-2 ring-brand hover:-translate-y-0.5 hover:shadow-card" : "") +
+        (highlight && !disabled
+          ? "ring-2 ring-brand hover:-translate-y-0.5 hover:shadow-card"
+          : "") +
         (!highlight && !disabled ? "hover:-translate-y-0.5 hover:shadow-card" : "") +
         (disabled ? "opacity-60 cursor-not-allowed" : "")
       }
@@ -202,7 +204,7 @@ function ChoiceCard({
       </div>
       <h3 className="mt-3 text-base font-semibold text-foreground">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
-      
+
       {disabled && disabledReason && (
         <p className="mt-2 text-xs text-destructive font-medium flex items-center gap-1">
           <Lock className="h-3 w-3" /> {disabledReason}

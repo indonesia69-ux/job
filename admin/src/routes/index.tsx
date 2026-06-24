@@ -136,37 +136,37 @@ function DashboardPage() {
               No data yet — stats will appear once jobs and applications are posted.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 12 }}
-                stroke="var(--color-muted-foreground)"
-              />
-              <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar
-                dataKey="jobs"
-                name="Jobs Posted"
-                fill="var(--color-primary)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="applications"
-                name="Applications"
-                fill="var(--color-chart-2)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={monthlyTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Bar
+                  dataKey="jobs"
+                  name="Jobs Posted"
+                  fill="var(--color-primary)"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="applications"
+                  name="Applications"
+                  fill="var(--color-chart-2)"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           )}
         </div>
 
@@ -177,41 +177,41 @@ function DashboardPage() {
               No data yet — growth trends will appear here.
             </div>
           ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={userGrowth}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis
-                dataKey="name"
-                tick={{ fontSize: 12 }}
-                stroke="var(--color-muted-foreground)"
-              />
-              <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border: "1px solid var(--color-border)",
-                  fontSize: 12,
-                }}
-              />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line
-                type="monotone"
-                dataKey="hospitals"
-                name="Hospitals Onboarded"
-                stroke="var(--color-primary)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="candidates"
-                name="Candidates Registered"
-                stroke="var(--color-chart-3)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={userGrowth}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 12 }}
+                  stroke="var(--color-muted-foreground)"
+                />
+                <YAxis tick={{ fontSize: 12 }} stroke="var(--color-muted-foreground)" />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: "1px solid var(--color-border)",
+                    fontSize: 12,
+                  }}
+                />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line
+                  type="monotone"
+                  dataKey="hospitals"
+                  name="Hospitals Onboarded"
+                  stroke="var(--color-primary)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="candidates"
+                  name="Candidates Registered"
+                  stroke="var(--color-chart-3)"
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           )}
         </div>
       </div>
@@ -225,29 +225,29 @@ function DashboardPage() {
               No recent activity logged yet.
             </div>
           ) : (
-          <div className="space-y-3">
-            {activityFeed.map((item: any) => (
-              <div key={item.id} className="flex items-start gap-3 rounded-lg border p-3">
-                <div
-                  className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
-                    item.type === "alert"
-                      ? "bg-destructive"
-                      : item.type === "verification"
-                        ? "bg-success"
-                        : item.type === "job"
-                          ? "bg-info"
-                          : "bg-chart-3"
-                  }`}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm capitalize">{item.text}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {item.time ? new Date(item.time).toLocaleString() : ""}
-                  </p>
+            <div className="space-y-3">
+              {activityFeed.map((item: any) => (
+                <div key={item.id} className="flex items-start gap-3 rounded-lg border p-3">
+                  <div
+                    className={`mt-0.5 h-2 w-2 shrink-0 rounded-full ${
+                      item.type === "alert"
+                        ? "bg-destructive"
+                        : item.type === "verification"
+                          ? "bg-success"
+                          : item.type === "job"
+                            ? "bg-info"
+                            : "bg-chart-3"
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm capitalize">{item.text}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {item.time ? new Date(item.time).toLocaleString() : ""}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
         </div>
 

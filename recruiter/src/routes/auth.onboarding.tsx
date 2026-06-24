@@ -636,7 +636,8 @@ export function OnboardingPage() {
             Complete Subscription Payment
           </h2>
           <p className="mt-2 text-[14px] text-muted-foreground max-w-sm">
-            You have selected the <span className="font-semibold text-foreground">{form.plan}</span> plan. Please complete the payment to finalize your onboarding application.
+            You have selected the <span className="font-semibold text-foreground">{form.plan}</span>{" "}
+            plan. Please complete the payment to finalize your onboarding application.
           </p>
         </div>
         <div className="w-full max-w-xs space-y-4 text-left">
@@ -647,7 +648,9 @@ export function OnboardingPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Validity</span>
-              <span className="font-semibold text-foreground">{form.plan === "Pro" ? "23 days" : "30 days"}</span>
+              <span className="font-semibold text-foreground">
+                {form.plan === "Pro" ? "23 days" : "30 days"}
+              </span>
             </div>
             <div className="h-px bg-border my-2" />
             <div className="flex justify-between text-base font-bold">

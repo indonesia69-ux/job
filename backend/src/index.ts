@@ -41,6 +41,7 @@ import onboardingVerifyRoutes from './routes/onboardingVerifyRoutes';
 import uploadRoutes from './routes/uploadRoutes';
 import planRoutes from './routes/planRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import webhookRoutes from './routes/webhookRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import { evaluateCorsOrigin } from './lib/corsConfig';
 
@@ -68,6 +69,11 @@ app.use(helmet());
 // Request logging via morgan + winston
 const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
 app.use(morgan(morganFormat, { stream: { write: (message) => logger.info(message.trim()) } }));
+
+// ─── Webhook routes (RAW BODY — must be before express.json()) ───────────────
+// Razorpay signs the raw request bytes. express.json() would destroy the raw
+// body, breaking HMAC validation. Mounting here preserves it for the handler.
+app.use('/api/webhooks', webhookRoutes);
 
 // Reduce payload limit since base64 CV compat is deprecated
 app.use(express.json({ limit: '5mb' }));

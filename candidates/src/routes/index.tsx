@@ -61,7 +61,9 @@ function Opportunities() {
       .catch(() => {
         if (!cancelled) setJobsLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

@@ -1,12 +1,4 @@
-import {
-  Outlet,
-  Link,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-  useRouterState,
-  useNavigate,
-} from "@tanstack/react-router";
+import { Outlet, Link, createRootRoute, useRouterState, useNavigate } from "@tanstack/react-router";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { useState, useEffect, ReactNode } from "react";
@@ -16,7 +8,7 @@ import { setUnauthorizedHandler, apiFetch, apiBase } from "@/lib/api";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { AdminPageLoader } from "@/components/common/PageLoader";
-import appCss from "../styles.css?url";
+import "../styles.css";
 
 import { LottiePlayer } from "@/components/common/LottiePlayer";
 
@@ -68,46 +60,10 @@ export const Route = createRootRoute({
     if (location.pathname === "/login") return;
     requireAdminAuth(location.pathname + location.searchStr);
   },
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ApronHanger – Super Admin Dashboard" },
-      {
-        name: "description",
-        content: "Enterprise healthcare hiring platform admin control center",
-      },
-    ],
-    links: [
-      { rel: "preload", as: "fetch", href: "/loading_state.json", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
-      },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: GlobalErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   useEffect(() => {

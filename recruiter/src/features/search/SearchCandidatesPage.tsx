@@ -639,7 +639,7 @@ function PremiumSearch({
                 </span>
               </h3>
             )}
-            
+
             {results.length > 0 ? (
               <ResultsGrid
                 results={results}

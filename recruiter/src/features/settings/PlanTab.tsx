@@ -55,6 +55,11 @@ type RazorpayOptions = {
   name: string;
   description: string;
   order_id: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
   handler: (response: RazorpayResponse) => void;
   theme?: { color?: string };
   modal?: { ondismiss?: () => void };

@@ -183,10 +183,7 @@ function JobDetails() {
               />
               <Stat label="Job type" value={job.type || "—"} />
               <Stat label="Location" value={job.city || "—"} />
-              <Stat
-                label="Posted"
-                value={job.postedOn || "—"}
-              />
+              <Stat label="Posted" value={job.postedOn || "—"} />
             </div>
             <div className="mt-5 grid gap-2">
               <Button asChild size="lg">
@@ -207,7 +204,8 @@ function JobDetails() {
               Hiring Pipeline
             </p>
             <p className="mt-2 text-sm text-foreground/80">
-              There are currently <strong>{job.applicants}</strong> applicant{job.applicants !== 1 ? "s" : ""} for this position.
+              There are currently <strong>{job.applicants}</strong> applicant
+              {job.applicants !== 1 ? "s" : ""} for this position.
             </p>
           </div>
         </aside>
