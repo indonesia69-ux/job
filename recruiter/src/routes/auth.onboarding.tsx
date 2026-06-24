@@ -37,6 +37,64 @@ import {
   type PlanTier,
 } from "@/lib/planCatalog";
 
+type RazorpayResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill?: {
+    name?: string;
+    email?: string;
+    contact?: string;
+  };
+  handler: (response: RazorpayResponse) => void;
+  theme?: { color?: string };
+  modal?: { ondismiss?: () => void };
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
+  }
+}
+
+function loadRazorpayCheckout(): Promise<void> {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Payment is only available in the browser"));
+  }
+  if (window.Razorpay) return Promise.resolve();
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+    );
+    if (existing) {
+      existing.addEventListener("load", () => resolve(), { once: true });
+      existing.addEventListener(
+        "error",
+        () => reject(new Error("Failed to load Razorpay checkout")),
+        { once: true },
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay checkout"));
+    document.body.appendChild(script);
+  });
+}
+
 export const Route = createFileRoute("/auth/onboarding")({
   head: () => ({
     meta: [
@@ -245,6 +303,8 @@ export function OnboardingPage() {
   const [submitted, setSubmitted] = useState(false);
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [applicationId, setApplicationId] = useState<string | null>(null);
+  const [requiresPayment, setRequiresPayment] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [otp, setOtp] = useState("");
   const [verifying, setVerifying] = useState(false);
   const [planOptions, setPlanOptions] = useState<PlanOption[]>(() =>
@@ -378,11 +438,15 @@ export function OnboardingPage() {
         return;
       }
 
+      setApplicationId(data.applicationId);
       if (data.requiresVerification) {
-        setApplicationId(data.applicationId);
         setRequiresVerification(true);
       } else {
-        setSubmitted(true);
+        if (form.plan === "Pro" || form.plan === "Premium") {
+          setRequiresPayment(true);
+        } else {
+          setSubmitted(true);
+        }
       }
     } catch {
       toast.error("Network error. Please check your connection and try again.");
@@ -405,11 +469,91 @@ export function OnboardingPage() {
         return;
       }
       setRequiresVerification(false);
-      setSubmitted(true);
+      if (form.plan === "Pro" || form.plan === "Premium") {
+        setRequiresPayment(true);
+      } else {
+        setSubmitted(true);
+      }
     } catch {
       toast.error("Network error.");
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handlePayment = async () => {
+    setPaying(true);
+    try {
+      await loadRazorpayCheckout();
+
+      const orderRes = await fetch(`${apiBase()}/api/onboarding/create-payment-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) {
+        toast.error(orderData.error || "Failed to initiate payment. Please try again.");
+        setPaying(false);
+        return;
+      }
+
+      await new Promise<void>((resolve, reject) => {
+        if (!window.Razorpay) {
+          reject(new Error("Razorpay checkout is unavailable"));
+          return;
+        }
+
+        const checkout = new window.Razorpay({
+          key: orderData.keyId,
+          amount: Math.round(orderData.amount * 100),
+          currency: orderData.currency,
+          name: "ApronHanger",
+          description: `Onboarding subscription payment (${form.plan} plan)`,
+          order_id: orderData.orderId,
+          prefill: {
+            name: form.contactName,
+            email: form.email,
+            contact: form.phone,
+          },
+          handler: async (response) => {
+            try {
+              const verifyRes = await fetch(`${apiBase()}/api/onboarding/verify-payment`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  applicationId,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                }),
+              });
+              const verifyData = await verifyRes.json();
+              if (!verifyRes.ok) {
+                reject(new Error(verifyData.error || "Payment verification failed"));
+                return;
+              }
+              resolve();
+            } catch (err) {
+              reject(err);
+            }
+          },
+          theme: { color: "#144A7A" },
+          modal: {
+            ondismiss: () => reject(new Error("Payment window closed")),
+          },
+        });
+
+        checkout.open();
+      });
+
+      toast.success("Payment completed successfully!");
+      setRequiresPayment(false);
+      setSubmitted(true);
+    } catch (err: any) {
+      toast.error(err.message || "Payment failed. Please try again.");
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -477,6 +621,61 @@ export function OnboardingPage() {
           >
             Resend OTP
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (requiresPayment) {
+    const planPrice = form.plan === "Pro" ? 799 : 2499;
+    return (
+      <div className="flex flex-col items-center gap-6 py-8 text-center animate-fade-in-up">
+        <LottiePlayer src="/mail_sent.json" loop={false} className="h-20 w-20 mx-auto mb-4" />
+        <div>
+          <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">
+            Complete Subscription Payment
+          </h2>
+          <p className="mt-2 text-[14px] text-muted-foreground max-w-sm">
+            You have selected the <span className="font-semibold text-foreground">{form.plan}</span>{" "}
+            plan. Please complete the payment to finalize your onboarding application.
+          </p>
+        </div>
+        <div className="w-full max-w-xs space-y-4 text-left">
+          <div className="rounded-xl border border-border bg-muted/30 p-4 text-[13px] space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Selected Plan</span>
+              <span className="font-semibold text-foreground">{form.plan}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Validity</span>
+              <span className="font-semibold text-foreground">
+                {form.plan === "Pro" ? "23 days" : "30 days"}
+              </span>
+            </div>
+            <div className="h-px bg-border my-2" />
+            <div className="flex justify-between text-base font-bold">
+              <span>Amount Due</span>
+              <span>₹{planPrice}</span>
+            </div>
+          </div>
+
+          <Button
+            onClick={handlePayment}
+            disabled={paying}
+            className="w-full h-12 text-[15px] font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow"
+          >
+            {paying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processing Payment…
+              </>
+            ) : (
+              `Pay ₹${planPrice} & Submit`
+            )}
+          </Button>
+
+          <p className="text-center text-[11px] text-muted-foreground">
+            Payments are securely processed via Razorpay.
+          </p>
         </div>
       </div>
     );

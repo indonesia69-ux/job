@@ -17,6 +17,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { AdminEmptyState as EmptyState } from "@/components/common/EmptyState";
+import { HospitalFlowBoard } from "@/components/HospitalFlowBoard";
 
 export const Route = createFileRoute("/hospitals")({
   component: HospitalsPage,
@@ -39,6 +40,7 @@ function HospitalsPage() {
   const [hospitalId, setHospitalId] = useState<string | null>(null);
   const [recruiterId, setRecruiterId] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"standard" | "canvas">("standard");
 
   const level: Level = jobId
     ? "applicants"
@@ -62,45 +64,73 @@ function HospitalsPage() {
             Drill from hospitals to recruiters, jobs, and candidate applications.
           </p>
         </div>
+        <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
+          <button
+            onClick={() => setViewMode("standard")}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              viewMode === "standard"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Standard View
+          </button>
+          <button
+            onClick={() => setViewMode("canvas")}
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+              viewMode === "canvas"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Canvas View
+          </button>
+        </div>
       </div>
 
-      <Breadcrumbs
-        level={level}
-        hospital={hospital?.name}
-        recruiter={recruiter?.name}
-        job={job?.title}
-        onHospitals={() => {
-          setHospitalId(null);
-          setRecruiterId(null);
-          setJobId(null);
-        }}
-        onRecruiters={() => {
-          setRecruiterId(null);
-          setJobId(null);
-        }}
-        onJobs={() => {
-          setJobId(null);
-        }}
-      />
+      {viewMode === "canvas" ? (
+        <HospitalFlowBoard />
+      ) : (
+        <>
+          <Breadcrumbs
+            level={level}
+            hospital={hospital?.name}
+            recruiter={recruiter?.name}
+            job={job?.title}
+            onHospitals={() => {
+              setHospitalId(null);
+              setRecruiterId(null);
+              setJobId(null);
+            }}
+            onRecruiters={() => {
+              setRecruiterId(null);
+              setJobId(null);
+            }}
+            onJobs={() => {
+              setJobId(null);
+            }}
+          />
 
-      {level === "hospitals" && <HospitalsList onOpen={(id) => setHospitalId(id)} />}
-      {level === "recruiters" && hospital && (
-        <RecruitersList
-          hospitalId={hospital.id}
-          onOpen={(id) => setRecruiterId(id)}
-          onBack={() => setHospitalId(null)}
-        />
-      )}
-      {level === "jobs" && hospital && recruiter && (
-        <JobsList
-          hospitalId={hospital.id}
-          recruiterId={recruiter.id}
-          onOpen={(id) => setJobId(id)}
-          onBack={() => setRecruiterId(null)}
-        />
-      )}
-      {level === "applicants" && job && (
-        <ApplicantsList jobId={job.id} onBack={() => setJobId(null)} />
+          {level === "hospitals" && <HospitalsList onOpen={(id) => setHospitalId(id)} />}
+          {level === "recruiters" && hospital && (
+            <RecruitersList
+              hospitalId={hospital.id}
+              onOpen={(id) => setRecruiterId(id)}
+              onBack={() => setHospitalId(null)}
+            />
+          )}
+          {level === "jobs" && hospital && recruiter && (
+            <JobsList
+              hospitalId={hospital.id}
+              recruiterId={recruiter.id}
+              onOpen={(id) => setJobId(id)}
+              onBack={() => setRecruiterId(null)}
+            />
+          )}
+          {level === "applicants" && job && (
+            <ApplicantsList jobId={job.id} onBack={() => setJobId(null)} />
+          )}
+        </>
       )}
     </div>
   );

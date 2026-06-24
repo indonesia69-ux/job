@@ -54,7 +54,7 @@ npm ci
 npm run build
 ```
 
-4. Upload the contents of `dist/client` to the correct cPanel public folder.
+4. Upload the **entire contents** of the `dist/` folder to the correct cPanel public folder.
 5. Ensure `.htaccess` is uploaded with the build output.
 6. Verify direct refresh on nested routes:
    - candidate `/jobs/some-id`

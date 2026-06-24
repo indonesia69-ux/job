@@ -11,6 +11,61 @@ const router = Router();
 // Doctor-level degrees used to classify Premium candidates
 const DOCTOR_DEGREES = ['MBBS', 'MD', 'DM', 'DNB', 'MS', 'MCh', 'DrNB'];
 
+// Helper function to check if query matches key fields exactly as a whole word
+export function isExactMatch(candidate: any, query: string): boolean {
+  if (!query) return true;
+  const terms = query.split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+
+  const name = candidate.name || '';
+  const role = candidate.role || '';
+  const specialty = candidate.specialty || '';
+
+  const degrees: string[] = [];
+  if (candidate.education) {
+    let eduList: any[] = [];
+    if (typeof candidate.education === 'string') {
+      try {
+        eduList = JSON.parse(candidate.education);
+      } catch {}
+    } else if (Array.isArray(candidate.education)) {
+      eduList = candidate.education;
+    }
+    for (const edu of eduList) {
+      if (edu && typeof edu === 'object' && edu.degree) {
+        degrees.push(edu.degree);
+      } else if (typeof edu === 'string') {
+        degrees.push(edu);
+      }
+    }
+  }
+
+  let skillsList: string[] = [];
+  if (candidate.skills) {
+    if (typeof candidate.skills === 'string') {
+      try {
+        skillsList = JSON.parse(candidate.skills);
+      } catch {}
+    } else if (Array.isArray(candidate.skills)) {
+      skillsList = candidate.skills;
+    }
+  }
+
+  const textToSearch = [
+    name,
+    role,
+    specialty,
+    ...degrees,
+    ...skillsList
+  ].join(' ');
+
+  return terms.every((term) => {
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+    return regex.test(textToSearch);
+  });
+}
+
 // ─── GET /api/candidates/search ───────────────────────────────────────────────
 // Query params:
 //   q       – free text (name / role / specialty / skills / education)
@@ -139,6 +194,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
     }
 
     const andConditions: any[] = [];
+    const andConditionsWithoutQ: any[] = [];
 
     if (q) {
       const searchTerms = q.split(' ').filter(Boolean);
@@ -150,13 +206,20 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
     }
 
     if (preferredLocation) {
-      andConditions.push({
+      const cond = {
         searchBlob: { contains: preferredLocation, mode: 'insensitive' }
-      });
+      };
+      andConditions.push(cond);
+      andConditionsWithoutQ.push(cond);
     }
+
+    const scalarWhereWithoutQ = { ...scalarWhere };
 
     if (andConditions.length > 0) {
       scalarWhere.AND = andConditions;
+    }
+    if (andConditionsWithoutQ.length > 0) {
+      scalarWhereWithoutQ.AND = andConditionsWithoutQ;
     }
 
     // Determine premium constraint (must contain at least one doctor degree)
@@ -168,49 +231,87 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
       scalarWhere.NOT = { OR: doctorDegreeConditions };
     } else {
       scalarWhere.OR = doctorDegreeConditions;
+      scalarWhereWithoutQ.OR = doctorDegreeConditions;
     }
 
-    // Execute paginated search securely within the database
-    const [candidates, total] = await prisma.$transaction([
-      prisma.candidate.findMany({
-        where: scalarWhere,
-        orderBy: [
-          { matchPercent: 'desc' },
-          { name: 'asc' },
-        ],
-        take,
-        skip,
-      }),
-      prisma.candidate.count({ where: scalarWhere })
-    ]);
+    if (type === 'premium' && q) {
+      // Execute Query A (exact candidate search with contains q) and Query B (recommendations without q)
+      const [candidatesWithQuery, recommendedRaw] = await prisma.$transaction([
+        prisma.candidate.findMany({
+          where: scalarWhere,
+          orderBy: [
+            { matchPercent: 'desc' },
+            { name: 'asc' },
+          ],
+          take: Math.max(100, take * 2),
+        }),
+        prisma.candidate.findMany({
+          where: scalarWhereWithoutQ,
+          orderBy: [
+            { matchPercent: 'desc' },
+            { name: 'asc' },
+          ],
+          take: Math.max(100, take * 2),
+        })
+      ]);
 
-    if (type === 'basic') {
-      // Fetch top 5 premium candidates for the locked teaser
-      const premiumWhere = { ...scalarWhere };
-      delete premiumWhere.NOT;
-      premiumWhere.OR = doctorDegreeConditions;
-      
-      const lockedCandidatesRaw = await prisma.candidate.findMany({
-        where: premiumWhere,
-        orderBy: [{ matchPercent: 'desc' }, { name: 'asc' }],
-        take: 5
-      });
-      const lockedCandidates = lockedCandidatesRaw.map(formatLockedCandidate);
-      
+      const exactMatches = candidatesWithQuery.filter(c => isExactMatch(c, q));
+      const exactIds = new Set(exactMatches.map(c => c.id));
+      const recommendedCandidates = recommendedRaw.filter(c => !exactIds.has(c.id));
+
+      const paginatedExact = exactMatches.slice(skip, skip + take);
+      const paginatedRecs = recommendedCandidates.slice(skip, skip + take);
+
       res.json({
-        candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
-        lockedCandidates,
-        total,
+        candidates: paginatedExact.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+        recommendedCandidates: paginatedRecs.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+        total: exactMatches.length,
         take,
         skip,
       });
     } else {
-      res.json({
-        candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
-        total,
-        take,
-        skip,
-      });
+      // Execute paginated search securely within the database
+      const [candidates, total] = await prisma.$transaction([
+        prisma.candidate.findMany({
+          where: scalarWhere,
+          orderBy: [
+            { matchPercent: 'desc' },
+            { name: 'asc' },
+          ],
+          take,
+          skip,
+        }),
+        prisma.candidate.count({ where: scalarWhere })
+      ]);
+
+      if (type === 'basic') {
+        // Fetch top 5 premium candidates for the locked teaser
+        const premiumWhere = { ...scalarWhere };
+        delete premiumWhere.NOT;
+        premiumWhere.OR = doctorDegreeConditions;
+        
+        const lockedCandidatesRaw = await prisma.candidate.findMany({
+          where: premiumWhere,
+          orderBy: [{ matchPercent: 'desc' }, { name: 'asc' }],
+          take: 5
+        });
+        const lockedCandidates = lockedCandidatesRaw.map(formatLockedCandidate);
+        
+        res.json({
+          candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+          lockedCandidates,
+          total,
+          take,
+          skip,
+        });
+      } else {
+        res.json({
+          candidates: candidates.map((candidate) => formatCandidate(candidate, { redactContact: true })),
+          total,
+          take,
+          skip,
+        });
+      }
     }
   } catch (error) {
     logger.error('[candidate search]', error);

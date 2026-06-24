@@ -111,6 +111,8 @@ function ApplyChooser() {
           to="/apply/$jobId/upload"
           jobId={job.id}
           ctaLabel="Upload & apply"
+          disabled={!hasFormCV}
+          disabledReason="You must complete the structured form once before you can use CV upload."
         />
       </div>
 
@@ -168,6 +170,8 @@ function ChoiceCard({
   jobId,
   ctaLabel,
   highlight,
+  disabled,
+  disabledReason,
 }: {
   icon: typeof Zap;
   title: string;
@@ -176,15 +180,21 @@ function ChoiceCard({
   jobId: string;
   ctaLabel: string;
   highlight?: boolean;
+  disabled?: boolean;
+  disabledReason?: string;
 }) {
   return (
     <div
       className={
-        "relative flex flex-col rounded-2xl border bg-card p-5 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-card " +
-        (highlight ? "ring-2 ring-brand" : "")
+        "relative flex flex-col rounded-2xl border bg-card p-5 shadow-soft transition-all " +
+        (highlight && !disabled
+          ? "ring-2 ring-brand hover:-translate-y-0.5 hover:shadow-card"
+          : "") +
+        (!highlight && !disabled ? "hover:-translate-y-0.5 hover:shadow-card" : "") +
+        (disabled ? "opacity-60 cursor-not-allowed" : "")
       }
     >
-      {highlight && (
+      {highlight && !disabled && (
         <span className="absolute -top-2 right-4 rounded-full bg-brand px-2 py-0.5 text-[10px] font-semibold text-brand-foreground">
           Recommended
         </span>
@@ -194,12 +204,25 @@ function ChoiceCard({
       </div>
       <h3 className="mt-3 text-base font-semibold text-foreground">{title}</h3>
       <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
+
+      {disabled && disabledReason && (
+        <p className="mt-2 text-xs text-destructive font-medium flex items-center gap-1">
+          <Lock className="h-3 w-3" /> {disabledReason}
+        </p>
+      )}
+
       <div className="flex-1" />
-      <Button asChild className="mt-5" variant={highlight ? "default" : "outline"}>
-        <Link to={to} params={{ jobId }}>
-          {ctaLabel} <ArrowRight className="h-4 w-4" />
-        </Link>
-      </Button>
+      {disabled ? (
+        <Button className="mt-5" variant="outline" disabled>
+          {ctaLabel}
+        </Button>
+      ) : (
+        <Button asChild className="mt-5" variant={highlight ? "default" : "outline"}>
+          <Link to={to} params={{ jobId }}>
+            {ctaLabel} <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      )}
     </div>
   );
 }

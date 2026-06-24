@@ -18,7 +18,7 @@ const KPI_ICONS = [Briefcase, Activity, Users, CheckCircle2];
 export function DashboardPage() {
   const { candidates: CANDIDATES, jobs: JOBS, stats, hospital } = Route.useLoaderData();
   const hospitalLabel = hospital?.shortName || hospital?.name || "Your hospital";
-  const KPI = stats.kpis.map((k, i) => ({ ...k, icon: KPI_ICONS[i] ?? Briefcase }));
+  const KPI = stats.kpis.map((k: any, i: number) => ({ ...k, icon: KPI_ICONS[i] ?? Briefcase }));
   const isRealSuggestion = stats.suggested.length > 0;
   const suggested = isRealSuggestion ? stats.suggested : CANDIDATES.slice(0, 5);
   const recentApplicants = CANDIDATES.slice(0, 5);
@@ -71,7 +71,7 @@ export function DashboardPage() {
 
       {/* KPI grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {KPI.map((k) => (
+        {KPI.map((k: any) => (
           <Card key={k.label} className="border-border bg-card shadow-soft">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">

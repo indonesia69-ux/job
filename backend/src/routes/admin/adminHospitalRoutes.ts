@@ -58,6 +58,11 @@ router.patch('/hospitals/:id/approve', requireAdmin, async (req: AdminAuthReques
       return;
     }
 
+    if (hospital.onboardingStatus === 'PendingPayment') {
+      res.status(403).json({ error: 'Hospital has not completed plan payment yet.' });
+      return;
+    }
+
     // Generate a unique invite code — retry on collision (extremely rare)
     // ONLY generate a new code if the hospital doesn't already have one.
     let inviteCode: string = hospital.inviteCode || '';
@@ -134,9 +139,14 @@ router.patch('/hospitals/:id/approve', requireAdmin, async (req: AdminAuthReques
     });
 
     // Send activation email with invite code (non-fatal — email failure must not crash the response)
-    sendApprovalEmail(updated).catch(err =>
-      logger.error('[Email] Approval email failed for hospital %s: %s', updated.id, err?.message || err)
-    );
+    const emailAddress = updated.email || updated.submittedEmail || '';
+    logger.info('[Email] Attempting approval email for hospital "%s" → recipient: "%s", inviteCode: "%s"',
+      updated.name, emailAddress, updated.inviteCode);
+
+    sendApprovalEmail(updated).catch(err => {
+      logger.error('[Email] Approval email FAILED for hospital %s (%s): %s',
+        updated.id, emailAddress, err?.message || JSON.stringify(err));
+    });
 
     res.json(updated);
   } catch (error) {

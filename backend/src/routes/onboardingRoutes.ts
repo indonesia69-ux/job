@@ -1,10 +1,23 @@
 import logger from '../lib/logger';
 import { Router, Request, Response } from 'express';
 import prisma from '../lib/prisma';
-import { getRecruiterLimit } from '../lib/helpers';
-import { isValidPlan } from '../config/plans';
+import { getRecruiterLimit, isValidPlan, PLAN_PRICES, type PlanTier } from '../config/plans';
 import { sendOTP } from '../lib/otp';
 import { notifyAdminHospitalOnboarding } from '../lib/notifyAdmin';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
+
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+
+if (!razorpayKeyId || !razorpayKeySecret) {
+  throw new Error('FATAL: RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET must be set.');
+}
+
+const razorpay = new Razorpay({
+  key_id: razorpayKeyId,
+  key_secret: razorpayKeySecret,
+});
 
 const router = Router();
 
@@ -106,7 +119,7 @@ router.post('/hospitals', async (req: Request, res: Response) => {
         submittedBy:        submittedBy       ? String(submittedBy)        : null,
         onboardingPlan:     String(plan),
         maxRecruiters,
-        onboardingStatus:   'Pending',
+        onboardingStatus:   (plan === 'Pro' || plan === 'Premium') ? 'PendingPayment' : 'Pending',
         submittedAt:        new Date(),
         type:               type              ? String(type)               : null,
         city:               city              ? String(city)               : null,
@@ -167,7 +180,9 @@ router.post('/hospitals', async (req: Request, res: Response) => {
         : 'Onboarding application submitted successfully. You will hear from us within 48 hours.',
       applicationId: hospital.id,
       requiresVerification: Boolean(phone),
-      otpSent
+      otpSent,
+      onboardingPlan: hospital.onboardingPlan,
+      onboardingStatus: hospital.onboardingStatus,
     });
   } catch (error) {
     logger.error(error);
@@ -235,6 +250,146 @@ router.get('/verify-code/:code', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(error);
     res.status(500).json({ error: 'Failed to verify invite code.' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/onboarding/create-payment-order  (Public — no auth required)
+// Creates a Razorpay order for paid plan during onboarding.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/create-payment-order', async (req: Request, res: Response) => {
+  const { applicationId } = req.body;
+  if (!applicationId) {
+    res.status(400).json({ error: 'applicationId is required' });
+    return;
+  }
+  try {
+    const hospital = await prisma.hospital.findUnique({
+      where: { id: String(applicationId) },
+    });
+    if (!hospital) {
+      res.status(404).json({ error: 'Hospital application not found' });
+      return;
+    }
+    if (hospital.onboardingStatus !== 'PendingPayment') {
+      res.status(400).json({ error: 'This application is not pending payment.' });
+      return;
+    }
+    const plan = hospital.onboardingPlan;
+    const amount = PLAN_PRICES[plan as PlanTier] ?? 0;
+    if (amount <= 0) {
+      res.status(400).json({ error: 'Selected plan does not require payment.' });
+      return;
+    }
+
+    const rzpOrder = await razorpay.orders.create({
+      amount: Math.round(amount * 100), // amount in paisa
+      currency: 'INR',
+      receipt: `receipt_onb_${hospital.id.substring(0, 10)}_${Date.now()}`
+    });
+
+    const order = await prisma.paymentOrder.create({
+      data: {
+        hospitalId: hospital.id,
+        amount,
+        currency: 'INR',
+        razorpayOrderId: rzpOrder.id,
+        status: 'CREATED',
+        planRequested: plan
+      }
+    });
+
+    res.json({ orderId: order.razorpayOrderId, amount: order.amount, currency: order.currency, keyId: razorpayKeyId });
+  } catch (err: any) {
+    logger.error('[onboarding/create-payment-order]', err);
+    res.status(500).json({ error: 'Failed to create payment order' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/onboarding/verify-payment  (Public — no auth required)
+// Verifies Razorpay signature for onboarding payment and updates hospital status.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/verify-payment', async (req: Request, res: Response) => {
+  const { applicationId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  if (!applicationId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+    res.status(400).json({ error: 'Missing payment details' });
+    return;
+  }
+
+  try {
+    const order = await prisma.paymentOrder.findUnique({
+      where: { razorpayOrderId: razorpay_order_id },
+      include: { hospital: true },
+    });
+
+    if (!order || order.hospitalId !== applicationId) {
+      res.status(400).json({ error: 'Invalid order or application mismatch' });
+      return;
+    }
+
+    const generatedSignature = crypto
+      .createHmac('sha256', razorpayKeySecret!)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    const expected = Buffer.from(generatedSignature);
+    const received = Buffer.from(String(razorpay_signature));
+    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) {
+      if (order.status === 'CREATED') {
+        await prisma.paymentOrder.update({
+          where: { id: order.id },
+          data: { status: 'FAILED' },
+        });
+      }
+      res.status(400).json({ error: 'Invalid payment signature' });
+      return;
+    }
+
+    if (order.status === 'PAID') {
+      res.json({ success: true, plan: order.hospital.onboardingPlan });
+      return;
+    }
+
+    // Optimistic lock: only flip CREATED → PAID.
+    // If a concurrent request (or webhook) already flipped it, count===0 → skip.
+    let alreadyProcessed = false;
+    await prisma.$transaction(async (tx) => {
+      const flip = await tx.paymentOrder.updateMany({
+        where: { id: order.id, status: 'CREATED' },
+        data:  { status: 'PAID' },
+      });
+
+      if (flip.count === 0) {
+        alreadyProcessed = true;
+        return;
+      }
+
+      await tx.hospital.update({
+        where: { id: order.hospital.id },
+        data: { onboardingStatus: 'Pending' },
+      });
+
+      await tx.planChangeLog.create({
+        data: {
+          hospitalId:    order.hospital.id,
+          fromPlan:      'None',
+          toPlan:        order.planRequested,
+          changeType:    'onboarding_activation',
+          amountPaid:    order.amount,
+          effectiveAt:   new Date(),
+          paymentStatus: 'Paid',
+          paymentRef:    razorpay_payment_id,
+          note:          `Onboarding subscription payment. Plan: ${order.planRequested}.`,
+        },
+      });
+    });
+
+    res.json({ success: true, plan: order.planRequested, alreadyProcessed });
+  } catch (err: any) {
+    logger.error('[onboarding/verify-payment]', err);
+    res.status(500).json({ error: 'Failed to verify payment' });
   }
 });
 

@@ -100,10 +100,14 @@ function mapFromFormProfile(
     applicationId: app.id,
     cvSource: "form",
     formProfile: profile,
-    supportingDocuments: safeJsonParse<any[]>(
-      (app as any).supportingDocuments || c.supportingDocuments || undefined,
-      [],
-    ),
+    supportingDocuments: (() => {
+      const appDocs = safeJsonParse<any[]>((app as any).supportingDocuments, []);
+      if (appDocs.length > 0) return appDocs;
+      const candDocs = safeJsonParse<any[]>(c.supportingDocuments, []);
+      if (candDocs.length > 0) return candDocs;
+      const profileDocs = safeJsonParse<any[]>(profile?.supportingDocuments, []);
+      return profileDocs;
+    })(),
   } as Candidate;
 }
 
@@ -252,12 +256,14 @@ export function mapApiCandidate(app: {
     applicationId: app.id,
     cvSource: appCvSource ? (appCvSource === "upload" ? "upload" : "form") : undefined,
     formProfile: profile || null,
-    supportingDocuments: safeJsonParse<any[]>(
-      (app as any).supportingDocuments ||
-        (c.supportingDocuments as string | undefined) ||
-        undefined,
-      [],
-    ),
+    supportingDocuments: (() => {
+      const appDocs = safeJsonParse<any[]>((app as any).supportingDocuments, []);
+      if (appDocs.length > 0) return appDocs;
+      const candDocs = safeJsonParse<any[]>(c.supportingDocuments, []);
+      if (candDocs.length > 0) return candDocs;
+      const profileDocs = safeJsonParse<any[]>(profile?.supportingDocuments, []);
+      return profileDocs;
+    })(),
     locked: c.locked as boolean | undefined,
     expectedSalaryMin: c.expectedSalaryMin as number | undefined,
     expectedSalaryMax: c.expectedSalaryMax as number | undefined,
@@ -533,6 +539,7 @@ export type SearchParams = {
 
 export type SearchResult = {
   candidates: Candidate[];
+  recommendedCandidates?: Candidate[];
   lockedCandidates?: Candidate[];
   total: number;
   take: number;
@@ -577,6 +584,15 @@ export async function searchCandidates(params: SearchParams = {}): Promise<Searc
   // Map raw API candidates through the same mapper used for applications
   return {
     candidates: (data.candidates || []).map((c: any) =>
+      mapApiCandidate({
+        id: c.id,
+        status: "Applied",
+        appliedOn: new Date().toISOString(),
+        jobId: "",
+        candidate: c,
+      }),
+    ),
+    recommendedCandidates: (data.recommendedCandidates || []).map((c: any) =>
       mapApiCandidate({
         id: c.id,
         status: "Applied",

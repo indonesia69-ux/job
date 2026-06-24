@@ -164,7 +164,13 @@ export function JobsPage() {
                     <span className="text-[11px] text-muted-foreground">{j.id}</span>
                   </div>
                   <h3 className="mt-2 font-display text-[17px] font-semibold leading-tight">
-                    {j.role}
+                    <Link
+                      to="/jobs/$jobId"
+                      params={{ jobId: j.id }}
+                      className="hover:text-primary transition-colors"
+                    >
+                      {j.role}
+                    </Link>
                   </h3>
                   <div className="mt-0.5 text-[13px] text-muted-foreground">
                     {j.specialty}
@@ -178,6 +184,11 @@ export function JobsPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link to="/jobs/$jobId" params={{ jobId: j.id }}>
+                        <Briefcase className="mr-2 h-4 w-4" /> View job details
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/applicants" search={{ jobId: j.id, q: "" }}>
                         <Users className="mr-2 h-4 w-4" /> View applicants

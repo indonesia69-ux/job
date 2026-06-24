@@ -1,16 +1,7 @@
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-  Link,
-  useNavigate,
-  useRouterState,
-} from "@tanstack/react-router";
+import { Outlet, createRootRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { hydrateProfileFromApi } from "@/lib/hydrate";
 import { hydrateSavedJobIds } from "@/store/savedJobsStore";
-import appCss from "../styles.css?url";
 import { TopNav } from "@/components/layout/TopNav";
 import { Footer } from "@/components/layout/Footer";
 import { Toaster } from "@/components/ui/sonner";
@@ -63,56 +54,11 @@ function GlobalErrorComponent({ error, reset }: { error: Error; reset: () => voi
 }
 
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ApronHanger — Candidate Portal" },
-      {
-        name: "description",
-        content:
-          "ApronHanger Candidate Portal — discover healthcare jobs, build your professional profile, and apply with a structured CV.",
-      },
-      { property: "og:title", content: "ApronHanger — Candidate Portal" },
-      {
-        property: "og:description",
-        content: "Premium hiring platform for India's doctors, dentists, nurses & technicians.",
-      },
-      { property: "og:type", content: "website" },
-    ],
-    links: [
-      { rel: "preload", as: "fetch", href: "/loading_state.json", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: appCss },
-      {
-        rel: "preconnect",
-        href: "https://fonts.googleapis.com",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
-      },
-    ],
-  }),
   // Candidates may browse jobs without signing in; protected routes use requireCandidateAuth.
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: GlobalErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 import { useSSE } from "@/hooks/useSSE";
 

@@ -107,4 +107,39 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
+
+  /* ── Global tactile press state for every raw <button> ─────────────────── */
+  button:not([disabled]) {
+    /* Fast snap response */
+    transition-property: transform, box-shadow, filter, background-color, color, opacity, border-color;
+    transition-duration: 100ms;
+    transition-timing-function: ease-in-out;
+  }
+
+  button:not([disabled]):active {
+    transform: scale(0.94);
+    filter: brightness(0.88);
+  }
+
+  /* Extra punch for coloured action buttons (Approve / Reject / primary) */
+  button.btn-approve:not([disabled]):active {
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.28);
+    transform: scale(0.93) translateY(1px);
+  }
+
+  button.btn-reject:not([disabled]):active {
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.28);
+    transform: scale(0.93) translateY(1px);
+  }
+
+  button.btn-warning:not([disabled]):active {
+    box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.22);
+    transform: scale(0.93) translateY(1px);
+  }
+
+  /* Icon-only buttons — smaller scale so they don't look weird */
+  button.btn-icon:not([disabled]):active {
+    transform: scale(0.88);
+    filter: brightness(0.85);
+  }
 }

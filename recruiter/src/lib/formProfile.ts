@@ -68,4 +68,5 @@ export type FormProfile = {
   expectedSalaryMin: number;
   expectedSalaryMax: number;
   documentChecklist?: string[];
+  supportingDocuments?: any[];
 };

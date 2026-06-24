@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,35 @@ function UploadApplyPage() {
         <Button asChild className="mt-6">
           <Link to="/applications">View my applications</Link>
         </Button>
+      </div>
+    );
+  }
+
+  const hasFormCV = !!profile && profile.completeness >= 30;
+
+  if (!hasFormCV) {
+    return (
+      <div className="mx-auto max-w-lg px-6 py-16 text-center animate-fade-in-up">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive mb-4">
+          <Lock className="h-6 w-6" />
+        </div>
+        <h1 className="text-xl font-semibold">Structured Form Required</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          To maintain quality profiles for recruiters, candidates are not allowed to apply by CV
+          upload without first completing the structured form.
+        </p>
+        <div className="mt-6 flex justify-center gap-3">
+          <Button asChild variant="outline">
+            <Link to="/apply/$jobId" params={{ jobId: job.id }}>
+              Back
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/apply/$jobId/form" params={{ jobId: job.id }}>
+              Start structured form
+            </Link>
+          </Button>
+        </div>
       </div>
     );
   }

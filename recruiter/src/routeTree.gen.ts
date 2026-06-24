@@ -25,6 +25,7 @@ import { Route as AppJobsRouteImport } from './routes/_app.jobs'
 import { Route as AppApplicantsRouteImport } from './routes/_app.applicants'
 import { Route as AppJobsIndexRouteImport } from './routes/_app.jobs.index'
 import { Route as AppJobsNewRouteImport } from './routes/_app.jobs.new'
+import { Route as AppJobsJobIdIndexRouteImport } from './routes/_app.jobs.$jobId.index'
 import { Route as AppJobsJobIdEditRouteImport } from './routes/_app.jobs.$jobId.edit'
 
 const ImpersonateRoute = ImpersonateRouteImport.update({
@@ -106,6 +107,11 @@ const AppJobsNewRoute = AppJobsNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AppJobsRoute,
 } as any)
+const AppJobsJobIdIndexRoute = AppJobsJobIdIndexRouteImport.update({
+  id: '/$jobId/',
+  path: '/$jobId/',
+  getParentRoute: () => AppJobsRoute,
+} as any)
 const AppJobsJobIdEditRoute = AppJobsJobIdEditRouteImport.update({
   id: '/$jobId/edit',
   path: '/$jobId/edit',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/jobs/new': typeof AppJobsNewRoute
   '/jobs/': typeof AppJobsIndexRoute
   '/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
+  '/jobs/$jobId/': typeof AppJobsJobIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/impersonate': typeof ImpersonateRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/jobs/new': typeof AppJobsNewRoute
   '/jobs': typeof AppJobsIndexRoute
   '/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
+  '/jobs/$jobId': typeof AppJobsJobIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_app/jobs/new': typeof AppJobsNewRoute
   '/_app/jobs/': typeof AppJobsIndexRoute
   '/_app/jobs/$jobId/edit': typeof AppJobsJobIdEditRoute
+  '/_app/jobs/$jobId/': typeof AppJobsJobIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/jobs/new'
     | '/jobs/'
     | '/jobs/$jobId/edit'
+    | '/jobs/$jobId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/impersonate'
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/jobs/new'
     | '/jobs'
     | '/jobs/$jobId/edit'
+    | '/jobs/$jobId'
   id:
     | '__root__'
     | '/_app'
@@ -220,6 +231,7 @@ export interface FileRouteTypes {
     | '/_app/jobs/new'
     | '/_app/jobs/'
     | '/_app/jobs/$jobId/edit'
+    | '/_app/jobs/$jobId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppJobsNewRouteImport
       parentRoute: typeof AppJobsRoute
     }
+    '/_app/jobs/$jobId/': {
+      id: '/_app/jobs/$jobId/'
+      path: '/$jobId'
+      fullPath: '/jobs/$jobId/'
+      preLoaderRoute: typeof AppJobsJobIdIndexRouteImport
+      parentRoute: typeof AppJobsRoute
+    }
     '/_app/jobs/$jobId/edit': {
       id: '/_app/jobs/$jobId/edit'
       path: '/$jobId/edit'
@@ -356,12 +375,14 @@ interface AppJobsRouteChildren {
   AppJobsNewRoute: typeof AppJobsNewRoute
   AppJobsIndexRoute: typeof AppJobsIndexRoute
   AppJobsJobIdEditRoute: typeof AppJobsJobIdEditRoute
+  AppJobsJobIdIndexRoute: typeof AppJobsJobIdIndexRoute
 }
 
 const AppJobsRouteChildren: AppJobsRouteChildren = {
   AppJobsNewRoute: AppJobsNewRoute,
   AppJobsIndexRoute: AppJobsIndexRoute,
   AppJobsJobIdEditRoute: AppJobsJobIdEditRoute,
+  AppJobsJobIdIndexRoute: AppJobsJobIdIndexRoute,
 }
 
 const AppJobsRouteWithChildren =
@@ -413,12 +434,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

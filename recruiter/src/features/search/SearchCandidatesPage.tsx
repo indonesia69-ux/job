@@ -272,6 +272,7 @@ function PremiumSearch({
 
   const [hasSearched, setHasSearched] = useState(false);
   const [results, setResults] = useState<Candidate[]>([]);
+  const [recommendedResults, setRecommendedResults] = useState<Candidate[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -310,9 +311,13 @@ function PremiumSearch({
         take: 50,
       });
       setResults(data.candidates);
+      setRecommendedResults(data.recommendedCandidates || []);
       setTotal(data.total);
       setHasSearched(true);
       data.candidates.forEach(onResult);
+      if (data.recommendedCandidates) {
+        data.recommendedCandidates.forEach(onResult);
+      }
       toast.success(`Premium search · ${data.total} physician${data.total !== 1 ? "s" : ""} found`);
     } catch (e: any) {
       setError(e.message || "Search failed");
@@ -623,14 +628,72 @@ function PremiumSearch({
 
       {/* Results */}
       {hasSearched ? (
-        <ResultsGrid
-          results={results}
-          onOpen={onOpen}
-          onCv={onCv}
-          premium
-          loading={loading}
-          total={total}
-        />
+        <div className="space-y-8">
+          {/* Main Results / Exact Matches */}
+          <div className="space-y-3">
+            {query && (
+              <h3 className="font-display text-[18px] font-semibold tracking-tight flex items-center gap-2 text-foreground">
+                Exact Matches
+                <span className="text-[12px] font-normal text-muted-foreground">
+                  ({results.length} profile{results.length !== 1 ? "s" : ""})
+                </span>
+              </h3>
+            )}
+
+            {results.length > 0 ? (
+              <ResultsGrid
+                results={results}
+                onOpen={onOpen}
+                onCv={onCv}
+                premium
+                loading={loading}
+                total={total}
+              />
+            ) : (
+              query && (
+                <Card className="border-dashed border-border bg-card">
+                  <CardContent className="p-8 text-center text-[13px] text-muted-foreground flex flex-col items-center">
+                    No exact matches found for "{query}".
+                  </CardContent>
+                </Card>
+              )
+            )}
+          </div>
+
+          {/* Recommended Matches */}
+          {query && recommendedResults.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-border/60">
+              <h3 className="font-display text-[18px] font-semibold tracking-tight flex items-center gap-2 text-foreground">
+                <Sparkles className="h-4 w-4 text-[oklch(0.72_0.14_85)] animate-pulse" />
+                Recommended Searches
+                <span className="text-[12px] font-normal text-muted-foreground">
+                  ({recommendedResults.length} profile{recommendedResults.length !== 1 ? "s" : ""})
+                </span>
+              </h3>
+              <ResultsGrid
+                results={recommendedResults}
+                onOpen={onOpen}
+                onCv={onCv}
+                premium
+                loading={loading}
+              />
+            </div>
+          )}
+
+          {/* Fallback if absolutely everything is empty */}
+          {!query && results.length === 0 && (
+            <Card className="border-dashed border-border bg-card">
+              <CardContent className="p-10 text-center text-[13px] text-muted-foreground flex flex-col items-center">
+                <LottiePlayer
+                  src="/nothing_for_the_particular_query.json"
+                  loop
+                  className="h-32 w-32 mb-4"
+                />
+                No verified doctors matched your filters. Try widening qualifications.
+              </CardContent>
+            </Card>
+          )}
+        </div>
       ) : (
         <Card className="border-dashed border-border bg-card">
           <CardContent className="p-10 text-center text-[13px] text-muted-foreground flex flex-col items-center">

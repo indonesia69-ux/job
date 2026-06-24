@@ -88,9 +88,9 @@ const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
   'InterviewAccepted':         ['InterviewCompleted', 'NoShow'],
   'InterviewCompleted':        ['Shortlisted', 'Rejected', 'OnHold', 'NextRound'],
   'NoShow':                    ['Rejected', 'InterviewRescheduled'],
-  'InterviewRescheduled':      ['InterviewScheduled'],
+  'InterviewRescheduled':      ['InterviewScheduled', 'InterviewCompleted', 'NoShow'],
   'Shortlisted':               ['DocumentsRequested'],
-  'OnHold':                    ['Shortlisted', 'Rejected', 'DocumentsRequested', 'InterviewScheduled'],
+  'OnHold':                    ['Shortlisted', 'Rejected', 'DocumentsRequested'],
   'DocumentsUploaded':         ['DocumentsApproved', 'AdditionalDocumentsRequired', 'DocumentsRejected'],
   'AdditionalDocumentsRequired': ['DocumentsRequested'],
   'DocumentsApproved':         ['OfferSent'],
@@ -279,7 +279,11 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
       const [applications, total] = await Promise.all([
         prisma.application.findMany({
           where,
-          include: { candidate: true, job: { include: { hospital: true } } },
+          include: {
+            candidate: true,
+            job: { include: { hospital: true } },
+            applicationDocuments: { orderBy: { uploadedAt: 'desc' } },
+          },
           orderBy: { appliedOn: 'desc' },
           skip,
           take: limit,
@@ -298,7 +302,11 @@ router.get('/', requireAuth, async (req: AuthRequest, res: Response) => {
 
     const applications = await prisma.application.findMany({
       where,
-      include: { candidate: true, job: { include: { hospital: true } } },
+      include: {
+        candidate: true,
+        job: { include: { hospital: true } },
+        applicationDocuments: { orderBy: { uploadedAt: 'desc' } },
+      },
       orderBy: { appliedOn: 'desc' },
       take: 50,
     });
@@ -441,6 +449,18 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
       if (!appCv.cvUrl && !appCv.uploadedCvData) {
         res.status(400).json({ error: 'CV file is required for upload applications' }); return;
       }
+
+      const dbCandidate = await prisma.candidate.findUnique({
+        where: { id: candidateId },
+        select: { profileJson: true },
+      });
+      if (!dbCandidate || !dbCandidate.profileJson) {
+        res.status(400).json({
+          error: 'You must fill up the structured form once before you can apply to any job.',
+        });
+        return;
+      }
+
       const contact = uploadedCv?.contact || {};
       const updatedCandidate = await prisma.candidate.update({
         where: { id: candidateId },

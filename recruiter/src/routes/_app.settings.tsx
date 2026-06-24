@@ -6,6 +6,9 @@ import { apiBase } from "@/lib/api";
 import { PageLoader } from "@/components/common/PageLoader";
 
 export const Route = createFileRoute("/_app/settings")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   staleTime: 0,
   loader: async () => {
     const [hospital, userRes] = await Promise.all([

@@ -25,8 +25,10 @@ describe('formatApp recruiter PII redaction', () => {
 
     expect(formatted.cvUrl).toBeNull();
     expect(formatted.interviewerEmail).toBeNull();
-    expect(formatted.customFieldResponses).toEqual({});
-    expect(formatted.supportingDocuments).toEqual([]);
+    expect(formatted.customFieldResponses).toEqual({ phone: '+919876543210', answer: 'yes' });
+    expect(formatted.supportingDocuments).toEqual([
+      { name: 'license.pdf', url: 'https://example.com/doc.pdf' },
+    ]);
     expect(formatted.candidate.email).toBeUndefined();
   });
 

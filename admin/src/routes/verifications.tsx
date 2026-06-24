@@ -176,21 +176,21 @@ function VerificationsPage() {
                     <button
                       onClick={() => handleApprove(h.id)}
                       disabled={actionLoading}
-                      className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg bg-success px-4 py-2 text-xs font-semibold text-success-foreground hover:bg-success/90 shadow-sm disabled:opacity-50"
+                      className="btn-approve flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg bg-success px-4 py-2 text-xs font-semibold text-success-foreground hover:bg-success/90 shadow-sm disabled:opacity-50"
                     >
                       <CheckCircle className="h-4 w-4" /> Approve
                     </button>
                     <button
                       onClick={() => openDocsModal(h.id)}
                       disabled={actionLoading}
-                      className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg border border-warning/20 bg-warning/10 px-4 py-2 text-xs font-semibold text-warning hover:bg-warning hover:text-warning-foreground transition-colors disabled:opacity-50"
+                      className="btn-warning flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg border border-warning/20 bg-warning/10 px-4 py-2 text-xs font-semibold text-warning hover:bg-warning hover:text-warning-foreground transition-colors disabled:opacity-50"
                     >
                       <FileText className="h-4 w-4" /> Request Docs
                     </button>
                     <button
                       onClick={() => openRejectModal(h.id)}
                       disabled={actionLoading}
-                      className="flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
+                      className="btn-reject flex-1 sm:flex-none inline-flex justify-center items-center gap-1.5 rounded-lg border border-destructive/20 bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" /> Reject
                     </button>
@@ -284,7 +284,7 @@ function VerificationsPage() {
                             toast.success("Activation code copied to clipboard!");
                           }
                         }}
-                        className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        className="btn-icon rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         title="Copy activation code"
                       >
                         <svg
@@ -344,7 +344,7 @@ function VerificationsPage() {
               <button
                 onClick={handleRejectSubmit}
                 disabled={!rejectReason.trim() || actionLoading}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+                className="btn-reject px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 transition-colors"
               >
                 {actionLoading ? "Rejecting…" : "Confirm Rejection"}
               </button>
@@ -380,7 +380,7 @@ function VerificationsPage() {
               <button
                 onClick={handleDocsSubmit}
                 disabled={!requestedDocs.trim() || actionLoading}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="btn-approve px-4 py-2 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {actionLoading ? "Sending…" : "Send Request"}
               </button>
@@ -407,7 +407,7 @@ function HospitalDetailModal({ app, onClose }: { app: RecruiterApplication; onCl
           </div>
           <button
             onClick={onClose}
-            className="rounded-md p-1.5 hover:bg-muted transition-colors"
+            className="btn-icon rounded-md p-1.5 hover:bg-muted transition-colors"
             title="Close"
           >
             <X className="h-4 w-4" />

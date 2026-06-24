@@ -44,6 +44,7 @@ function RecruiterApplicationsPage() {
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
 
   const statusMatch = filterToStatus(filter);
   const filtered = recruiterApplications.filter((a) => {
@@ -64,6 +65,19 @@ function RecruiterApplicationsPage() {
       .length,
     Approved: recruiterApplications.filter((a) => a.status === "Approved").length,
     Rejected: recruiterApplications.filter((a) => a.status === "Rejected").length,
+  };
+
+  const handleApprove = async (id: string) => {
+    setApproveLoading(true);
+    try {
+      await approveRecruiterApplication(id);
+      toast.success("Hospital approved! Invite code sent to hospital.", { duration: 5000 });
+      setSelectedId(null);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to approve hospital. Please try again.");
+    } finally {
+      setApproveLoading(false);
+    }
   };
 
   const handleRejectSubmit = async () => {
@@ -280,10 +294,12 @@ function RecruiterApplicationsPage() {
               {selected.status === "Pending" && (
                 <div className="mt-5 grid grid-cols-2 gap-2">
                   <button
-                    onClick={() => approveRecruiterApplication(selected.id)}
-                    className="h-10 rounded-lg bg-success text-success-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5"
+                    onClick={() => handleApprove(selected.id)}
+                    disabled={approveLoading}
+                    className="btn-approve h-10 rounded-lg bg-success text-success-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
-                    <CheckCircle2 className="h-4 w-4" /> Approve
+                    <CheckCircle2 className="h-4 w-4" />
+                    {approveLoading ? "Approving…" : "Approve"}
                   </button>
                   <button
                     onClick={() => {
@@ -291,7 +307,8 @@ function RecruiterApplicationsPage() {
                       setRejectReason("");
                       setRejectModalOpen(true);
                     }}
-                    className="h-10 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5"
+                    disabled={approveLoading}
+                    className="btn-reject h-10 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
                   >
                     <XCircle className="h-4 w-4" /> Reject
                   </button>
@@ -327,7 +344,7 @@ function RecruiterApplicationsPage() {
               <h3 className="text-lg font-semibold">Reject Application</h3>
               <button
                 onClick={() => setRejectModalOpen(false)}
-                className="rounded p-1 hover:bg-muted"
+                className="btn-icon rounded p-1 hover:bg-muted"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -352,7 +369,7 @@ function RecruiterApplicationsPage() {
               <button
                 onClick={handleRejectSubmit}
                 disabled={!rejectReason.trim() || rejectLoading}
-                className="px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 transition-colors"
+                className="btn-reject px-4 py-2 text-sm font-medium rounded-md bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 transition-colors"
               >
                 {rejectLoading ? "Rejecting…" : "Confirm Rejection"}
               </button>

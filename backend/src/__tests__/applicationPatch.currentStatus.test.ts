@@ -93,4 +93,58 @@ describe('PATCH /api/applications/:id recruiter optimistic lock', () => {
     expect(res.body.error).toContain('status has changed');
     expect(mockApplicationUpdate).not.toHaveBeenCalled();
   });
+
+  it('allows transition from InterviewRescheduled to InterviewCompleted', async () => {
+    mockApplicationFindUnique.mockResolvedValue({ ...baseApp, status: 'InterviewRescheduled' });
+    mockApplicationUpdate.mockResolvedValue({ ...baseApp, status: 'InterviewCompleted' });
+    
+    const res = await request(createApp())
+      .patch('/api/applications/app-1')
+      .set('Authorization', `Bearer ${recruiterToken('hosp-1')}`)
+      .send({ status: 'InterviewCompleted', currentStatus: 'InterviewRescheduled' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('InterviewCompleted');
+    expect(mockApplicationUpdate).toHaveBeenCalled();
+  });
+
+  it('allows transition from InterviewRescheduled to NoShow', async () => {
+    mockApplicationFindUnique.mockResolvedValue({ ...baseApp, status: 'InterviewRescheduled' });
+    mockApplicationUpdate.mockResolvedValue({ ...baseApp, status: 'NoShow' });
+    
+    const res = await request(createApp())
+      .patch('/api/applications/app-1')
+      .set('Authorization', `Bearer ${recruiterToken('hosp-1')}`)
+      .send({ status: 'NoShow', currentStatus: 'InterviewRescheduled' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('NoShow');
+    expect(mockApplicationUpdate).toHaveBeenCalled();
+  });
+
+  it('rejects invalid transitions from InterviewRescheduled', async () => {
+    mockApplicationFindUnique.mockResolvedValue({ ...baseApp, status: 'InterviewRescheduled' });
+    
+    const res = await request(createApp())
+      .patch('/api/applications/app-1')
+      .set('Authorization', `Bearer ${recruiterToken('hosp-1')}`)
+      .send({ status: 'Shortlisted', currentStatus: 'InterviewRescheduled' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Cannot move from "InterviewRescheduled" to "Shortlisted"');
+    expect(mockApplicationUpdate).not.toHaveBeenCalled();
+  });
+
+  it('rejects transition from OnHold to InterviewScheduled', async () => {
+    mockApplicationFindUnique.mockResolvedValue({ ...baseApp, status: 'OnHold' });
+    
+    const res = await request(createApp())
+      .patch('/api/applications/app-1')
+      .set('Authorization', `Bearer ${recruiterToken('hosp-1')}`)
+      .send({ status: 'InterviewScheduled', currentStatus: 'OnHold' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toContain('Cannot move from "OnHold" to "InterviewScheduled"');
+    expect(mockApplicationUpdate).not.toHaveBeenCalled();
+  });
 });

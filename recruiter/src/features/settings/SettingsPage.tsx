@@ -38,6 +38,10 @@ const EMPTY: HospitalProfile = {
 export function SettingsPage() {
   const user = getUser();
   const { hospital: loaded } = Route.useLoaderData();
+  const { tab } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const activeTab = tab || "profile";
+
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<HospitalProfile>(() =>
     loaded ? { ...EMPTY, ...loaded } : EMPTY,
@@ -149,7 +153,7 @@ export function SettingsPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="profile">
+      <Tabs value={activeTab} onValueChange={(val) => navigate({ search: { tab: val } })}>
         <TabsList>
           <TabsTrigger value="profile">Hospital profile</TabsTrigger>
           <TabsTrigger value="myaccount">My account</TabsTrigger>
