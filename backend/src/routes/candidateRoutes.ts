@@ -150,6 +150,14 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
       await ensureUsageReset(prisma, user);
     }
 
+    let searchToken: string | undefined;
+    if (skip === 0) {
+      const log = await prisma.searchLog.create({
+        data: { userId: user.id }
+      });
+      searchToken = log.id;
+    }
+
     // Scalar filter conditions
     const scalarWhere: any = {
       isSuspended: false,
@@ -268,6 +276,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
         total: exactMatches.length,
         take,
         skip,
+        searchToken,
       });
     } else {
       // Execute paginated search securely within the database
@@ -303,6 +312,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
           total,
           take,
           skip,
+          searchToken,
         });
       } else {
         res.json({
@@ -310,6 +320,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
           total,
           take,
           skip,
+          searchToken,
         });
       }
     }

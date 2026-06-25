@@ -766,3 +766,32 @@ export async function reactivateSuspended(): Promise<void> {
     throw new Error((err as { error?: string }).error || "Failed to reactivate recruiters");
   }
 }
+
+export async function fetchActiveJobs(): Promise<any[]> {
+  const res = await apiFetch(`${apiBase()}/api/jobs`, { headers: authHeader() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to fetch jobs");
+  }
+  const data = await res.json();
+  const allJobs = data.data || data;
+  return Array.isArray(allJobs) ? allJobs.filter(j => j.status === 'Active' || j.status === 'Published') : [];
+}
+
+export async function pullCandidateToJob(
+  jobId: string,
+  candidateId: string,
+  type: "basic" | "premium",
+  searchToken: string
+): Promise<any> {
+  const res = await apiFetch(`${apiBase()}/api/applications/pull`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ jobId, candidateId, type, searchToken }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to pull candidate");
+  }
+  return res.json();
+}

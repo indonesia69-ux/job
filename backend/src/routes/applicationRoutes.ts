@@ -505,6 +505,91 @@ router.post('/', requireAuth, requireRole('CANDIDATE'), async (req: AuthRequest,
   }
 });
 
+// ─── POST /api/applications/pull ────────────────────────────────────────────────
+router.post('/pull', requireAuth, requireRole('RECRUITER'), async (req: AuthRequest, res: Response) => {
+  const { jobId, candidateId, searchToken, type } = req.body;
+  if (!jobId) { res.status(400).json({ error: 'jobId is required' }); return; }
+  if (!candidateId) { res.status(400).json({ error: 'candidateId is required' }); return; }
+  if (!searchToken) { res.status(400).json({ error: 'searchToken is required' }); return; }
+
+  try {
+    const job = await prisma.job.findUnique({
+      where: { id: String(jobId) },
+      include: { hospital: true },
+    });
+    if (!job) { res.status(404).json({ error: 'Job not found' }); return; }
+    if (job.hospitalId !== req.user!.hospitalId) {
+      res.status(403).json({ error: 'Forbidden' }); return;
+    }
+    if (job.status !== 'Active' && job.status !== 'Published') {
+      res.status(400).json({ error: 'This job is not active' }); return;
+    }
+
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: String(candidateId) },
+    });
+    if (!candidate) { res.status(404).json({ error: 'Candidate not found' }); return; }
+
+    const existing = await prisma.application.findUnique({
+      where: { jobId_candidateId: { jobId: String(jobId), candidateId: String(candidateId) } },
+    });
+    if (existing) { res.status(409).json({ error: 'Candidate has already applied to this job' }); return; }
+
+    // Validate searchToken logic
+    const searchLog = await prisma.searchLog.findFirst({
+      where: {
+        id: String(searchToken),
+        userId: req.user!.id,
+      },
+    });
+    if (!searchLog) {
+      res.status(403).json({ error: 'Invalid search token' }); return;
+    }
+    if (searchLog.pullUsed) {
+      res.status(403).json({ error: 'Pull already used for this search. Please run a new search to pull more candidates.' }); return;
+    }
+
+    // Mark as used
+    await prisma.searchLog.update({
+      where: { id: searchLog.id },
+      data: { pullUsed: true },
+    });
+
+    // Create application
+    const application = await prisma.application.create({
+      data: {
+        jobId: String(jobId),
+        candidateId: String(candidateId),
+        status: 'Applied',
+        cvSource: candidate.cvSource || 'form',
+        cvUrl: candidate.cvUrl,
+        cvCloudinaryId: candidate.cvCloudinaryId,
+      },
+      include: { candidate: true, job: { include: { hospital: true } } },
+    });
+
+    // Notify candidate
+    const candidateUser = await prisma.user.findFirst({
+      where: { candidate: { id: String(candidateId) } },
+    });
+    if (candidateUser) {
+      await notifyCandidate(
+        candidateUser.id,
+        'Shortlisted for a Role',
+        `A recruiter at ${job.hospital.name || 'a top hospital'} has shortlisted your profile for the ${job.role} position and automatically applied your CV to it.`,
+        `/applications`
+      );
+    }
+
+    res.status(201).json(formatApp(application));
+  } catch (error: any) {
+    logger.error('[pull application error]', error);
+    if (error?.code === 'P2002') { res.status(409).json({ error: 'Candidate has already applied to this job' }); return; }
+    const msg = typeof error?.message === 'string' ? error.message : 'Failed to pull candidate';
+    res.status(400).json({ error: msg.slice(0, 200) });
+  }
+});
+
 // ─── PATCH /api/applications/:id ─────────────────────────────────────────────
 router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   const { status, currentStatus, ...rest } = req.body as { status: string; currentStatus?: string } & Record<string, unknown>;

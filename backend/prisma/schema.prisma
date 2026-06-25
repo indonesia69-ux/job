@@ -52,6 +52,9 @@ model User {
   // ── Jobs Posted ───────────────────────────────────────────────────────────
   jobsPosted Job[] @relation("JobPostedBy")
 
+  // ── Search Tracking ───────────────────────────────────────────────────────
+  searchLogs SearchLog[]
+
   // Username is unique within a hospital (not globally)
   @@unique([hospitalId, username])
   @@unique([mobile, role], name: "unique_mobile_per_role")
@@ -470,4 +473,12 @@ model OtpVerificationToken {
 
   @@index([token])
   @@index([mobile, role, purpose])
+}
+
+model SearchLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searchedAt DateTime @default(now())
+  pullUsed   Boolean  @default(false)
 }

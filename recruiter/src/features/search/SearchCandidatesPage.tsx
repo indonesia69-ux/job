@@ -19,6 +19,7 @@ import { LottiePlayer } from "@/components/common/LottiePlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
@@ -33,7 +34,7 @@ import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { CandidatePanel } from "@/features/applicants/CandidatePanel";
 import { CvDialog } from "@/features/applicants/CvDialog";
 import { usePlan, type PlanTier } from "./PlanContext";
-import { searchCandidates } from "@/lib/recruiterData";
+import { searchCandidates, fetchActiveJobs, pullCandidateToJob } from "@/lib/recruiterData";
 
 // Doctor degrees eligible for Premium Search
 const PREMIUM_DEGREES = ["MBBS", "MD", "DM", "DNB", "MS", "MCh", "DrNB"] as const;
@@ -44,14 +45,104 @@ const DEGREE_GROUPS = [
   { label: "Surgery", degrees: ["MS", "MCh", "DrNB"] as PremiumDegree[] },
 ];
 
+function PullCandidateModal({
+  isOpen,
+  onClose,
+  candidate,
+  searchToken,
+  type,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  candidate: Candidate | null;
+  searchToken: string;
+  type: "basic" | "premium";
+}) {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [selectedJob, setSelectedJob] = useState("");
+  const [pulling, setPulling] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingJobs(true);
+      fetchActiveJobs()
+        .then(setJobs)
+        .catch(() => toast.error("Failed to load active jobs"))
+        .finally(() => setLoadingJobs(false));
+      setSelectedJob("");
+    }
+  }, [isOpen]);
+
+  const handlePull = async () => {
+    if (!candidate || !selectedJob) return;
+    setPulling(true);
+    try {
+      await pullCandidateToJob(selectedJob, candidate.id, type, searchToken);
+      toast.success("Candidate successfully pulled to the job");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to pull candidate");
+    } finally {
+      setPulling(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Pull Candidate to Job</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            Select an active job to automatically apply <strong>{candidate?.name}</strong> to it.
+          </p>
+          {loadingJobs ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading jobs...
+            </div>
+          ) : (
+            <Select value={selectedJob} onValueChange={setSelectedJob}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a job" />
+              </SelectTrigger>
+              <SelectContent>
+                {jobs.map((job) => (
+                  <SelectItem key={job.id} value={job.id}>
+                    {job.role} {job.location ? `· ${job.location}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={pulling}>
+              Cancel
+            </Button>
+            <Button onClick={handlePull} disabled={!selectedJob || pulling || loadingJobs}>
+              {pulling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Pull Candidate
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function SearchCandidatesPage() {
   const [tab, setTab] = useState<"basic" | "premium">("basic");
   const [openId, setOpenId] = useState<string | null>(null);
   const [cvId, setCvId] = useState<string | null>(null);
+  const [pullCandidateId, setPullCandidateId] = useState<string | null>(null);
+  const [pullSearchToken, setPullSearchToken] = useState<string>("");
+  const [pullType, setPullType] = useState<"basic" | "premium">("basic");
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
 
   const openCandidate = allCandidates.find((c) => c.id === openId) ?? null;
   const cvCandidate = allCandidates.find((c) => c.id === cvId) ?? null;
+  const pullCandidate = allCandidates.find((c) => c.id === pullCandidateId) ?? null;
 
   const mergeCandidate = (c: Candidate) =>
     setAllCandidates((prev) => {
@@ -63,6 +154,12 @@ export function SearchCandidatesPage() {
       }
       return [...prev, c];
     });
+
+  const handlePullRequest = useCallback((id: string, token: string, type: "basic" | "premium") => {
+    setPullCandidateId(id);
+    setPullSearchToken(token);
+    setPullType(type);
+  }, []);
 
   const { isLocked } = usePlan();
 
@@ -97,10 +194,10 @@ export function SearchCandidatesPage() {
         </TabsList>
 
         <TabsContent value="basic" className="mt-5">
-          <BasicSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} />
+          <BasicSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} onPullRequest={handlePullRequest} />
         </TabsContent>
         <TabsContent value="premium" className="mt-5">
-          <PremiumSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} />
+          <PremiumSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} onPullRequest={handlePullRequest} />
         </TabsContent>
       </Tabs>
 
@@ -110,6 +207,13 @@ export function SearchCandidatesPage() {
         onViewCv={(id) => setCvId(id)}
       />
       <CvDialog candidate={cvCandidate} onClose={() => setCvId(null)} />
+      <PullCandidateModal
+        isOpen={!!pullCandidateId}
+        onClose={() => setPullCandidateId(null)}
+        candidate={pullCandidate}
+        searchToken={pullSearchToken}
+        type={pullType}
+      />
     </div>
   );
 }
@@ -120,10 +224,12 @@ function BasicSearch({
   onOpen,
   onCv,
   onResult,
+  onPullRequest,
 }: {
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
+  onPullRequest: (id: string, token: string, type: "basic" | "premium") => void;
 }) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("All");
@@ -133,6 +239,7 @@ function BasicSearch({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roles, setRoles] = useState<string[]>(["All"]);
+  const [latestSearchToken, setLatestSearchToken] = useState<string>("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { isLocked } = usePlan();
@@ -149,6 +256,7 @@ function BasicSearch({
           type: "basic",
           take: 50,
         });
+        if (data.searchToken) setLatestSearchToken(data.searchToken);
         setResults(data.candidates);
         setLockedResults(data.lockedCandidates || []);
         setTotal(data.total);
@@ -234,6 +342,7 @@ function BasicSearch({
         lockedResults={lockedResults}
         onOpen={onOpen}
         onCv={onCv}
+        onPull={(id) => onPullRequest(id, latestSearchToken, "basic")}
         loading={loading}
       />
     </div>
@@ -246,10 +355,12 @@ function PremiumSearch({
   onOpen,
   onCv,
   onResult,
+  onPullRequest,
 }: {
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
+  onPullRequest: (id: string, token: string, type: "basic" | "premium") => void;
 }) {
   const { plan, used, quota, remaining, consume, isLocked } = usePlan();
   const [query, setQuery] = useState("");
@@ -276,6 +387,7 @@ function PremiumSearch({
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [latestSearchToken, setLatestSearchToken] = useState<string>("");
 
   const toggleDegree = (d: PremiumDegree) =>
     setSelectedDegrees((arr) => (arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d]));
@@ -310,6 +422,7 @@ function PremiumSearch({
           availabilityStatus && availabilityStatus !== "All" ? [availabilityStatus] : undefined,
         take: 50,
       });
+      if (data.searchToken) setLatestSearchToken(data.searchToken);
       setResults(data.candidates);
       setRecommendedResults(data.recommendedCandidates || []);
       setTotal(data.total);
@@ -645,6 +758,7 @@ function PremiumSearch({
                 results={results}
                 onOpen={onOpen}
                 onCv={onCv}
+                onPull={(id) => onPullRequest(id, latestSearchToken, "premium")}
                 premium
                 loading={loading}
                 total={total}
@@ -674,6 +788,7 @@ function PremiumSearch({
                 results={recommendedResults}
                 onOpen={onOpen}
                 onCv={onCv}
+                onPull={(id) => onPullRequest(id, latestSearchToken, "premium")}
                 premium
                 loading={loading}
               />
@@ -713,6 +828,7 @@ function ResultsGrid({
   lockedResults = [],
   onOpen,
   onCv,
+  onPull,
   premium = false,
   loading = false,
   total,
@@ -721,6 +837,7 @@ function ResultsGrid({
   lockedResults?: Candidate[];
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
+  onPull?: (id: string) => void;
   premium?: boolean;
   loading?: boolean;
   total?: number;
@@ -813,17 +930,32 @@ function ResultsGrid({
                 <span>
                   {c.experienceYears} yrs · {c.location}
                 </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-[11px]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCv(c.id);
-                  }}
-                >
-                  View CV
-                </Button>
+                <div className="flex items-center gap-2">
+                  {onPull && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPull(c.id);
+                      }}
+                    >
+                      Pull
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCv(c.id);
+                    }}
+                  >
+                    View CV
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
