@@ -544,6 +544,7 @@ export type SearchResult = {
   total: number;
   take: number;
   skip: number;
+  searchToken?: string;
 };
 
 export async function searchCandidates(params: SearchParams = {}): Promise<SearchResult> {

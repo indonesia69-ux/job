@@ -161,7 +161,7 @@ function Opportunities() {
         jobCount={JOBS.length}
       />
 
-      <div className="mx-auto max-w-[1400px] px-6 py-10">
+      <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10">
         <RecommendedRail jobs={JOBS} profile={profile} />
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[280px_1fr]">

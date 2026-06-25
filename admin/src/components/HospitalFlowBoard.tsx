@@ -244,8 +244,8 @@ export function HospitalFlowBoard() {
     return () => el.removeEventListener("wheel", handleWheel);
   }, []);
 
-  // Panning Drag Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Panning Drag Handlers – use Pointer Events so touch devices work too
+  const handlePointerDown = (e: React.PointerEvent) => {
     // Only pan if clicking on the background (svg / dot grid)
     if (
       (e.target as HTMLElement).closest(".flow-card-node") ||
@@ -253,11 +253,13 @@ export function HospitalFlowBoard() {
     ) {
       return;
     }
+    // Capture pointer so we get move/up events even if cursor leaves the element
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setIsPanning(true);
     setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!isPanning) return;
     setPan({
       x: e.clientX - dragStart.x,
@@ -265,7 +267,7 @@ export function HospitalFlowBoard() {
     });
   };
 
-  const handleMouseUp = () => {
+  const handlePointerUp = () => {
     setIsPanning(false);
   };
 
@@ -675,11 +677,12 @@ export function HospitalFlowBoard() {
           backgroundImage: `radial-gradient(circle, var(--color-border) 1.2px, transparent 1.2px)`,
           backgroundSize: "28px 28px",
           backgroundPosition: `${pan.x}px ${pan.y}px`,
+          touchAction: "none",
         }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
         {/* Animated Grid lines / Interactive content wrapper */}
         <motion.div

@@ -36,7 +36,7 @@ export function OpportunitiesHero({
       <div className="hero-grid-motion absolute inset-0" aria-hidden />
       <div className="hero-shine absolute inset-0" aria-hidden />
 
-      <div className="relative mx-auto max-w-[1400px] px-6 pb-12 pt-12 md:pb-16 md:pt-16">
+      <div className="relative mx-auto max-w-[1400px] px-4 sm:px-6 pb-12 pt-12 md:pb-16 md:pt-16">
         <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
           <div className="hero-stagger">
             <div className="hero-badge inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-3 py-1.5 text-[11px] font-medium text-primary shadow-soft backdrop-blur-md">

@@ -1756,9 +1756,9 @@ function OptionGrid({
 
 function ReviewRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="grid gap-2 rounded-lg border bg-surface px-4 py-3 text-sm sm:grid-cols-[180px_1fr]">
+    <div className="grid min-w-0 gap-2 rounded-lg border bg-surface px-4 py-3 text-sm sm:grid-cols-[180px_1fr]">
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="break-words text-foreground">{value || "—"}</p>
+      <p className="min-w-0 break-words text-foreground">{value || "—"}</p>
     </div>
   );
 }

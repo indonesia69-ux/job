@@ -51,7 +51,7 @@ function JobDetails() {
   const { job } = Route.useLoaderData();
 
   return (
-    <div className="mx-auto max-w-[1400px] px-6 py-8">
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-8">
       <Link
         to="/jobs"
         className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground"

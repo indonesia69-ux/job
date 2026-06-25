@@ -55,7 +55,7 @@ function SavedJobsPage() {
   if (loading) return <PageLoader />;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-6 py-10">
+    <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">Saved jobs</h1>

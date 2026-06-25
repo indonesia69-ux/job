@@ -367,7 +367,7 @@ export function ApplicantsPage() {
       </Card>
 
       {selected.length > 0 && (
-        <div className="flex items-center justify-between rounded-lg border border-accent/30 bg-accent/[0.06] px-4 py-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-accent/30 bg-accent/[0.06] px-4 py-2.5">
           <div className="text-[13px] text-foreground">
             <span className="font-medium">{selected.length}</span> selected
             {bulkLoading && (
@@ -415,7 +415,7 @@ export function ApplicantsPage() {
 
       {/* Pagination controls for the filtered list */}
       {totalFilteredPages > 1 && (
-        <div className="flex items-center justify-between pt-4 pb-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 pb-2">
           <div className="text-sm text-muted-foreground">
             Showing {(localPage - 1) * ITEMS_PER_PAGE + 1}–
             {Math.min(localPage * ITEMS_PER_PAGE, list.length)} of {list.length} applicants
@@ -618,7 +618,7 @@ function ApplicantsCards({
               <StatusPill status={c.status} />
             </div>
             <p className="line-clamp-2 text-[12.5px] text-muted-foreground">{c.summary}</p>
-            <div className="flex justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-[11px] text-muted-foreground">
               <span>
                 {c.experienceYears} yrs · {c.location}
               </span>

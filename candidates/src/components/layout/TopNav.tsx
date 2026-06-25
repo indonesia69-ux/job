@@ -61,7 +61,7 @@ export function TopNav() {
 
   return (
     <header className="sticky top-0 z-40 border-b bg-surface/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-6 px-6">
+      <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-6 px-4 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <span className="text-sm font-bold">A</span>
@@ -178,7 +178,7 @@ export function TopNav() {
             key={item.to}
             to={item.to}
             className={cn(
-              "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted",
+              "shrink-0 rounded-md px-3 py-2.5 text-xs font-medium text-muted-foreground hover:bg-muted",
               isActive(item.to) && "bg-brand-soft text-primary",
             )}
           >
@@ -188,7 +188,7 @@ export function TopNav() {
         {!authed && (
           <Link
             {...signInHref()}
-            className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-brand-foreground"
+            className="shrink-0 rounded-md bg-brand px-3 py-2.5 text-xs font-medium text-brand-foreground"
           >
             Sign in
           </Link>

@@ -65,9 +65,9 @@ export function FileUploadZone({ files, onChange, multiple = true, title, hint }
       {files.map((f, i) => (
         <div
           key={`${f.name}-${i}`}
-          className="flex items-center justify-between rounded-lg border bg-surface px-3 py-2 text-sm"
+          className="flex min-w-0 items-center justify-between gap-2 rounded-lg border bg-surface px-3 py-2 text-sm"
         >
-          <span className="truncate text-foreground">{f.name}</span>
+          <span className="min-w-0 flex-1 truncate text-foreground">{f.name}</span>
           <button
             type="button"
             className="text-muted-foreground hover:text-destructive"
