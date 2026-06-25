@@ -194,7 +194,7 @@ export function ApplicantsPage() {
               <LottiePlayer
                 src="/nothing_for_the_particular_query.json"
                 loop
-                className="h-32 w-32 mb-4"
+                className="w-3/4 max-w-[128px] aspect-square mb-4"
               />
               No job posts yet. Post a job to start receiving applications.
             </CardContent>
@@ -558,7 +558,7 @@ function ApplicantsTable({
                     <LottiePlayer
                       src="/nothing_for_the_particular_query.json"
                       loop
-                      className="mx-auto h-20 w-20 mb-2"
+                      className="w-1/4 max-w-[80px] aspect-square mx-auto mb-2"
                     />
                     No applicants for this job yet.
                   </td>
@@ -618,7 +618,7 @@ function ApplicantsCards({
               <StatusPill status={c.status} />
             </div>
             <p className="line-clamp-2 text-[12.5px] text-muted-foreground">{c.summary}</p>
-            <div className="flex justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
+            <div className="flex flex-wrap gap-2 justify-between border-t border-border pt-3 text-[11px] text-muted-foreground">
               <span>
                 {c.experienceYears} yrs · {c.location}
               </span>

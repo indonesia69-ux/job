@@ -578,7 +578,7 @@ export function OnboardingPage() {
   if (requiresVerification) {
     return (
       <div className="flex flex-col items-center gap-6 py-8 text-center">
-        <LottiePlayer src="/mail_sent.json" loop={false} className="h-20 w-20 mx-auto mb-4" />
+        <LottiePlayer src="/mail_sent.json" loop={false} className="w-1/4 max-w-[80px] aspect-square mx-auto mb-4" />
         <div>
           <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">
             Verify Mobile Number
@@ -630,7 +630,7 @@ export function OnboardingPage() {
     const planPrice = form.plan === "Pro" ? 799 : 2499;
     return (
       <div className="flex flex-col items-center gap-6 py-8 text-center animate-fade-in-up">
-        <LottiePlayer src="/mail_sent.json" loop={false} className="h-20 w-20 mx-auto mb-4" />
+        <LottiePlayer src="/mail_sent.json" loop={false} className="w-1/4 max-w-[80px] aspect-square mx-auto mb-4" />
         <div>
           <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">
             Complete Subscription Payment
@@ -687,7 +687,7 @@ export function OnboardingPage() {
         <LottiePlayer
           src="/successful_signup_signin.json"
           loop={false}
-          className="h-28 w-28 mx-auto"
+          className="w-1/3 max-w-[110px] aspect-square mx-auto"
         />
         <div>
           <h2 className="font-display text-[26px] font-semibold tracking-tight text-foreground">

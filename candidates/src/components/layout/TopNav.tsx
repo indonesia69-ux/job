@@ -63,9 +63,11 @@ export function TopNav() {
     <header className="sticky top-0 z-40 border-b bg-surface/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1400px] items-center justify-between gap-6 px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <span className="text-sm font-bold">A</span>
-          </div>
+          <img
+            src="/logo (1).webp"
+            alt="ApronHanger Logo"
+            className="h-8 w-8 object-contain rounded-lg shadow-soft"
+          />
           <span className="text-[15px] font-semibold tracking-tight text-foreground">
             ApronHanger
           </span>
@@ -172,13 +174,13 @@ export function TopNav() {
         </div>
       </div>
 
-      <nav className="flex items-center gap-1 overflow-x-auto border-t px-4 py-2 md:hidden">
+      <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide border-t px-4 py-2 md:hidden">
         {navItems.map((item) => (
           <Link
             key={item.to}
             to={item.to}
             className={cn(
-              "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted",
+              "shrink-0 rounded-md px-3 py-3 text-xs font-medium text-muted-foreground hover:bg-muted",
               isActive(item.to) && "bg-brand-soft text-primary",
             )}
           >
@@ -188,7 +190,7 @@ export function TopNav() {
         {!authed && (
           <Link
             {...signInHref()}
-            className="shrink-0 rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-brand-foreground"
+            className="shrink-0 rounded-md bg-brand px-3 py-3 text-xs font-medium text-brand-foreground"
           >
             Sign in
           </Link>

@@ -12,6 +12,9 @@ import {
   ChevronDown,
   ChevronUp,
   SlidersHorizontal,
+  Zap,
+  BriefcaseBusiness,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LottiePlayer } from "@/components/common/LottiePlayer";
@@ -33,7 +36,7 @@ import { VerifiedBadge } from "@/components/brand/VerifiedBadge";
 import { CandidatePanel } from "@/features/applicants/CandidatePanel";
 import { CvDialog } from "@/features/applicants/CvDialog";
 import { usePlan, type PlanTier } from "./PlanContext";
-import { searchCandidates } from "@/lib/recruiterData";
+import { searchCandidates, fetchActiveJobs, pullCandidateToJob } from "@/lib/recruiterData";
 
 // Doctor degrees eligible for Premium Search
 const PREMIUM_DEGREES = ["MBBS", "MD", "DM", "DNB", "MS", "MCh", "DrNB"] as const;
@@ -49,6 +52,10 @@ export function SearchCandidatesPage() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [cvId, setCvId] = useState<string | null>(null);
   const [allCandidates, setAllCandidates] = useState<Candidate[]>([]);
+
+  // Pull-to-job state
+  const [pullCandidateId, setPullCandidateId] = useState<string | null>(null);
+  const [latestSearchToken, setLatestSearchToken] = useState<string | null>(null);
 
   const openCandidate = allCandidates.find((c) => c.id === openId) ?? null;
   const cvCandidate = allCandidates.find((c) => c.id === cvId) ?? null;
@@ -97,10 +104,22 @@ export function SearchCandidatesPage() {
         </TabsList>
 
         <TabsContent value="basic" className="mt-5">
-          <BasicSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} />
+      <BasicSearch
+          onOpen={setOpenId}
+          onCv={setCvId}
+          onResult={mergeCandidate}
+          onToken={setLatestSearchToken}
+          onPull={setPullCandidateId}
+        />
         </TabsContent>
         <TabsContent value="premium" className="mt-5">
-          <PremiumSearch onOpen={setOpenId} onCv={setCvId} onResult={mergeCandidate} />
+      <PremiumSearch
+          onOpen={setOpenId}
+          onCv={setCvId}
+          onResult={mergeCandidate}
+          onToken={setLatestSearchToken}
+          onPull={setPullCandidateId}
+        />
         </TabsContent>
       </Tabs>
 
@@ -110,6 +129,13 @@ export function SearchCandidatesPage() {
         onViewCv={(id) => setCvId(id)}
       />
       <CvDialog candidate={cvCandidate} onClose={() => setCvId(null)} />
+
+      {/* Pull-to-Job Modal */}
+      <PullCandidateModal
+        candidateId={pullCandidateId}
+        searchToken={latestSearchToken}
+        onClose={() => setPullCandidateId(null)}
+      />
     </div>
   );
 }
@@ -120,10 +146,14 @@ function BasicSearch({
   onOpen,
   onCv,
   onResult,
+  onToken,
+  onPull,
 }: {
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
+  onToken: (token: string) => void;
+  onPull: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState("All");
@@ -152,6 +182,7 @@ function BasicSearch({
         setResults(data.candidates);
         setLockedResults(data.lockedCandidates || []);
         setTotal(data.total);
+        if (data.searchToken) onToken(data.searchToken);
         data.candidates.forEach(onResult);
 
         // Collect unique roles from current result set for the filter dropdown
@@ -234,6 +265,7 @@ function BasicSearch({
         lockedResults={lockedResults}
         onOpen={onOpen}
         onCv={onCv}
+        onPull={onPull}
         loading={loading}
       />
     </div>
@@ -246,10 +278,14 @@ function PremiumSearch({
   onOpen,
   onCv,
   onResult,
+  onToken,
+  onPull,
 }: {
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
   onResult: (c: Candidate) => void;
+  onToken: (token: string) => void;
+  onPull: (id: string) => void;
 }) {
   const { plan, used, quota, remaining, consume, isLocked } = usePlan();
   const [query, setQuery] = useState("");
@@ -282,6 +318,39 @@ function PremiumSearch({
 
   const runSearch = async () => {
     if (isLocked) return;
+
+    // Check if recruiter has filled any details
+    const hasQuery = query.trim().length > 0;
+    const hasDegrees = selectedDegrees.length > 0;
+    const hasSpecialty = specialty.trim().length > 0;
+    const hasExperience = experienceMin.trim().length > 0 || experienceMax.trim().length > 0;
+    const hasLocation = location.trim().length > 0;
+    const hasCurrentOrg = currentOrg.trim().length > 0;
+    const hasExpectedSalary = expectedSalaryMin.trim().length > 0 || expectedSalaryMax.trim().length > 0;
+    const hasNoticePeriod = noticePeriod && noticePeriod !== "All" && noticePeriod.trim().length > 0;
+    const hasCurrentSalary = currentSalaryMin.trim().length > 0 || currentSalaryMax.trim().length > 0;
+    const hasPreferredLocation = preferredLocation.trim().length > 0;
+    const hasAvailability = availabilityStatus && availabilityStatus !== "All" && availabilityStatus.trim().length > 0;
+
+    const hasAnyDetail =
+      hasQuery ||
+      hasDegrees ||
+      hasSpecialty ||
+      hasExperience ||
+      hasLocation ||
+      hasCurrentOrg ||
+      hasExpectedSalary ||
+      hasNoticePeriod ||
+      hasCurrentSalary ||
+      hasPreferredLocation ||
+      hasAvailability;
+
+    if (!hasAnyDetail) {
+      toast.error("Please fill in at least one search criteria or filter to perform a Premium Search.");
+      setError("Please fill in at least one search criteria or filter.");
+      return;
+    }
+
     if (remaining <= 0) {
       toast.error(`You've reached your ${plan} plan limit of ${quota} premium searches.`);
       return;
@@ -314,6 +383,7 @@ function PremiumSearch({
       setRecommendedResults(data.recommendedCandidates || []);
       setTotal(data.total);
       setHasSearched(true);
+      if (data.searchToken) onToken(data.searchToken);
       data.candidates.forEach(onResult);
       if (data.recommendedCandidates) {
         data.recommendedCandidates.forEach(onResult);
@@ -642,13 +712,14 @@ function PremiumSearch({
 
             {results.length > 0 ? (
               <ResultsGrid
-                results={results}
-                onOpen={onOpen}
-                onCv={onCv}
-                premium
-                loading={loading}
-                total={total}
-              />
+              results={results}
+              onOpen={onOpen}
+              onCv={onCv}
+              onPull={onPull}
+              premium
+              loading={loading}
+              total={total}
+            />
             ) : (
               query && (
                 <Card className="border-dashed border-border bg-card">
@@ -674,6 +745,7 @@ function PremiumSearch({
                 results={recommendedResults}
                 onOpen={onOpen}
                 onCv={onCv}
+                onPull={onPull}
                 premium
                 loading={loading}
               />
@@ -713,6 +785,7 @@ function ResultsGrid({
   lockedResults = [],
   onOpen,
   onCv,
+  onPull,
   premium = false,
   loading = false,
   total,
@@ -721,6 +794,7 @@ function ResultsGrid({
   lockedResults?: Candidate[];
   onOpen: (id: string) => void;
   onCv: (id: string) => void;
+  onPull: (id: string) => void;
   premium?: boolean;
   loading?: boolean;
   total?: number;
@@ -813,17 +887,30 @@ function ResultsGrid({
                 <span>
                   {c.experienceYears} yrs · {c.location}
                 </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-[11px]"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCv(c.id);
-                  }}
-                >
-                  View CV
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCv(c.id);
+                    }}
+                  >
+                    View CV
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 gap-1 text-[11px] text-accent hover:text-accent hover:bg-accent/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPull(c.id);
+                    }}
+                  >
+                    <Zap className="h-3 w-3" /> Pull
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -884,6 +971,173 @@ function ErrorBanner({ message }: { message: string }) {
     <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
       <AlertCircle className="h-4 w-4 shrink-0" />
       {message}
+    </div>
+  );
+}
+
+/* ─────────────────────────── PULL CANDIDATE MODAL ─────────────────────────── */
+
+function PullCandidateModal({
+  candidateId,
+  searchToken,
+  onClose,
+}: {
+  candidateId: string | null;
+  searchToken: string | null;
+  onClose: () => void;
+}) {
+  const [jobs, setJobs] = useState<
+    { id: string; role: string; specialty: string; location: string }[]
+  >([]);
+  const [selectedJobId, setSelectedJobId] = useState<string>("");
+  const [loadingJobs, setLoadingJobs] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  const isOpen = candidateId !== null;
+
+  // Fetch active jobs whenever the modal opens for a specific candidate.
+  // Depend on candidateId (not isOpen) so a fresh fetch happens even if another
+  // candidate's modal was open immediately before.
+  useEffect(() => {
+    if (!candidateId) {
+      setSelectedJobId("");
+      setFetchError(null);
+      return;
+    }
+    setLoadingJobs(true);
+    setFetchError(null);
+    setJobs([]);
+    fetchActiveJobs()
+      .then((data) => {
+        setJobs(data);
+        if (data.length > 0) setSelectedJobId(data[0].id);
+      })
+      .catch((err) => setFetchError(err.message || "Failed to load jobs"))
+      .finally(() => setLoadingJobs(false));
+  }, [candidateId]);
+
+  if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (!candidateId || !selectedJobId) return;
+    setSubmitting(true);
+    try {
+      await pullCandidateToJob(selectedJobId, candidateId, searchToken);
+      toast.success("Candidate successfully pulled to the job");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to pull candidate");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+              <Zap className="h-4.5 w-4.5 text-accent" />
+            </div>
+            <div>
+              <h2 className="font-display text-[16px] font-semibold">Pull to Job</h2>
+              <p className="text-[12px] text-muted-foreground">Auto-apply this candidate to one of your active jobs</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 hover:bg-muted transition-colors"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Quota notice */}
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-amber-200/60 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-500/10 px-3 py-2.5 text-[12px] text-amber-900 dark:text-amber-400">
+          <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>This action costs <strong>1 premium search quota</strong>. The candidate will be notified.</span>
+        </div>
+
+
+
+        {/* Job selection */}
+        {loadingJobs ? (
+          <div className="flex items-center justify-center py-8 text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span className="text-[13px]">Loading your active jobs…</span>
+          </div>
+        ) : fetchError ? (
+          <ErrorBanner message={fetchError} />
+        ) : jobs.length === 0 ? (
+          <div className="flex flex-col items-center py-8 text-center">
+            <BriefcaseBusiness className="mb-2 h-8 w-8 text-muted-foreground/40" />
+            <p className="text-[13px] text-muted-foreground">You have no active jobs to pull this candidate to.</p>
+          </div>
+        ) : (
+          <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+            {jobs.map((job) => (
+              <button
+                key={job.id}
+                onClick={() => setSelectedJobId(job.id)}
+                className={
+                  "w-full flex items-start gap-3 rounded-xl border px-4 py-3 text-left transition-all " +
+                  (selectedJobId === job.id
+                    ? "border-accent bg-accent/10 ring-1 ring-accent/40"
+                    : "border-border bg-muted/30 hover:bg-muted/60")
+                }
+              >
+                <CheckCircle2
+                  className={
+                    "mt-0.5 h-4 w-4 shrink-0 " +
+                    (selectedJobId === job.id ? "text-accent" : "text-muted-foreground/30")
+                  }
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-[13px]">{job.role}</p>
+                  <p className="truncate text-[11.5px] text-muted-foreground">
+                    {job.specialty} · {job.location}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="mt-5 flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            disabled={!selectedJobId || submitting || loadingJobs || jobs.length === 0}
+            onClick={handleConfirm}
+            className="gap-1.5"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Pulling…
+              </>
+            ) : (
+              <>
+                <Zap className="h-3.5 w-3.5" />
+                Confirm Pull
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

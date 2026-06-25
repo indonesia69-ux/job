@@ -544,6 +544,7 @@ export type SearchResult = {
   total: number;
   take: number;
   skip: number;
+  searchToken?: string;
 };
 
 export async function searchCandidates(params: SearchParams = {}): Promise<SearchResult> {
@@ -615,6 +616,7 @@ export async function searchCandidates(params: SearchParams = {}): Promise<Searc
     total: data.total,
     take: data.take,
     skip: data.skip,
+    searchToken: data.searchToken,
   };
 }
 
@@ -765,4 +767,58 @@ export async function reactivateSuspended(): Promise<void> {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { error?: string }).error || "Failed to reactivate recruiters");
   }
+}
+
+// ── Pull to Job ───────────────────────────────────────────────────────────────
+
+export async function fetchActiveJobs(): Promise<
+  { id: string; role: string; specialty: string; location: string; city?: string }[]
+> {
+  // Scope to the recruiter's own hospital so only pullable jobs are listed.
+  // Passing hospitalId triggers the recruiter-own-hospital branch in the backend,
+  // which skips the global Active filter — we apply it client-side below.
+  const user = getUser();
+  const hospitalParam = user?.hospitalId ? `&hospitalId=${user.hospitalId}` : "";
+  const res = await apiFetch(`${apiBase()}/api/jobs?_=pull${hospitalParam}`, {
+    headers: authHeader(),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to fetch active jobs");
+  }
+  const data = await res.json();
+  const jobs: any[] = Array.isArray(data) ? data : (data.data ?? []);
+  // Deduplicate by id and only keep Active jobs
+  const seen = new Set<string>();
+  return jobs
+    .filter((j) => {
+      if (j.status !== "Active") return false;
+      if (seen.has(j.id)) return false;
+      seen.add(j.id);
+      return true;
+    })
+    .map((j) => ({
+      id: j.id,
+      role: j.role,
+      specialty: j.specialty,
+      location: j.location ?? j.city ?? "",
+      city: j.city,
+    }));
+}
+
+export async function pullCandidateToJob(
+  jobId: string,
+  candidateId: string,
+  searchToken?: string | null,
+): Promise<{ applicationId: string }> {
+  const res = await apiFetch(`${apiBase()}/api/applications/pull`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify({ jobId, candidateId, searchToken: searchToken || undefined }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { error?: string }).error || "Failed to pull candidate to job");
+  }
+  return res.json();
 }

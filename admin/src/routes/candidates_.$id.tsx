@@ -32,7 +32,7 @@ function getCandidatePortalUrl(): string | null {
     console.error("VITE_CANDIDATE_URL is required for production impersonation links.");
     return null;
   }
-  return "http://localhost:5173";
+  return "http://localhost:8082";
 }
 
 function CandidateDetailsPage() {

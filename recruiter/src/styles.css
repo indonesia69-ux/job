@@ -206,4 +206,12 @@
       linear-gradient(to bottom, oklch(0.92 0.012 250) 1px, transparent 1px);
     background-size: 32px 32px;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
 }

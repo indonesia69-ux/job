@@ -56,9 +56,11 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         <div className="flex h-16 items-center justify-between px-6 border-b border-sidebar-border">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-active">
-              <span className="text-sm font-bold text-sidebar-active-foreground">A</span>
-            </div>
+            <img
+              src="/logo (1).webp"
+              alt="ApronHanger Logo"
+              className="h-8 w-8 object-contain rounded-lg shadow-soft"
+            />
             <span className="text-lg font-semibold text-sidebar-active-foreground tracking-tight">
               ApronHanger
             </span>

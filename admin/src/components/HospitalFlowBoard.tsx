@@ -162,6 +162,10 @@ export function HospitalFlowBoard() {
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
+  // Track active pointer events for pinch-to-zoom
+  const activePointers = useRef<{ [id: number]: { x: number; y: number } }>({});
+  const lastTouchDistance = useRef<number | null>(null);
+
   // Expand/Collapse States
   const [expandedHospitals, setExpandedHospitals] = useState<Set<string>>(new Set());
   const [expandedRecruiters, setExpandedRecruiters] = useState<Set<string>>(new Set());
@@ -244,8 +248,8 @@ export function HospitalFlowBoard() {
     return () => el.removeEventListener("wheel", handleWheel);
   }, []);
 
-  // Panning Drag Handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Panning & Zoom Touch/Pointer Drag Handlers
+  const handlePointerDown = (e: React.PointerEvent) => {
     // Only pan if clicking on the background (svg / dot grid)
     if (
       (e.target as HTMLElement).closest(".flow-card-node") ||
@@ -253,20 +257,98 @@ export function HospitalFlowBoard() {
     ) {
       return;
     }
-    setIsPanning(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    
+    // Store pointer position
+    activePointers.current[e.pointerId] = { x: e.clientX, y: e.clientY };
+    const pointerIds = Object.keys(activePointers.current);
+
+    if (pointerIds.length === 1) {
+      const el = containerRef.current;
+      if (el) {
+        el.setPointerCapture(e.pointerId);
+      }
+      setIsPanning(true);
+      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+    } else if (pointerIds.length === 2) {
+      // Start of pinch zoom: disable panning
+      setIsPanning(false);
+      const pts = Object.values(activePointers.current);
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      lastTouchDistance.current = Math.sqrt(dx * dx + dy * dy);
+    }
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isPanning) return;
-    setPan({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (activePointers.current[e.pointerId]) {
+      activePointers.current[e.pointerId] = { x: e.clientX, y: e.clientY };
+    }
+
+    const pointerIds = Object.keys(activePointers.current);
+    if (pointerIds.length === 1 && isPanning) {
+      setPan({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    } else if (pointerIds.length === 2 && lastTouchDistance.current !== null) {
+      const pts = Object.values(activePointers.current);
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      const factor = dist / lastTouchDistance.current;
+      lastTouchDistance.current = dist;
+
+      // Find midpoint of the two touches relative to the container bounding box
+      const el = containerRef.current;
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
+        const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+
+        setScale((prevScale) => {
+          const newScale = Math.min(Math.max(prevScale * factor, 0.25), 1.8);
+
+          // Adjust pan so the zoom is centered on the midpoint
+          setPan((prevPan) => {
+            const xs = (midX - prevPan.x) / prevScale;
+            const ys = (midY - prevPan.y) / prevScale;
+            return {
+              x: midX - xs * newScale,
+              y: midY - ys * newScale,
+            };
+          });
+          return newScale;
+        });
+      }
+    }
   };
 
-  const handleMouseUp = () => {
-    setIsPanning(false);
+  const handlePointerUp = (e: React.PointerEvent) => {
+    delete activePointers.current[e.pointerId];
+    const pointerIds = Object.keys(activePointers.current);
+
+    if (pointerIds.length < 2) {
+      lastTouchDistance.current = null;
+    }
+
+    if (pointerIds.length === 0 && isPanning) {
+      const el = containerRef.current;
+      if (el) {
+        try {
+          el.releasePointerCapture(e.pointerId);
+        } catch (err) {}
+      }
+      setIsPanning(false);
+    }
+  };
+
+  const handlePointerCancel = (e: React.PointerEvent) => {
+    delete activePointers.current[e.pointerId];
+    lastTouchDistance.current = null;
+    if (isPanning) {
+      setIsPanning(false);
+    }
   };
 
   // Toggle helpers
@@ -672,14 +754,15 @@ export function HospitalFlowBoard() {
           isPanning ? "cursor-grabbing" : "cursor-grab"
         }`}
         style={{
+          touchAction: "none",
           backgroundImage: `radial-gradient(circle, var(--color-border) 1.2px, transparent 1.2px)`,
           backgroundSize: "28px 28px",
           backgroundPosition: `${pan.x}px ${pan.y}px`,
         }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
       >
         {/* Animated Grid lines / Interactive content wrapper */}
         <motion.div

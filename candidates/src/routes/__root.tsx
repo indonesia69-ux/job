@@ -18,7 +18,7 @@ function NotFoundComponent() {
         <LottiePlayer
           src="/404_pagenotfound.json"
           loop
-          className="mx-auto h-36 w-36 sm:h-48 sm:w-48 lg:h-56 lg:w-56 mb-4"
+          className="w-3/4 max-w-[200px] aspect-square mx-auto mb-4"
         />
         <div className="mt-6">
           <Link

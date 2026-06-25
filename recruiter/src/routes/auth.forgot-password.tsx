@@ -125,14 +125,14 @@ export function ForgotPasswordPage() {
         <LottiePlayer
           src="/mail_sent.json"
           loop={false}
-          className="mx-auto h-24 w-24 sm:h-28 sm:w-28 mb-4"
+          className="w-1/2 max-w-[110px] aspect-square mx-auto mb-4"
         />
       )}
       {step === "success" && (
         <LottiePlayer
           src="/rest_sent_flow.json"
           loop={false}
-          className="mx-auto h-28 w-28 sm:h-32 sm:w-32 mb-4"
+          className="w-1/2 max-w-[128px] aspect-square mx-auto mb-4"
         />
       )}
       <div className="flex flex-col space-y-2 text-center">

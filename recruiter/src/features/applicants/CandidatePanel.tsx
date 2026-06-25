@@ -53,7 +53,7 @@ export function CandidatePanel({
       <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-[560px]">
         {candidate && (
           <>
-            <SheetHeader className="space-y-3 border-b border-border bg-muted/30 p-6">
+            <SheetHeader className="space-y-3 border-b border-border bg-muted/30 p-4 sm:p-6">
               <div className="flex items-start gap-3">
                 <span className="grid h-12 w-12 place-items-center rounded-lg bg-primary text-primary-foreground font-display text-[14px] font-semibold">
                   {candidate.initials}
@@ -85,7 +85,7 @@ export function CandidatePanel({
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-[12px] text-muted-foreground">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[12px] text-muted-foreground">
                 <Meta icon={<MapPin className="h-3.5 w-3.5" />}>{candidate.location}</Meta>
                 <Meta icon={<Briefcase className="h-3.5 w-3.5" />}>
                   {candidate.experienceYears} yrs
@@ -143,22 +143,22 @@ export function CandidatePanel({
               </div>
             </SheetHeader>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
               <Tabs defaultValue="workflow">
-                <TabsList className="grid w-full grid-cols-6">
-                  <TabsTrigger value="workflow">Workflow</TabsTrigger>
-                  <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="exp">Experience</TabsTrigger>
-                  <TabsTrigger value="edu">Education</TabsTrigger>
-                  <TabsTrigger value="skills">Skills</TabsTrigger>
-                  <TabsTrigger value="docs">Documents</TabsTrigger>
+                <TabsList className="flex w-full overflow-x-auto whitespace-nowrap scrollbar-hide justify-start bg-muted/40 p-1">
+                  <TabsTrigger value="workflow" className="shrink-0">Workflow</TabsTrigger>
+                  <TabsTrigger value="overview" className="shrink-0">Overview</TabsTrigger>
+                  <TabsTrigger value="exp" className="shrink-0">Experience</TabsTrigger>
+                  <TabsTrigger value="edu" className="shrink-0">Education</TabsTrigger>
+                  <TabsTrigger value="skills" className="shrink-0">Skills</TabsTrigger>
+                  <TabsTrigger value="docs" className="shrink-0">Documents</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="workflow" className="mt-5 space-y-5">
                   <Section title="Interview Details">
                     {candidate.interviewDate ? (
                       <div className="space-y-2 text-[13px] text-foreground">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <div>
                             <span className="text-muted-foreground block text-[11px] uppercase tracking-wider">
                               Date
