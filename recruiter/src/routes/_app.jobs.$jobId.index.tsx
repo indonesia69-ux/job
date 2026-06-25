@@ -39,9 +39,9 @@ export const Route = createFileRoute("/_app/jobs/$jobId/")({
   head: ({ loaderData }) => ({
     meta: loaderData
       ? [
-          { title: `${loaderData.job.role} - ApronHanger` },
-          { name: "description", content: (loaderData.job.description ?? "").slice(0, 150) },
-        ]
+        { title: `${loaderData.job.role} - ApronHanger` },
+        { name: "description", content: (loaderData.job.description ?? "").slice(0, 150) },
+      ]
       : [],
   }),
   component: JobDetails,
@@ -175,8 +175,8 @@ function JobDetails() {
                 label="Experience"
                 value={
                   job.experienceMin != null &&
-                  job.experienceMax != null &&
-                  (job.experienceMin > 0 || job.experienceMax > 0)
+                    job.experienceMax != null &&
+                    (job.experienceMin > 0 || job.experienceMax > 0)
                     ? formatExp(job.experienceMin, job.experienceMax)
                     : job.experience || "—"
                 }

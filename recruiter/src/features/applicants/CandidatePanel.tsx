@@ -227,7 +227,7 @@ export function CandidatePanel({
 
                   <Section title="Document Requests">
                     {candidate.requestedDocumentList &&
-                    candidate.requestedDocumentList.length > 0 ? (
+                      candidate.requestedDocumentList.length > 0 ? (
                       <div className="space-y-2 text-[13px] text-foreground">
                         <ul className="list-disc pl-4 space-y-1">
                           {candidate.requestedDocumentList.map((d, i) => (
@@ -500,7 +500,7 @@ export function CandidatePanel({
                   {/* Document checklist from step 15 */}
                   <Section title="Verification Documents Ready">
                     {candidate.formProfile?.documentChecklist &&
-                    candidate.formProfile.documentChecklist.length > 0 ? (
+                      candidate.formProfile.documentChecklist.length > 0 ? (
                       <div className="space-y-1.5">
                         {candidate.formProfile.documentChecklist.map((doc: string) => (
                           <div
