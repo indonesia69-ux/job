@@ -150,6 +150,12 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
       await ensureUsageReset(prisma, user);
     }
 
+    // Create a search log entry for pull-to-job token tracking
+    const searchLog = await prisma.searchLog.create({
+      data: { userId: req.user!.id },
+    });
+    const searchToken = searchLog.id;
+
     // Scalar filter conditions
     const scalarWhere: any = {
       isSuspended: false,
@@ -268,6 +274,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
         total: exactMatches.length,
         take,
         skip,
+        searchToken,
       });
     } else {
       // Execute paginated search securely within the database
@@ -303,6 +310,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
           total,
           take,
           skip,
+          searchToken,
         });
       } else {
         res.json({
@@ -310,6 +318,7 @@ router.get('/search', requireAuth, requireRole('RECRUITER'), async (req: AuthReq
           total,
           take,
           skip,
+          searchToken,
         });
       }
     }

@@ -6,6 +6,7 @@ import { authHeader } from "@/store/authStore";
 import { toast } from "sonner";
 import {
   Download,
+  Eye,
   UploadCloud,
   Calendar,
   MapPin,
@@ -278,12 +279,12 @@ export function CandidateActionCard({
           <p>Congratulations! The hospital has sent you an offer letter.</p>
           {application.offerLetterUrl && (
             <a
-              href={application.offerLetterUrl}
+              href="https://apronhanger.work"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-100 text-emerald-800 font-medium hover:bg-emerald-200 transition-colors"
             >
-              <Download className="h-3.5 w-3.5" /> View Offer Letter PDF
+              <Eye className="h-3.5 w-3.5" /> View Offer Letter
             </a>
           )}
         </div>

@@ -11,9 +11,11 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1400px] flex-col gap-6 px-6 py-10 md:flex-row md:items-start md:justify-between">
         <div className="max-w-md">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-xs font-bold">A</span>
-            </div>
+            <img
+              src="/logo (1).webp"
+              alt="ApronHanger Logo"
+              className="h-7 w-7 object-contain rounded-lg shadow-soft"
+            />
             <span className="text-sm font-semibold text-foreground">ApronHanger</span>
           </div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">

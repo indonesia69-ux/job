@@ -66,9 +66,7 @@ function LoginPage() {
 
         <div className="relative">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur border border-white/15">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
+            <img src="/logo (1).webp" alt="ApronHanger Logo" className="h-10 w-10 object-contain rounded-lg shadow-soft" />
             <span className="text-xl font-semibold tracking-tight">ApronHanger</span>
           </div>
         </div>
@@ -107,9 +105,7 @@ function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile-only brand */}
           <div className="lg:hidden flex items-center justify-center gap-2.5 mb-8">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <ShieldCheck className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src="/logo (1).webp" alt="ApronHanger Logo" className="h-10 w-10 object-contain rounded-lg shadow-soft" />
             <span className="text-xl font-semibold tracking-tight">ApronHanger</span>
           </div>
 

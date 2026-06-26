@@ -1,5 +1,31 @@
 import type { Profile } from "@/data/profile";
 
+export function rolesMatch(cRole: string, jRole: string, jSpec: string): boolean {
+  const cr = cRole.toLowerCase();
+  const jr = jRole.toLowerCase();
+  const js = jSpec.toLowerCase();
+  
+  if (cr === jr || jr.includes(cr) || js.includes(cr)) return true;
+  
+  // Doctor mapping
+  if (cr.includes("clinical practitioners & super specialists") && (jr.includes("doctor") || jr.includes("physician") || js.includes("doctor") || js.includes("medicine"))) return true;
+  // Dentist mapping
+  if (cr.includes("dentist") && (jr.includes("dentist") || js.includes("dentist") || js.includes("dental"))) return true;
+  // Nurse mapping
+  if (cr.includes("nursing") && (jr.includes("nurse") || js.includes("nurse"))) return true;
+  // Technician mapping
+  if (cr.includes("laboratory technologist") && (jr.includes("technician") || jr.includes("tech") || js.includes("technician") || js.includes("lab"))) return true;
+  // Pharmacist mapping
+  if (cr.includes("pharmacy") && (jr.includes("pharmacist") || jr.includes("pharmacy") || js.includes("pharmacist") || js.includes("pharmacy"))) return true;
+  // Admin mapping
+  if (cr.includes("administration") && (jr.includes("admin") || jr.includes("management") || js.includes("admin") || js.includes("management"))) return true;
+  
+  // Generic word overlap check for other roles
+  const cWords = cr.split(/[^a-z0-9]+/).filter(w => w.length >= 4);
+  const jWords = (jr + " " + js).split(/[^a-z0-9]+/).filter(w => w.length >= 4);
+  return cWords.some(cw => jWords.some(jw => jw.includes(cw) || cw.includes(jw)));
+}
+
 export function scoreJobMatch(
   job: Record<string, any>,
   profile: Profile | null | undefined,
@@ -9,7 +35,7 @@ export function scoreJobMatch(
   const role = String(profile.role || "").toLowerCase();
   const jobRole = String(job.role || "").toLowerCase();
   const jobSpec = String(job.specialty || "").toLowerCase();
-  if (role && (jobRole.includes(role) || jobSpec.includes(role))) score += 20;
+  if (role && rolesMatch(role, jobRole, jobSpec)) score += 20;
   const years = profile.yearsExperience ?? 0;
   const min = Number(job.experienceMin ?? 0);
   const max = Number(job.experienceMax ?? 20);

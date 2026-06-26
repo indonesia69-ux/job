@@ -457,8 +457,24 @@ function AuthPage() {
               {mode === "signup" && (
                 <p className="text-center text-xs text-muted-foreground">
                   By continuing you agree to our{" "}
-                  <a className="underline underline-offset-2">Terms</a> and{" "}
-                  <a className="underline underline-offset-2">Privacy Policy</a>.
+                  <a
+                    href="/APRONHANGER_Work_Terms_and_Conditions.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Terms
+                  </a>{" "}
+                  and{" "}
+                  <a
+                    href="/APRONHANGER_Work_Privacy_Policy.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    Privacy Policy
+                  </a>
+                  .
                 </p>
               )}
             </form>
@@ -483,7 +499,7 @@ function AuthPage() {
 
             <div className="mt-8 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <ShieldCheck className="h-3.5 w-3.5" />
-              <span>Verified credentials · MCI / DCI / INC compliant</span>
+              <span>Verified credentials</span>
             </div>
           </div>
         </section>
@@ -578,9 +594,11 @@ function BrandPanel() {
 
       {/* Logo */}
       <Link to="/" search={{ q: "", city: "" }} className="relative z-10 flex items-center gap-2.5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur">
-          <Sparkles className="h-5 w-5" />
-        </div>
+        <img
+          src="/logo (1).webp"
+          alt="ApronHanger Logo"
+          className="h-10 w-10 object-contain rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur"
+        />
         <div>
           <div className="text-base font-semibold tracking-tight">ApronHanger</div>
           <div className="text-[11px] uppercase tracking-wider text-white/50">
@@ -597,9 +615,9 @@ function BrandPanel() {
         </div>
         <h2 className="text-4xl font-semibold leading-tight tracking-tight xl:text-[2.75rem]">
           <>
-            Where India's clinicians
+            Clinicians Nursing and
             <br />
-            <span className="text-sky-200">find their next role.</span>
+            <span className="text-sky-200">Healthcare Providers.</span>
           </>
         </h2>
         <p className="mt-4 text-base leading-relaxed text-white/70">

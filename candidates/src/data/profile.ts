@@ -1,8 +1,11 @@
+import { type RoleType } from "./categories";
+
 export type Qualification = {
   degree: string;
   institution: string;
   year: string;
 };
+
 
 export type ExperienceItem = {
   role: string;
@@ -57,7 +60,7 @@ export type Profile = {
   avatar: string;
   verified: boolean;
   completeness: number; // 0-100
-  role: "Doctor" | "Dentist" | "Nurse" | "Technician" | "Blue collar" | "";
+  role: RoleType | "";
   registrationNumber: string;
   registrationCouncil: string;
   specialty: string;
@@ -117,7 +120,7 @@ export const SAMPLE_PROFILE: Profile = {
   avatar: "AS",
   verified: true,
   completeness: 82,
-  role: "Doctor",
+  role: "Clinical Practitioners & Super Specialists (MBBS/ MD Physician/ MD/MS / DM / MCh / DNB-SS etc)",
   registrationNumber: "WBMC/2017/45821",
   registrationCouncil: "West Bengal Medical Council",
   specialty: "Cardiology",

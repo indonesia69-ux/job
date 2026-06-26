@@ -67,7 +67,9 @@ export function FileUploadZone({ files, onChange, multiple = true, title, hint }
           key={`${f.name}-${i}`}
           className="flex items-center justify-between rounded-lg border bg-surface px-3 py-2 text-sm"
         >
-          <span className="truncate text-foreground">{f.name}</span>
+          <div className="min-w-0 flex-1 mr-2">
+            <span className="truncate text-foreground block">{f.name}</span>
+          </div>
           <button
             type="button"
             className="text-muted-foreground hover:text-destructive"

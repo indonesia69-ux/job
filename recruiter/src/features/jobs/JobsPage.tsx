@@ -254,7 +254,7 @@ export function JobsPage() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between border-t border-border pt-3">
+              <div className="flex flex-wrap gap-2 items-center justify-between border-t border-border pt-3">
                 <div className="text-[11px] text-muted-foreground">
                   Posted {j.postedOn} · by{" "}
                   {j.postedBy?.id === user?.id ? "you" : j.postedBy?.name || "someone"}
@@ -276,7 +276,7 @@ export function JobsPage() {
             <LottiePlayer
               src="/nothing_for_the_particular_query.json"
               loop
-              className="h-32 w-32 mb-4"
+              className="w-3/4 max-w-[128px] aspect-square mb-4"
             />
             No jobs match your filters.
           </CardContent>

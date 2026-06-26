@@ -163,8 +163,16 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Render pings the root URL by default
+app.get('/', (req, res) => {
+  res.redirect('/health');
+});
+
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests without an Origin (like Render health checks or curl)
+    if (!origin) return callback(null, true);
+    
     const result = evaluateCorsOrigin(origin, allowedOrigins, process.env.NODE_ENV || 'development');
     if (result.allowed) return callback(null, true);
     callback(new Error(result.error || 'Not allowed by CORS'));

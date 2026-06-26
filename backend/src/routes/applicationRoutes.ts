@@ -82,14 +82,15 @@ const TERMINAL_STATUSES: AppStatus[] = [
 /** Recruiter-only allowed transitions from each status. Key '*' means any status. */
 const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
   '*':                         ['DocumentsRequested'],   // doc request can come from ANY status
-  'Applied':                   ['Reviewed'],
+  'Applied':                   ['Reviewed', 'Rejected'],
   'Reviewed':                  ['InterviewScheduled', 'Rejected'],
+  'InterviewScheduled':        ['Rejected', 'InterviewRescheduled'],
   'RescheduleRequested':       ['InterviewScheduled', 'InterviewRescheduled', 'InterviewDeclined', 'Rejected'],
-  'InterviewAccepted':         ['InterviewCompleted', 'NoShow'],
+  'InterviewAccepted':         ['InterviewCompleted', 'NoShow', 'Rejected'],
   'InterviewCompleted':        ['Shortlisted', 'Rejected', 'OnHold', 'NextRound'],
   'NoShow':                    ['Rejected', 'InterviewRescheduled'],
-  'InterviewRescheduled':      ['InterviewScheduled', 'InterviewCompleted', 'NoShow'],
-  'Shortlisted':               ['DocumentsRequested'],
+  'InterviewRescheduled':      ['InterviewScheduled', 'InterviewCompleted', 'NoShow', 'Rejected'],
+  'Shortlisted':               ['DocumentsRequested', 'Rejected'],
   'OnHold':                    ['Shortlisted', 'Rejected', 'DocumentsRequested'],
   'DocumentsUploaded':         ['DocumentsApproved', 'AdditionalDocumentsRequired', 'DocumentsRejected'],
   'AdditionalDocumentsRequired': ['DocumentsRequested'],
@@ -371,6 +372,138 @@ router.get('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
     res.json(formatApp(app, { redactCandidateContact: req.user!.role === 'RECRUITER' }));
   } catch (error) {
     logger.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── POST /api/applications/pull ─────────────────────────────────────────────
+// Recruiter-initiated: automatically apply a candidate (using their existing CV)
+// to one of the recruiter's active jobs. Costs 1 premium search quota.
+router.post('/pull', requireAuth, requireRole('RECRUITER'), requireNotPlanSuspended, async (req: AuthRequest, res: Response) => {
+  const { jobId, candidateId, searchToken } = req.body;
+
+  if (!jobId) { res.status(400).json({ error: 'jobId is required' }); return; }
+  if (!candidateId) { res.status(400).json({ error: 'candidateId is required' }); return; }
+
+  try {
+    // 1. Verify job belongs to recruiter's hospital and is Active
+    const job = await prisma.job.findUnique({
+      where: { id: String(jobId) },
+      include: { hospital: true },
+    });
+    if (!job) { res.status(404).json({ error: 'Job not found' }); return; }
+    if (!req.user!.hospitalId || job.hospitalId !== req.user!.hospitalId) {
+      res.status(403).json({ error: 'You can only pull candidates to your own hospital\'s jobs' }); return;
+    }
+    if (job.status !== 'Active') {
+      res.status(400).json({ error: 'You can only pull candidates to Active jobs' }); return;
+    }
+
+    // 2. Load candidate
+    const candidate = await prisma.candidate.findUnique({
+      where: { id: String(candidateId) },
+    });
+    if (!candidate) { res.status(404).json({ error: 'Candidate not found' }); return; }
+    if (candidate.isSuspended || candidate.deletedAt) {
+      res.status(403).json({ error: 'This candidate profile is not available' }); return;
+    }
+
+    // 3. Validate search token or create a new search log on the fly
+    let searchLog = null;
+    if (searchToken) {
+      searchLog = await prisma.searchLog.findFirst({
+        where: { id: String(searchToken), userId: req.user!.id },
+      });
+    }
+    if (!searchLog) {
+      searchLog = await prisma.searchLog.create({
+        data: { userId: req.user!.id, pullUsed: false },
+      });
+    }
+    if (searchLog.pullUsed) {
+      res.status(403).json({ error: 'Invalid search token or pull already used for this search.' }); return;
+    }
+
+    // 4. Load recruiter for quota check
+    const recruiterUser = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      include: { hospital: true },
+    });
+    if (!recruiterUser || !recruiterUser.hospital) {
+      res.status(400).json({ error: 'No hospital linked to your account' }); return;
+    }
+
+    const { getSearchLimit } = await import('../lib/helpers');
+    const limit = getSearchLimit(recruiterUser.hospital.onboardingPlan || 'Basic');
+
+    // 5. Run everything in a transaction: mark token used, increment quota, create application
+    let application: any;
+    try {
+      application = await prisma.$transaction(async (tx) => {
+        // Mark search log as used
+        await tx.searchLog.update({
+          where: { id: searchLog.id },
+          data: { pullUsed: true },
+        });
+
+        // Increment premium search quota (fail if limit already reached)
+        const incrementResult = await tx.user.updateMany({
+          where: {
+            id: req.user!.id,
+            premiumSearchesThisMonth: { lt: limit },
+          },
+          data: { premiumSearchesThisMonth: { increment: 1 } },
+        });
+        if (incrementResult.count === 0) {
+          throw Object.assign(new Error(`You have reached your limit of ${limit} premium searches this month.`), { code: 'PLAN_QUOTA_EXCEEDED' });
+        }
+
+        // Create the application using candidate's existing CV data
+        return tx.application.create({
+          data: {
+            jobId: job.id,
+            candidateId: candidate.id,
+            status: 'Applied',
+            cvSource: candidate.cvSource || 'form',
+            cvUrl: candidate.cvUrl || null,
+            cvCloudinaryId: candidate.cvCloudinaryId || null,
+            uploadedCvName: candidate.uploadedCvName || null,
+            uploadedCvMime: candidate.uploadedCvMime || null,
+            supportingDocuments: candidate.supportingDocuments
+              ? JSON.stringify(candidate.supportingDocuments)
+              : null,
+          },
+          include: { candidate: true, job: { include: { hospital: true } } },
+        });
+      });
+    } catch (txErr: any) {
+      if (txErr.code === 'PLAN_QUOTA_EXCEEDED') {
+        res.status(403).json({ error: txErr.message, code: 'PLAN_QUOTA_EXCEEDED' }); return;
+      }
+      // Unique constraint: candidate already applied to this job
+      if (txErr.code === 'P2002') {
+        res.status(409).json({ error: 'This candidate has already been applied to this job.' }); return;
+      }
+      throw txErr;
+    }
+
+    // 6. Notify the candidate (fire-and-forget)
+    if (candidate.userId) {
+      await notifyCandidate(
+        candidate.userId,
+        'Profile Shortlisted',
+        `A recruiter at ${job.hospital.name} has shortlisted your profile for the ${job.role} position.`,
+        '/applications',
+      );
+    }
+
+    res.status(201).json({
+      applicationId: application.id,
+      jobId: application.jobId,
+      candidateId: application.candidateId,
+    });
+  } catch (error) {
+    logger.error('[pull-to-job]', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

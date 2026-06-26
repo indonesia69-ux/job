@@ -508,7 +508,15 @@ function SignupPage() {
                 />
                 <span>
                   I agree to APRONHANGER{" "}
-                  <span className="text-accent hover:underline">Terms & Conditions</span>.
+                  <a
+                    href="/Apronhanger_Recruiter_Terms_and_Conditions.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    Terms & Conditions
+                  </a>
+                  .
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
@@ -519,7 +527,15 @@ function SignupPage() {
                 />
                 <span>
                   I agree to APRONHANGER{" "}
-                  <span className="text-accent hover:underline">Privacy Policy</span>.
+                  <a
+                    href="/Apronhanger_Recruiter_Privacy_Policy.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    Privacy Policy
+                  </a>
+                  .
                 </span>
               </label>
             </div>

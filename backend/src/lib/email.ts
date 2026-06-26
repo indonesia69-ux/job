@@ -113,7 +113,7 @@ body{margin:0;padding:0;background:#f5f8fc;font-family:'Inter',Arial,sans-serif;
 .step-number{width:32px;height:32px;border-radius:10px;background:#E9F4FD;color:#0D2746;font-weight:600;display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0;}
 .step-text{color:#475569;font-size:14px;line-height:1.8;}
 .cta-wrapper{text-align:center;margin:40px 0;}
-.cta{display:inline-block;background:linear-gradient(135deg,#144A7A,#1D74C7);color:#ffffff;text-decoration:none;padding:16px 36px;border-radius:999px;font-size:14px;font-weight:600;}
+.cta{display:inline-block;background:#ffffff;color:#0D2746;border:1.5px solid #0D2746;text-decoration:none;padding:15px 35px;border-radius:999px;font-size:14px;font-weight:600;}
 .support{text-align:center;color:#64748B;font-size:14px;line-height:1.8;}
 .signature{margin-top:36px;color:#334155;line-height:1.8;}
 .footer{background:#F8FAFC;padding:28px;text-align:center;border-top:1px solid #E2E8F0;}
@@ -152,7 +152,7 @@ Thank you for joining ApronHanger. We are excited to partner with your instituti
 <div class="step"><div class="step-number">1</div><div class="step-text">Visit the ApronHanger recruiter portal.</div></div>
 <div class="step"><div class="step-number">2</div><div class="step-text">Enter the activation code exactly as displayed above.</div></div>
 <div class="step"><div class="step-number">3</div><div class="step-text">Complete your institution profile and begin posting healthcare opportunities.</div></div>
-<div class="cta-wrapper"><a href="https://app.apronhanger.com/activate" class="cta">Begin Platform Setup</a></div>
+<div class="cta-wrapper"><a href="https://apronhanger.org/auth/signup" class="cta">Begin Platform Setup</a></div>
 <div class="support">If you did not request this activation, please ignore this email or contact our support team.</div>
 <div class="signature">Warm regards,<br><strong>ApronHanger Onboarding Team</strong><br>Healthcare Talent Platform</div>
 </div>
@@ -208,7 +208,7 @@ body{margin:0;padding:0;background:#f5f8fc;font-family:'Inter',Arial,sans-serif;
 .step-dot{width:8px;height:8px;border-radius:50%;background:#144A7A;margin-top:7px;margin-right:14px;flex-shrink:0;}
 .step-text{color:#475569;font-size:14px;line-height:1.7;}
 .cta-wrapper{text-align:center;margin:36px 0;}
-.cta{display:inline-block;background:linear-gradient(135deg,#144A7A,#1D74C7);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:999px;font-size:14px;font-weight:600;}
+.cta{display:inline-block;background:#ffffff;color:#0D2746;border:1.5px solid #0D2746;text-decoration:none;padding:13px 31px;border-radius:999px;font-size:14px;font-weight:600;}
 .divider{height:1px;background:#E2E8F0;margin:32px 0;}
 .support{text-align:center;color:#64748B;font-size:13px;line-height:1.8;}
 .signature{margin-top:32px;color:#334155;line-height:1.8;font-size:14px;}
@@ -297,7 +297,7 @@ body{margin:0;padding:0;background:#f5f8fc;font-family:'Inter',Arial,sans-serif;
 .step-number{width:32px;height:32px;border-radius:10px;background:#E9F4FD;color:#0D2746;font-weight:600;display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0;font-size:13px;}
 .step-text{color:#475569;font-size:14px;line-height:1.8;}
 .cta-wrapper{text-align:center;margin:36px 0;}
-.cta{display:inline-block;background:linear-gradient(135deg,#144A7A,#1D74C7);color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:999px;font-size:14px;font-weight:600;}
+.cta{display:inline-block;background:#ffffff;color:#0D2746;border:1.5px solid #0D2746;text-decoration:none;padding:13px 31px;border-radius:999px;font-size:14px;font-weight:600;}
 .divider{height:1px;background:#E2E8F0;margin:32px 0;}
 .support{text-align:center;color:#64748B;font-size:13px;line-height:1.8;}
 .signature{margin-top:32px;color:#334155;line-height:1.8;font-size:14px;}
@@ -490,8 +490,7 @@ We are pleased to inform you that <span class="highlight">${hospitalName}</span>
 <div class="step"><div class="step-number">2</div><div class="step-text">Review all terms and conditions in the offer document carefully.</div></div>
 <div class="step"><div class="step-number">3</div><div class="step-text">Accept or decline the offer through your portal. Your response will be notified to the recruiter.</div></div>
 <div class="cta-wrapper">
-<a href="${portalUrl}" class="cta-primary">View Offer Letter</a>
-<a href="${offerLetterUrl}" class="cta-secondary">Download PDF</a>
+<a href="https://apronhanger.work" class="cta-primary">View Offer Letter</a>
 </div>
 <div class="divider"></div>
 <div class="support">If you have any questions regarding this offer, please reach out to the recruiter directly or contact us at<br><strong>support@apronhanger.in</strong></div>

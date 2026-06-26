@@ -57,8 +57,12 @@ export default function HiringChart({
           >
             <defs>
               <linearGradient id="fillApps" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(168 45% 38%)" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="hsl(168 45% 38%)" stopOpacity={0.02} />
+                <stop offset="0%" stopColor="hsl(168 45% 38%)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="hsl(168 45% 38%)" stopOpacity={0.01} />
+              </linearGradient>
+              <linearGradient id="fillJobs" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="hsl(220 55% 42%)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="hsl(220 55% 42%)" stopOpacity={0.01} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="4 4" vertical={false} className="stroke-border/60" />
@@ -70,14 +74,25 @@ export default function HiringChart({
               interval="preserveStartEnd"
             />
             <YAxis
+              yAxisId="left"
+              orientation="left"
               tickLine={false}
               axisLine={false}
               width={28}
               allowDecimals={false}
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+              tick={{ fontSize: 10, fill: "hsl(168 45% 38%)" }}
+            />
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              tickLine={false}
+              axisLine={false}
+              width={28}
+              allowDecimals={false}
+              tick={{ fontSize: 10, fill: "hsl(220 55% 42%)" }}
             />
             <ChartTooltip
-              cursor={{ fill: "hsl(var(--muted) / 0.25)" }}
+              cursor={{ stroke: "hsl(var(--border))", strokeWidth: 1, strokeDasharray: "4 4" }}
               content={
                 <ChartTooltipContent
                   labelFormatter={(label) => `Week of ${label}`}
@@ -89,20 +104,26 @@ export default function HiringChart({
               }
             />
             <Area
+              yAxisId="left"
               type="monotone"
               dataKey="applications"
               name="applications"
               stroke="hsl(168 45% 38%)"
               strokeWidth={2}
               fill="url(#fillApps)"
+              dot={{ r: 3, strokeWidth: 1, fill: "hsl(168 45% 38%)" }}
+              activeDot={{ r: 5, strokeWidth: 0 }}
             />
-            <Bar
+            <Area
+              yAxisId="right"
+              type="monotone"
               dataKey="jobs"
               name="jobs"
-              fill="hsl(220 55% 42%)"
-              radius={[6, 6, 0, 0]}
-              maxBarSize={28}
-              opacity={0.9}
+              stroke="hsl(220 55% 42%)"
+              strokeWidth={2}
+              fill="url(#fillJobs)"
+              dot={{ r: 3, strokeWidth: 1, fill: "hsl(220 55% 42%)" }}
+              activeDot={{ r: 5, strokeWidth: 0 }}
             />
           </ComposedChart>
         </ResponsiveContainer>
