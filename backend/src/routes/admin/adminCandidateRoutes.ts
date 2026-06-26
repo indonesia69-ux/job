@@ -18,14 +18,25 @@ router.get('/candidates', requireAdmin, async (req: AdminAuthRequest, res: Respo
         include: {
           _count: {
             select: { applications: true }
-          }
+          },
+          // Join user so we always get the canonical email + phone (mobile)
+          user: { select: { email: true, mobile: true, isSuspended: true } }
         },
         orderBy: { createdAt: 'desc' },
         take,
         skip
       })
     ]);
-    res.json({ data: candidates, total, take, skip });
+
+    // Merge user.email and user.mobile into the candidate object (same as detail endpoint)
+    const data = candidates.map((c: any) => ({
+      ...c,
+      email: c.user?.email || c.email,
+      phone: c.user?.mobile || c.phone,
+      isSuspended: c.isSuspended || c.user?.isSuspended || false,
+    }));
+
+    res.json({ data, total, take, skip });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch candidates' });
   }

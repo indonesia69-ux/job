@@ -66,7 +66,7 @@ function CandidateDetailsPage() {
     );
   }
 
-  const hasCv = !!(candidate.cvUrl || candidate.uploadedCvData);
+  const hasCv = !!candidate.cvUrl;
   const hasDocuments = candidate.supportingDocuments && candidate.supportingDocuments.length > 0;
 
   return (
@@ -108,8 +108,13 @@ function CandidateDetailsPage() {
 
               <div className="flex flex-col gap-1.5 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" /> {candidate.email}
+                  <Mail className="h-4 w-4" /> {candidate.email || <span className="italic">No email</span>}
                 </div>
+                {candidate.phone && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-base leading-none">📞</span> {candidate.phone}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4" /> {candidate.location || "Location not provided"}
                 </div>
@@ -256,11 +261,6 @@ function CandidateDetailsPage() {
                   onClick={() => {
                     if (candidate.cvUrl) {
                       window.open(candidate.cvUrl, "_blank");
-                    } else if (candidate.uploadedCvData) {
-                      const a = document.createElement("a");
-                      a.href = candidate.uploadedCvData;
-                      a.download = candidate.uploadedCvName || "cv.pdf";
-                      a.click();
                     }
                   }}
                   className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"

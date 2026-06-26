@@ -42,6 +42,7 @@ export interface Candidate {
   userId?: string;
   name: string;
   email: string;
+  phone?: string;
   role: string;
   specialty: string;
   experience: string;
@@ -51,7 +52,6 @@ export interface Candidate {
   joined: string;
   cvUrl?: string;
   uploadedCvName?: string;
-  uploadedCvData?: string;
   cvSource?: string;
   supportingDocuments?: any[];
   isSuspended?: boolean;
@@ -69,7 +69,7 @@ export interface Application {
   cvUrl?: string;
   isFlagged?: boolean;
   uploadedCvName?: string;
-  uploadedCvData?: string;
+  // uploadedCvData removed — field does not exist in DB (replaced by Cloudinary cvUrl)
 }
 
 export type PlanTier = "Basic" | "Pro" | "Premium";
@@ -307,7 +307,10 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             id: c.id,
             userId: c.userId,
             name: c.name,
+            // Backend merges user.email → candidate.email; fall back to direct field
             email: c.email || "",
+            // Backend merges user.mobile → candidate.phone
+            phone: c.phone || "",
             role: c.role || "",
             specialty: c.specialty || "",
             experience: `${c.experienceYears || 0} years`,
@@ -318,7 +321,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             joined: c.createdAt ? new Date(c.createdAt).toISOString().slice(0, 10) : "N/A",
             cvUrl: c.cvUrl,
             uploadedCvName: c.uploadedCvName,
-            uploadedCvData: c.uploadedCvData,
+            // uploadedCvData does NOT exist in DB (replaced by Cloudinary cvUrl) — omit it
             cvSource: c.cvSource,
             supportingDocuments:
               typeof c.supportingDocuments === "string"
@@ -366,7 +369,7 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             cvUrl: a.cvUrl || a.candidate?.cvUrl,
             isFlagged: a.isFlagged || false,
             uploadedCvName: a.candidate?.uploadedCvName,
-            uploadedCvData: a.candidate?.uploadedCvData,
+            // uploadedCvData does not exist in DB — omitted
           })),
         );
       }

@@ -59,23 +59,11 @@ function ApplicationsPage() {
   });
 
   function openCv(a: (typeof applications)[0]) {
-    const base64 = a.uploadedCvData;
     const url = a.cvUrl;
 
-    if (url && !url.startsWith("data:")) {
-      // Regular HTTP URL — open in new tab
+    if (url) {
+      // Cloudinary URL — open in new tab
       window.open(url, "_blank");
-    } else if (base64 || url?.startsWith("data:")) {
-      // Base64 data URI — trigger download
-      const data = base64 || url!;
-      const name = a.uploadedCvName || "cv.pdf";
-      const link = document.createElement("a");
-      link.href = data;
-      link.download = name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success(`Downloading ${name}`);
     } else {
       toast.info("No CV attached to this application.");
     }
