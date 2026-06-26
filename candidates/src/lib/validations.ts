@@ -1,18 +1,18 @@
 import { z } from "zod";
 import { parseISO, isValid, isAfter, isBefore, startOfDay } from "date-fns";
-import type { RoleType } from "@/data/categories";
+import { type RoleType, isDoctor, isDentist, isNurse } from "@/data/categories";
 
 export function validateLinkedInUrl(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
   try {
     const parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
-    if (!parsed.hostname.toLowerCase().includes("linkedin.com")) {
-      return "Enter a valid LinkedIn profile URL (linkedin.com)";
+    if (!parsed.hostname.toLowerCase().includes(".com")) {
+      return "Enter a valid public profile URL";
     }
     return null;
   } catch {
-    return "Enter a valid LinkedIn profile URL";
+    return "Enter a valid public profile URL";
   }
 }
 
@@ -131,25 +131,24 @@ export function validateWizardStep(step: number, s: WizardFormState): string | n
       }
       if (s.yearsExperience > 60) return "Years of experience seems too high — check the value";
       const role = s.role as RoleType;
-      if (role === "Doctor") {
+      if (isDoctor(role)) {
         if (!s.specialty.trim()) return "Primary specialty is required";
-        if (!s.grade.trim()) return "Current grade is required";
       }
-      if (role === "Dentist" && !s.specialty.trim()) {
+      if (isDentist(role) && !s.specialty.trim()) {
         return "Primary specialty is required";
       }
       return null;
     }
     case 2: {
       const role = s.role as RoleType;
-      if (role === "Doctor" || role === "Dentist") {
+      if (isDoctor(role) || isDentist(role)) {
         if (!s.registrationCouncil.trim()) return "Registration council is required";
         if (!s.registrationNumber.trim()) return "Registration number is required";
       }
-      if (role === "Nurse" && !s.registrationNumber.trim()) {
+      if (isNurse(role) && !s.registrationNumber.trim()) {
         return "INC registration number is required";
       }
-      if ((role === "Doctor" || role === "Dentist") && !s.licenseStatus.trim()) {
+      if ((isDoctor(role) || isDentist(role)) && !s.licenseStatus.trim()) {
         return "License status is required";
       }
       return null;
@@ -178,7 +177,7 @@ export function validateWizardStep(step: number, s: WizardFormState): string | n
         if (!ex.city.trim()) return `Experience ${i + 1}: city is required`;
         const dateErr = compareDates(ex.start, ex.end, Boolean(ex.current));
         if (dateErr) return `Experience ${i + 1}: ${dateErr}`;
-        if (s.role === "Doctor" && !ex.specialty?.trim()) {
+        if (isDoctor(s.role) && !ex.specialty?.trim()) {
           return `Experience ${i + 1}: specialty or department focus is required`;
         }
       }

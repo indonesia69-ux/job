@@ -85,5 +85,33 @@ export const CATEGORIES: Category[] = [
   },
 ];
 
-export const ROLE_TYPES = ["Doctor", "Dentist", "Nurse", "Technician", "Blue collar"] as const;
+export const ROLE_TYPES = [
+  "Students, Interns, Residents & Trainees",
+  "Clinical Practitioners & Super Specialists (MBBS/ MD Physician/ MD/MS / DM / MCh / DNB-SS etc)",
+  "Dentist and Super specialists (BDS/MDS)",
+  "Clinical Practioners (BHMS/BAMS/BUMS)-  AYUSH & Alternative Medicine",
+  "Veterinary Practitioners and Specialist",
+  "Nursing Professionals & Paramedics",
+  "Biotechnologist, Genetics & Life Sciences speclist",
+  "Physiotherapy and Rehabilitation Professionals",
+  "Laboratory Technologist & Diagnostic Services",
+  "Pharmacy & Pharmaceutical Professionals",
+  "Hospital Administration & Management",
+  "Dietician , Nutritionist and Wellness advisor",
+  "Medical Education & Faculty (BSC/MSC/PHD)",
+  "Clinical Research & Healthcare Research",
+  "Pharmaceutical, Medical Devices & Healthcare Industry",
+  "Emergency Medical Services (EMS)",
+  "Public Health care workers",
+  "Non-Clinical Healthcare Support Staff"
+] as const;
 export type RoleType = (typeof ROLE_TYPES)[number];
+
+export const isDoctor = (role?: string) =>
+  String(role || "").includes("Clinical Practitioners & Super Specialists");
+
+export const isDentist = (role?: string) =>
+  String(role || "").includes("Dentist and Super specialists");
+
+export const isNurse = (role?: string) =>
+  String(role || "").includes("Nursing Professionals & Paramedics");

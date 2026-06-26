@@ -37,7 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChipInput, FieldRow } from "@/components/apply/FormPrimitives";
-import { ROLE_TYPES, type RoleType } from "@/data/categories";
+import { ROLE_TYPES, type RoleType, isDoctor, isDentist, isNurse } from "@/data/categories";
 import {
   EMPTY_PROFILE,
   computeCompleteness,
@@ -614,7 +614,7 @@ export function ProfileFormWizard({
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider opacity-80">
-                {job ? "Doctor-ready application form" : "Doctor-ready CV builder"}
+                {job ? "Application form" : "CV builder"}
               </p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight">
                 {job ? `${job.role} · ${job.hospital}` : "Build a premium clinical profile"}
@@ -853,7 +853,7 @@ function renderStep(
               </SelectContent>
             </Select>
           </FieldRow>
-          <FieldRow label="LinkedIn profile" hint="Optional public profile URL">
+          <FieldRow label="Social profile" hint="Optional public profile URL">
             <Input
               type="url"
               value={s.linkedinUrl}
@@ -892,22 +892,22 @@ function renderStep(
             </FieldRow>
             <FieldRow
               label="Primary specialty"
-              required={s.role === "Doctor" || s.role === "Dentist"}
+              required={isDoctor(s.role) || isDentist(s.role)}
             >
               <ChipInput
                 values={s.specialty ? [s.specialty] : []}
                 onChange={(v) => set("specialty", v.at(-1) ?? "")}
                 placeholder="Type specialty and press Enter"
                 suggestions={
-                  s.role === "Doctor"
+                  isDoctor(s.role)
                     ? DOCTOR_SPECIALTIES
-                    : s.role === "Dentist"
+                    : isDentist(s.role)
                       ? ["Dental Surgery", "Endodontics", "Orthodontics", "Prosthodontics"]
                       : ["ICU", "OT", "Radiology", "Laboratory", "Hospital Ops"]
                 }
               />
             </FieldRow>
-            <FieldRow label="Current grade" required={s.role === "Doctor"}>
+            <FieldRow label="Current grade" hint="Optional">
               <Select value={s.grade || undefined} onValueChange={(v) => set("grade", v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select grade" />
@@ -935,13 +935,13 @@ function renderStep(
         <div className="grid gap-4 md:grid-cols-2">
           <FieldRow
             label={
-              s.role === "Dentist"
+              isDentist(s.role)
                 ? "Dental Council"
-                : s.role === "Nurse"
+                : isNurse(s.role)
                   ? "Nursing Council"
                   : "Medical Council"
             }
-            required={s.role === "Doctor" || s.role === "Dentist"}
+            required={isDoctor(s.role) || isDentist(s.role)}
           >
             <Input
               value={s.registrationCouncil}
@@ -951,20 +951,20 @@ function renderStep(
           </FieldRow>
           <FieldRow
             label={
-              s.role === "Dentist"
+              isDentist(s.role)
                 ? "DCI registration number"
-                : s.role === "Nurse"
+                : isNurse(s.role)
                   ? "INC registration number"
                   : "Registration number"
             }
-            required={s.role === "Doctor" || s.role === "Dentist" || s.role === "Nurse"}
+            required={isDoctor(s.role) || isDentist(s.role) || isNurse(s.role)}
           >
             <Input
               value={s.registrationNumber}
               onChange={(e) => set("registrationNumber", e.target.value)}
             />
           </FieldRow>
-          <FieldRow label="License status" required={s.role === "Doctor" || s.role === "Dentist"}>
+          <FieldRow label="License status" required={isDoctor(s.role) || isDentist(s.role)}>
             <Select
               value={s.licenseStatus || undefined}
               onValueChange={(v) => set("licenseStatus", v)}
@@ -1126,7 +1126,7 @@ function renderStep(
                   placeholder="Tertiary care, teaching hospital, clinic"
                 />
               </FieldRow>
-              <FieldRow label="Specialty / department focus" required={s.role === "Doctor"}>
+              <FieldRow label="Specialty / department focus" required={isDoctor(s.role)}>
                 <Input
                   value={item.specialty}
                   onChange={(e) => update(i, { ...item, specialty: e.target.value })}
@@ -1216,7 +1216,7 @@ function renderStep(
     case 5:
       return (
         <FieldRow
-          label={s.role === "Nurse" ? "Patient care & ward skills" : "Clinical skills"}
+          label={isNurse(s.role) ? "Patient care & ward skills" : "Clinical skills"}
           required
           hint="Press Enter to add"
         >
@@ -1225,7 +1225,7 @@ function renderStep(
             onChange={(v) => set("clinicalSkills", v)}
             placeholder="Type a skill and press Enter"
             suggestions={
-              s.role === "Doctor"
+              isDoctor(s.role)
                 ? [
                     "OPD Management",
                     "ICU Care",
@@ -1233,9 +1233,9 @@ function renderStep(
                     "Echocardiography",
                     "Perioperative Care",
                   ]
-                : s.role === "Nurse"
+                : isNurse(s.role)
                   ? ["IV Cannulation", "Wound Care", "Ventilator Care", "Triage"]
-                  : s.role === "Dentist"
+                  : isDentist(s.role)
                     ? ["RCT", "Restorations", "Crowns", "Implants"]
                     : ["Sterilization", "Equipment Setup", "Patient Handling"]
             }
@@ -1255,9 +1255,9 @@ function renderStep(
                   value={item.name}
                   onChange={(e) => update(i, { ...item, name: e.target.value })}
                   placeholder={
-                    s.role === "Dentist"
+                    isDentist(s.role)
                       ? "e.g. Root Canal Therapy"
-                      : s.role === "Nurse"
+                      : isNurse(s.role)
                         ? "e.g. Catheterization"
                         : "e.g. Coronary Angiography"
                   }
@@ -1815,7 +1815,7 @@ function formatPublicationDetail(p: PublicationDetail): string {
 function computeDoctorReadiness(s: FormState) {
   const checks = [
     { label: "Add contact details", done: Boolean(s.fullName && s.email && s.phone) },
-    { label: "Select specialty and grade", done: Boolean(s.specialty && s.grade) },
+    { label: "Select specialty", done: Boolean(s.specialty) },
     {
       label: "Add active registration details",
       done: Boolean(s.registrationNumber && s.registrationCouncil && s.licenseStatus),

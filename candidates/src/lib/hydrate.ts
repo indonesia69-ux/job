@@ -46,7 +46,7 @@ async function hydrateProfileFromApiInner(): Promise<Profile | null> {
         avatar: data.initials || "CV",
         verified: false,
         completeness: 60,
-        role: (data.role as Profile["role"]) || "Doctor",
+        role: (data.role as Profile["role"]) || "Clinical Practitioners & Super Specialists (MBBS/ MD Physician/ MD/MS / DM / MCh / DNB-SS etc)",
         registrationNumber: "",
         registrationCouncil: "",
         specialty: "",

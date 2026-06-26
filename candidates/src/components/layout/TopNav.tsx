@@ -169,7 +169,6 @@ export function TopNav() {
           )}
 
           <Badge variant="outline" className="md:hidden">
-            Beta
           </Badge>
         </div>
       </div>
