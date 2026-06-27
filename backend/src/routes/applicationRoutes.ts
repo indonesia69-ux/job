@@ -79,9 +79,8 @@ const TERMINAL_STATUSES: AppStatus[] = [
   'Rejected', 'InterviewDeclined', 'JobClosed',
 ];
 
-/** Recruiter-only allowed transitions from each status. Key '*' means any status. */
+/** Recruiter-only allowed transitions from each status. */
 const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
-  '*':                         ['DocumentsRequested'],   // doc request can come from ANY status
   'Applied':                   ['Reviewed', 'Rejected'],
   'Reviewed':                  ['InterviewScheduled', 'Rejected'],
   'InterviewScheduled':        ['Rejected', 'InterviewRescheduled'],
@@ -90,12 +89,12 @@ const RECRUITER_TRANSITIONS: Record<string, AppStatus[]> = {
   'InterviewCompleted':        ['Shortlisted', 'Rejected', 'OnHold', 'NextRound'],
   'NoShow':                    ['Rejected', 'InterviewRescheduled'],
   'InterviewRescheduled':      ['InterviewScheduled', 'InterviewCompleted', 'NoShow', 'Rejected'],
-  'Shortlisted':               ['DocumentsRequested', 'Rejected'],
-  'OnHold':                    ['Shortlisted', 'Rejected', 'DocumentsRequested'],
+  'Shortlisted':               ['OfferSent', 'Rejected'],
+  'OnHold':                    ['Shortlisted', 'Rejected'],
   'DocumentsUploaded':         ['DocumentsApproved', 'AdditionalDocumentsRequired', 'DocumentsRejected'],
   'AdditionalDocumentsRequired': ['DocumentsRequested'],
-  'DocumentsApproved':         ['OfferSent'],
-  'OfferAccepted':             ['JoiningConfirmed'],
+  'DocumentsApproved':         ['JoiningConfirmed'],
+  'OfferAccepted':             ['DocumentsRequested', 'JoiningConfirmed', 'Rejected'],
   'JoiningConfirmed':          ['Joined'],
   'Joined':                    ['Onboarded', 'Dropped'],
 };
@@ -110,15 +109,7 @@ const CANDIDATE_TRANSITIONS: Record<string, AppStatus[]> = {
 
 function getAllowedNextStatuses(current: string, role: 'RECRUITER' | 'CANDIDATE'): AppStatus[] {
   const transitions = role === 'RECRUITER' ? RECRUITER_TRANSITIONS : CANDIDATE_TRANSITIONS;
-  const specific = transitions[current] ?? [];
-  // Recruiter wildcard: DocumentsRequested from any non-terminal status
-  if (role === 'RECRUITER') {
-    const wildcard = (RECRUITER_TRANSITIONS['*'] ?? []).filter(
-      s => !TERMINAL_STATUSES.includes(current as AppStatus)
-    );
-    return [...new Set([...specific, ...wildcard])];
-  }
-  return specific;
+  return transitions[current] ?? [];
 }
 
 // ─── Required fields per target status ───────────────────────────────────────

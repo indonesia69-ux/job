@@ -142,15 +142,6 @@ export function WorkflowActions({
           <Button
             size="sm"
             variant="outline"
-            className="h-9"
-            disabled={isAnyLoading}
-            onClick={() => setModal("documents")}
-          >
-            Request Documents
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
             className="h-9 border-destructive/30 text-destructive hover:bg-destructive/5"
             disabled={isAnyLoading}
             onClick={() => setStatus("Rejected", {}, "Interview cancelled")}
@@ -258,17 +249,16 @@ export function WorkflowActions({
         </>
       )}
 
-      {/* 6. Shortlisted -> Request Docs / Send Offer */}
+      {/* 6. Shortlisted -> Send Offer */}
       {apiStatus === "Shortlisted" && (
         <>
           <Button
             size="sm"
-            variant="outline"
-            className="h-9"
+            className="h-9 bg-emerald-600 hover:bg-emerald-700"
             disabled={isAnyLoading}
-            onClick={() => setModal("documents")}
+            onClick={() => setModal("offer")}
           >
-            Request Documents
+            Send Offer Letter
           </Button>
         </>
       )}
@@ -345,22 +335,33 @@ export function WorkflowActions({
           size="sm"
           className="h-9 bg-emerald-600 hover:bg-emerald-700"
           disabled={isAnyLoading}
-          onClick={() => setModal("offer")}
-        >
-          Send Offer Letter
-        </Button>
-      )}
-
-      {/* 8. Offer Accepted -> Confirm Joining */}
-      {apiStatus === "OfferAccepted" && (
-        <Button
-          size="sm"
-          className="h-9"
-          disabled={isAnyLoading}
           onClick={() => setModal("joining")}
         >
           Confirm Joining
         </Button>
+      )}
+
+      {/* 8. Offer Accepted -> Request Docs / Confirm Joining */}
+      {apiStatus === "OfferAccepted" && (
+        <>
+          <Button
+            size="sm"
+            className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isAnyLoading}
+            onClick={() => setModal("documents")}
+          >
+            Request Documents
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-9"
+            disabled={isAnyLoading}
+            onClick={() => setModal("joining")}
+          >
+            Confirm Joining
+          </Button>
+        </>
       )}
 
       {/* 9. Joining Confirmed -> Joined */}

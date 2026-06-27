@@ -53,6 +53,15 @@ export interface Candidate {
   cvUrl?: string;
   uploadedCvName?: string;
   cvSource?: string;
+  profileJson?: any;
+  summary?: string;
+  educationList?: any[];
+  experienceList?: any[];
+  skillsList?: any[];
+  proceduresList?: any[];
+  certificationsList?: any[];
+  languagesList?: any[];
+  experienceYears?: number;
   supportingDocuments?: any[];
   isSuspended?: boolean;
 }
@@ -321,8 +330,16 @@ export function AdminStoreProvider({ children }: { children: ReactNode }) {
             joined: c.createdAt ? new Date(c.createdAt).toISOString().slice(0, 10) : "N/A",
             cvUrl: c.cvUrl,
             uploadedCvName: c.uploadedCvName,
-            // uploadedCvData does NOT exist in DB (replaced by Cloudinary cvUrl) — omit it
             cvSource: c.cvSource,
+            profileJson: c.profileJson,
+            summary: c.summary || "",
+            educationList: typeof c.education === "string" ? JSON.parse(c.education || "[]") : (c.education || []),
+            experienceList: typeof c.experience === "string" ? JSON.parse(c.experience || "[]") : (c.experience || []),
+            skillsList: typeof c.skills === "string" ? JSON.parse(c.skills || "[]") : (c.skills || []),
+            proceduresList: typeof c.procedures === "string" ? JSON.parse(c.procedures || "[]") : (c.procedures || []),
+            certificationsList: typeof c.certifications === "string" ? JSON.parse(c.certifications || "[]") : (c.certifications || []),
+            languagesList: typeof c.languages === "string" ? JSON.parse(c.languages || "[]") : (c.languages || []),
+            experienceYears: c.experienceYears ?? 0,
             supportingDocuments:
               typeof c.supportingDocuments === "string"
                 ? JSON.parse(c.supportingDocuments || "[]")
