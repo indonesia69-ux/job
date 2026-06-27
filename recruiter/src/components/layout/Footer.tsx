@@ -42,6 +42,14 @@ export function Footer() {
               ))}
             </ul>
           </div>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Support
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              support@apronhanger.org
+            </p>
+          </div>
           <div className="flex items-end">
             <a
               href="/who_are_we.html"

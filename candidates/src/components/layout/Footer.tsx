@@ -43,30 +43,13 @@ export function Footer() {
               ))}
             </ul>
           </div>
-          <div className="flex items-end">
-            <a
-              href="/who_are_we.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 hover:shadow-md"
-            >
-              Who We Are
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" y1="14" x2="21" y2="3" />
-              </svg>
-            </a>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Support
+            </p>
+            <p className="mt-3 text-xs text-muted-foreground">
+              support@apronhanger.work
+            </p>
           </div>
         </div>
       </div>
