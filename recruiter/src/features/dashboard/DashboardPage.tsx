@@ -54,6 +54,16 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="h-10">
+            <a
+              href="https://apronhanger.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5"
+            >
+              Join our community <ArrowUpRight className="h-4 w-4" />
+            </a>
+          </Button>
           {hospital?.verified && <VerifiedBadge label="Verified Hospital" size="md" />}
           {isLocked ? (
             <Button disabled className="h-10">

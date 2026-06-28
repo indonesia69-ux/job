@@ -136,7 +136,7 @@ const STEP_META = [
     icon: UserRound,
   },
   {
-    label: "Doctor Profile",
+    label: "Medical Work Profile",
     description: "Specialty, grade and preferred appointment types for doctor matching.",
     icon: Stethoscope,
   },
@@ -652,7 +652,7 @@ export function ProfileFormWizard({
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Doctor profile
+                  Medical Work Profile
                 </p>
                 <p className="mt-1 text-lg font-semibold text-foreground">
                   {readiness.score}% ready

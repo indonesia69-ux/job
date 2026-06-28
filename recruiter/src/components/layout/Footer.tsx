@@ -50,7 +50,7 @@ export function Footer() {
               support@apronhanger.org
             </p>
           </div>
-          <div className="flex items-end">
+          {/* <div className="flex items-end">
             <a
               href="/who_are_we.html"
               target="_blank"
@@ -74,7 +74,7 @@ export function Footer() {
                 <line x1="10" y1="14" x2="21" y2="3" />
               </svg>
             </a>
-          </div>
+          </div> */}
         </div>
       </div>
       <div className="border-t">

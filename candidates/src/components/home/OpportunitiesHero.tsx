@@ -1,4 +1,4 @@
-import { Briefcase, MapPin, Search, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
+import { Briefcase, MapPin, Search, ShieldCheck, Sparkles, TrendingUp, ArrowUpRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CategoryRail } from "@/components/jobs/CategoryRail";
@@ -83,13 +83,23 @@ export function OpportunitiesHero({
           {/* ── Left: Text + Search ── */}
           <div className="hero-stagger w-full">
 
-            {/* Badge */}
-            <div className="hero-badge inline-flex items-center gap-2 rounded-full border border-brand/20 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-primary shadow-soft backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
-              </span>
-              Verified hospitals · Live openings
+            {/* Badge & Community Button */}
+            <div className="flex flex-wrap gap-2">
+              <div className="hero-badge inline-flex items-center gap-2 rounded-full border border-brand/20 bg-white/90 px-3 py-1.5 text-[11px] font-medium text-primary shadow-soft backdrop-blur-sm">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-brand" />
+                </span>
+                Verified hospitals · Live openings
+              </div>
+              <a
+                href="https://apronhanger.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hero-badge inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground shadow-soft backdrop-blur-sm hover:bg-primary/95 transition-all cursor-pointer"
+              >
+                Join our community <ArrowUpRight className="h-3.5 w-3.5 text-primary-foreground" />
+              </a>
             </div>
 
             {/* Headline */}
